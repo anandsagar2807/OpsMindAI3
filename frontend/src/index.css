@@ -1,0 +1,27 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-dark-700;
+  }
+
+  body {
+    @apply bg-dark-900 text-dark-50 font-sans antialiased;
+  }
+}
+
+@layer utilities {
+  .glass-effect {
+    @apply bg-white/5 backdrop-blur-xl border border-white/10;
+  }
+
+  .gradient-primary {
+    @apply bg-gradient-to-r from-primary-600 to-primary-500;
+  }
+
+  .gradient-dark {
+    @apply bg-gradient-to-br from-dark-800 to-dark-900;
+  }
+}
