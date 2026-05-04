@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chat API Test</title>
+    <style>
+        body { font-family: Arial; padding: 20px; background: #1a1a2e; color: white; }
+        button { padding: 10px 20px; background: #6366f1; color: white; border: none; cursor: pointer; border-radius: 5px; }
+        #result { margin-top: 20px; padding: 15px; background: #16213e; border-radius: 5px; white-space: pre-wrap; }
+        .error { color: #ff6b6b; }
+        .success { color: #51cf66; }
+    </style>
+</head>
+<body>
+    <h1>Chat API Connection Test</h1>
+    <button onclick="testConnection()">Test Backend Connection</button>
+    <button onclick="testChat()">Test Chat Endpoint</button>
+    <div id="result"></div>
+
+    <script>
+        const API_URL = 'http://localhost:5000/api';
+
+        async function testConnection() {
+            const result = document.getElementById('result');
+            result.innerHTML = 'Testing connection...';
+
+            try {
+                const response = await fetch('http://localhost:5000/health');
+                const data = await response.json();
+                result.className = 'success';
+                result.innerHTML = '✅ Backend is reachable!\n\n' + JSON.stringify(data, null, 2);
+            } catch (error) {
+                result.className = 'error';
+                result.innerHTML = '❌ Connection failed!\n\nError: ' + error.message;
+            }
+        }
+
+        async function testChat() {
+            const result = document.getElementById('result');
+            result.innerHTML = 'Testing chat endpoint...';
+
+            try {
+                const response = await fetch(`${API_URL}/chat/query`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ query: 'test message' })
+                });
+
+                const data = await response.json();
+                result.className = response.ok ? 'success' : 'error';
+                result.innerHTML = `Status: ${response.status}\n\n` + JSON.stringify(data, null, 2);
+            } catch (error) {
+                result.className = 'error';
+                result.innerHTML = '❌ Chat request failed!\n\nError: ' + error.message + '\n\nThis usually means:\n1. Backend is not running\n2. CORS is blocking the request\n3. Network/firewall issue';
+            }
+        }
+    </script>
+</body>
+</html>

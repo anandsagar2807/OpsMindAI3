@@ -1,10 +1,18 @@
 import { Navigate } from 'react-router-dom'
-import useAuthStore from '../store/authStore'
+import { useAuth } from '@clerk/react'
 
 const PrivateRoute = ({ children }) => {
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
+  const { isSignedIn, isLoaded } = useAuth()
 
-  return isAuthenticated ? children : <Navigate to="/login" replace />
+  if (!isLoaded) {
+    return (
+      <div className="min-h-screen gradient-dark flex items-center justify-center">
+        <div className="text-white">Loading...</div>
+      </div>
+    )
+  }
+
+  return isSignedIn ? children : <Navigate to="/" replace />
 }
 
 export default PrivateRoute

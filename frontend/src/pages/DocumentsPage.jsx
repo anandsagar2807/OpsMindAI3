@@ -1,205 +1,186 @@
-import { useState, useEffect } from 'react'
-import { FileText, Trash2, Eye, Loader, CheckCircle, AlertCircle, Clock } from 'lucide-react'
-import toast from 'react-hot-toast'
-import api from '../utils/api'
+import { useState } from 'react'
+import { motion } from 'framer-motion'
+import { useDropzone } from 'react-dropzone'
+import {
+  Upload,
+  FileText,
+  Calendar,
+  CheckCircle2,
+  Clock,
+  Trash2,
+  Eye,
+  Download,
+  Search
+} from 'lucide-react'
+import { Card, Button, Badge } from '../components/ui'
+import DashboardLayout from '../layouts/DashboardLayout'
 
 const DocumentsPage = () => {
-  const [documents, setDocuments] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [selectedDoc, setSelectedDoc] = useState(null)
-  const [vectors, setVectors] = useState([])
-  const [loadingVectors, setLoadingVectors] = useState(false)
-
-  useEffect(() => {
-    fetchDocuments()
-  }, [])
-
-  const fetchDocuments = async () => {
-    try {
-      const response = await api.get('/documents')
-      setDocuments(response.data.data)
-    } catch (error) {
-      toast.error('Failed to fetch documents')
-    } finally {
-      setLoading(false)
+  const [documents, setDocuments] = useState([
+    {
+      id: 1,
+      name: 'Employee_Handbook_2024.pdf',
+      size: '2.4 MB',
+      uploadDate: '2024-03-15',
+      status: 'completed',
+      pages: 45,
+      chunks: 120
+    },
+    {
+      id: 2,
+      name: 'IT_Security_Policy.pdf',
+      size: '1.8 MB',
+      uploadDate: '2024-03-14',
+      status: 'completed',
+      pages: 32,
+      chunks: 85
+    },
+    {
+      id: 3,
+      name: 'Sales_Procedures.pdf',
+      size: '3.2 MB',
+      uploadDate: '2024-03-13',
+      status: 'processing',
+      pages: 58,
+      chunks: 0
     }
-  }
+  ])
 
-  const handleDelete = async (id) => {
-    if (!confirm('Are you sure you want to delete this document?')) return
+  const [uploading, setUploading] = useState(false)
 
-    try {
-      await api.delete(`/documents/${id}`)
-      toast.success('Document deleted successfully')
-      setDocuments(documents.filter(doc => doc._id !== id))
-      if (selectedDoc?._id === id) {
-        setSelectedDoc(null)
-        setVectors([])
-      }
-    } catch (error) {
-      toast.error('Failed to delete document')
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    accept: {
+      'application/pdf': ['.pdf']
+    },
+    maxSize: 20971520,
+    onDrop: (acceptedFiles) => {
+      setUploading(true)
+      setTimeout(() => {
+        const newDoc = {
+          id: documents.length + 1,
+          name: acceptedFiles[0].name,
+          size: `${(acceptedFiles[0].size / 1024 / 1024).toFixed(1)} MB`,
+          uploadDate: new Date().toISOString().split('T')[0],
+          status: 'processing',
+          pages: 0,
+          chunks: 0
+        }
+        setDocuments([newDoc, ...documents])
+        setUploading(false)
+      }, 2000)
     }
-  }
-
-  const handleViewVectors = async (doc) => {
-    setSelectedDoc(doc)
-    setLoadingVectors(true)
-    try {
-      const response = await api.get(`/documents/${doc._id}/vectors`)
-      setVectors(response.data.data)
-    } catch (error) {
-      toast.error('Failed to fetch vectors')
-    } finally {
-      setLoadingVectors(false)
-    }
-  }
-
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'completed':
-        return <CheckCircle className="w-5 h-5 text-green-500" />
-      case 'processing':
-        return <Loader className="w-5 h-5 text-primary-500 animate-spin" />
-      case 'failed':
-        return <AlertCircle className="w-5 h-5 text-red-500" />
-      default:
-        return <Clock className="w-5 h-5 text-dark-400" />
-    }
-  }
-
-  const getStatusBadge = (status) => {
-    const styles = {
-      completed: 'bg-green-500/10 text-green-400 border-green-500/20',
-      processing: 'bg-primary-500/10 text-primary-400 border-primary-500/20',
-      failed: 'bg-red-500/10 text-red-400 border-red-500/20'
-    }
-    return (
-      <span className={`px-3 py-1 rounded-full text-xs font-medium border ${styles[status]}`}>
-        {status.charAt(0).toUpperCase() + status.slice(1)}
-      </span>
-    )
-  }
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader className="w-8 h-8 text-primary-500 animate-spin" />
-      </div>
-    )
-  }
+  })
 
   return (
-    <div className="max-w-7xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white mb-2">My Documents</h1>
-        <p className="text-dark-400">Manage your uploaded SOP documents and view their vectors</p>
-      </div>
-
-      {documents.length === 0 ? (
-        <div className="glass-effect rounded-2xl p-12 text-center">
-          <FileText className="w-16 h-16 text-dark-600 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-white mb-2">No documents yet</h3>
-          <p className="text-dark-400">Upload your first SOP document to get started</p>
+    <DashboardLayout>
+      <div className="max-w-7xl mx-auto space-y-8">
+        <div>
+          <h1 className="text-3xl font-bold text-white mb-2">Documents</h1>
+          <p className="text-dark-400">Manage your knowledge base documents</p>
         </div>
-      ) : (
-        <div className="grid lg:grid-cols-2 gap-6">
-          {/* Documents List */}
-          <div className="space-y-4">
-            {documents.map((doc) => (
-              <div key={doc._id} className="glass-effect rounded-xl p-6 hover:bg-white/10 transition">
+
+        <Card glass>
+          <div
+            {...getRootProps()}
+            className={`
+              border-2 border-dashed rounded-xl p-12
+              transition-all duration-200 cursor-pointer
+              ${isDragActive
+                ? 'border-primary-500 bg-primary-500/10'
+                : 'border-dark-700 hover:border-primary-500/50 hover:bg-white/5'
+              }
+            `}
+          >
+            <input {...getInputProps()} />
+            <div className="text-center">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-500 to-blue-600 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-primary-500/30">
+                <Upload className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="text-xl font-semibold text-white mb-2">
+                {uploading ? 'Uploading...' : isDragActive ? 'Drop files here' : 'Upload Documents'}
+              </h3>
+              <p className="text-dark-400 mb-4">
+                Drag & drop PDF files here, or click to browse
+              </p>
+              <p className="text-sm text-dark-500">
+                Maximum file size: 20MB • Supported format: PDF
+              </p>
+            </div>
+          </div>
+        </Card>
+
+        <div className="relative">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-dark-400" />
+          <input
+            type="text"
+            placeholder="Search documents..."
+            className="
+              w-full pl-12 pr-4 py-3
+              bg-dark-800/50 border border-dark-700
+              rounded-xl text-white placeholder-dark-500
+              focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent
+              transition-all
+            "
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {documents.map((doc, index) => (
+            <motion.div
+              key={doc.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.1 }}
+            >
+              <Card hover glass>
                 <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-start gap-3 flex-1">
-                    {getStatusIcon(doc.status)}
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-white font-semibold mb-1 truncate">{doc.name}</h3>
-                      <p className="text-sm text-dark-400">
-                        {new Date(doc.createdAt).toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric'
-                        })}
-                      </p>
-                    </div>
+                  <div className="w-12 h-12 rounded-xl bg-red-500/20 border border-red-500/30 flex items-center justify-center">
+                    <FileText className="w-6 h-6 text-red-400" />
                   </div>
-                  {getStatusBadge(doc.status)}
+                  <Badge variant={doc.status === 'completed' ? 'success' : 'warning'}>
+                    {doc.status === 'completed' ? (
+                      <><CheckCircle2 className="w-3 h-3 mr-1" /> Processed</>
+                    ) : (
+                      <><Clock className="w-3 h-3 mr-1" /> Processing</>
+                    )}
+                  </Badge>
                 </div>
 
-                <div className="grid grid-cols-3 gap-4 mb-4 text-sm">
-                  <div>
-                    <p className="text-dark-500">Pages</p>
-                    <p className="text-white font-medium">{doc.totalPages || 0}</p>
+                <h3 className="text-white font-semibold mb-2 truncate" title={doc.name}>
+                  {doc.name}
+                </h3>
+
+                <div className="space-y-2 mb-4 text-sm text-dark-400">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4" />
+                    <span>{doc.uploadDate}</span>
                   </div>
-                  <div>
-                    <p className="text-dark-500">Chunks</p>
-                    <p className="text-white font-medium">{doc.totalChunks || 0}</p>
-                  </div>
-                  <div>
-                    <p className="text-dark-500">Size</p>
-                    <p className="text-white font-medium">
-                      {(doc.fileSize / 1024 / 1024).toFixed(2)} MB
-                    </p>
+                  <div className="flex items-center justify-between">
+                    <span>{doc.size}</span>
+                    {doc.status === 'completed' && (
+                      <span>{doc.pages} pages • {doc.chunks} chunks</span>
+                    )}
                   </div>
                 </div>
 
                 <div className="flex gap-2">
-                  <button
-                    onClick={() => handleViewVectors(doc)}
-                    disabled={doc.status !== 'completed'}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-primary-500/10 text-primary-400 rounded-lg hover:bg-primary-500/20 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
+                  <button className="flex-1 px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white text-sm font-medium transition-colors flex items-center justify-center gap-2">
                     <Eye className="w-4 h-4" />
-                    <span className="text-sm font-medium">View Vectors</span>
+                    View
                   </button>
-                  <button
-                    onClick={() => handleDelete(doc._id)}
-                    className="px-4 py-2 bg-red-500/10 text-red-400 rounded-lg hover:bg-red-500/20 transition"
-                  >
+                  <button className="px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white transition-colors">
+                    <Download className="w-4 h-4" />
+                  </button>
+                  <button className="px-3 py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 rounded-lg text-red-400 transition-colors">
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Vectors Panel */}
-          <div className="glass-effect rounded-xl p-6 lg:sticky lg:top-6 h-fit max-h-[calc(100vh-8rem)] overflow-hidden flex flex-col">
-            <h2 className="text-xl font-semibold text-white mb-4">Document Vectors</h2>
-
-            {!selectedDoc ? (
-              <div className="flex-1 flex items-center justify-center text-center py-12">
-                <div>
-                  <Eye className="w-12 h-12 text-dark-600 mx-auto mb-3" />
-                  <p className="text-dark-400">Select a document to view its vectors</p>
-                </div>
-              </div>
-            ) : loadingVectors ? (
-              <div className="flex-1 flex items-center justify-center">
-                <Loader className="w-8 h-8 text-primary-500 animate-spin" />
-              </div>
-            ) : (
-              <div className="flex-1 overflow-y-auto space-y-3 pr-2">
-                {vectors.map((vector, index) => (
-                  <div key={vector._id} className="bg-dark-800/50 rounded-lg p-4 border border-dark-700">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-medium text-primary-400">
-                        Chunk #{vector.chunkIndex + 1}
-                      </span>
-                      <span className="text-xs text-dark-500">Page {vector.pageNumber}</span>
-                    </div>
-                    <p className="text-sm text-dark-300 line-clamp-3">{vector.text}</p>
-                    <div className="mt-2 pt-2 border-t border-dark-700">
-                      <p className="text-xs text-dark-500">
-                        Embedding: {vector.metadata?.chunkSize || 0} chars
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+              </Card>
+            </motion.div>
+          ))}
         </div>
-      )}
-    </div>
+      </div>
+    </DashboardLayout>
   )
 }
 

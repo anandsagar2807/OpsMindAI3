@@ -1,9 +1,14 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
-import Home from './pages/Home'
+import LandingPage from './pages/LandingPage'
+import DashboardHome from './pages/DashboardHome'
+import DocumentsPage from './pages/DocumentsPage'
+import UploadPage from './pages/UploadPage'
+import ChatPage from './pages/ChatPage'
+import GroqChatPage from './pages/GroqChatPage'
+import SettingsPage from './pages/SettingsPage'
 import Login from './pages/Login'
 import Register from './pages/Register'
-import Dashboard from './pages/Dashboard'
 import PrivateRoute from './components/PrivateRoute'
 
 function App() {
@@ -33,14 +38,46 @@ function App() {
         }}
       />
       <Routes>
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route
-          path="/dashboard/*"
+          path="/dashboard"
           element={
             <PrivateRoute>
-              <Dashboard />
+              <DashboardHome />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/dashboard/documents"
+          element={
+            <PrivateRoute>
+              <DocumentsPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/dashboard/upload"
+          element={
+            <PrivateRoute>
+              <UploadPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/dashboard/chat"
+          element={
+            <PrivateRoute>
+              <GroqChatPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/dashboard/settings"
+          element={
+            <PrivateRoute>
+              <SettingsPage />
             </PrivateRoute>
           }
         />

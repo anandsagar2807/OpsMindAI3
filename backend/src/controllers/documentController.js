@@ -23,7 +23,7 @@ export const uploadDocument = async (req, res, next) => {
       status: 'processing'
     });
 
-    processDocumentAsync(document._id, req.file.path);
+    processDocumentAsync(document._id, req.file.path, req.user._id);
 
     res.status(201).json({
       success: true,
@@ -39,7 +39,7 @@ export const uploadDocument = async (req, res, next) => {
   }
 };
 
-const processDocumentAsync = async (documentId, filePath) => {
+const processDocumentAsync = async (documentId, filePath, userId) => {
   try {
     const document = await Document.findById(documentId);
 
@@ -62,6 +62,7 @@ const processDocumentAsync = async (documentId, filePath) => {
 
       vectors.push({
         documentId: document._id,
+        userId: userId,
         text: chunk.text,
         embedding: embedding,
         pageNumber: pageNumber,

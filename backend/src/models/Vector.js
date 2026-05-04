@@ -7,6 +7,11 @@ const vectorSchema = new mongoose.Schema({
     required: true,
     index: true
   },
+  userId: {
+    type: String,
+    required: true,
+    index: true
+  },
   text: {
     type: String,
     required: true
@@ -37,6 +42,7 @@ const vectorSchema = new mongoose.Schema({
   }
 });
 
+vectorSchema.index({ userId: 1, documentId: 1 });
 vectorSchema.index({ documentId: 1, chunkIndex: 1 });
 vectorSchema.index({ documentId: 1, pageNumber: 1 });
 
