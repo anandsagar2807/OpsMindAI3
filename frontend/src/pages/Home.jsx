@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { Brain, Upload, FileText, Zap, Shield, TrendingUp, ArrowRight, Sparkles, Lock } from 'lucide-react'
 import { Show, SignInButton, SignUpButton, UserButton } from '@clerk/react'
+import Header from '../components/Header'
 
 const Home = () => {
   const features = [
@@ -16,45 +17,9 @@ const Home = () => {
   ]
 
   return (
-    <div className="min-h-screen gradient-dark">
-      {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 glass-effect border-b border-white/10 backdrop-blur-xl">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-20">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center shadow-lg shadow-primary-500/50 animate-pulseBrain" className="w-7 h-7 text-white">
-                <Brain className="w-7 h-7 text-white" />
-              </div>
-              <div className="flex items-center gap-1 transition-colors duration-300">
-                <Sparkles className="w-3 h-3 text-primary-400" />
-                <span className="text-xs text-primary-400 font-medium">Powered by Advanced AI Technology</span>
-              </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <Show when="signed-out">
-                <SignInButton mode="modal">
-                  <button className="text-dark-300 hover:text-white transition px-6 py-2 font-medium animate-hover">
-                    Sign In
-                  </button>
-                </SignInButton>
-                <SignUpButton mode="modal">
-                  <button className="btn-primary shadow-lg shadow-primary-500/30 hover:shadow-primary-500/50 transition-all animate-hover">
-                    Get Started Free
-                  </button>
-                </SignUpButton>
-              </Show>
-              <Show when="signed-in">
-                <Link
-                  to="/dashboard"
-                  className="text-dark-300 hover:text-white transition px-6 py-2 font-medium animate-hover">
-                  Dashboard
-                </Link>
-                <UserButton afterSignOutUrl="/" />
-              </Show>
-            </div>
-          </div>
-        </div>
-      </nav>
+    <div className="min-h-screen bg-gradient-to-b from-white to-blue-50">
+      {/* Header */}
+      <Header />
 
       {/* Hero Section */}
       <section className="relative overflow-hidden pt-32 pb-20 lg:pt-40 lg:pb-32">

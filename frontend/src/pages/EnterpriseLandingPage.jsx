@@ -12,7 +12,9 @@ import {
   Star,
   Globe,
   Lock,
-  BarChart3
+  BarChart3,
+  Quote,
+  Play
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '@clerk/react';
@@ -109,10 +111,40 @@ export default function EnterpriseLandingPage() {
     { value: '500+', label: 'Enterprise Clients' }
   ];
 
+  const testimonials = [
+    {
+      name: 'Sarah Johnson',
+      role: 'CTO, TechCorp',
+      image: 'https://ui-avatars.com/api/?name=Sarah+Johnson&background=6366f1&color=fff',
+      content: 'OpsMind AI reduced our support ticket resolution time by 70%. Game-changer for our operations team.'
+    },
+    {
+      name: 'Michael Chen',
+      role: 'VP Operations, FinanceHub',
+      image: 'https://ui-avatars.com/api/?name=Michael+Chen&background=8b5cf6&color=fff',
+      content: 'The zero-hallucination guarantee gives us confidence. Our compliance team loves the source citations.'
+    },
+    {
+      name: 'Emily Rodriguez',
+      role: 'Head of HR, GlobalCo',
+      image: 'https://ui-avatars.com/api/?name=Emily+Rodriguez&background=06b6d4&color=fff',
+      content: 'Onboarding new employees is 10x faster. They get instant answers to policy questions 24/7.'
+    }
+  ];
+
+  const integrations = [
+    { name: 'Slack', logo: '💬' },
+    { name: 'Microsoft Teams', logo: '👥' },
+    { name: 'Google Drive', logo: '📁' },
+    { name: 'Dropbox', logo: '📦' },
+    { name: 'Salesforce', logo: '☁️' },
+    { name: 'Zendesk', logo: '🎫' }
+  ];
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+    <div className="min-h-screen bg-white">
       {/* Navigation */}
-      <nav className="glass border-b border-white/20 sticky top-0 z-50">
+      <nav className="bg-white/95 backdrop-blur-md border-b border-gray-200 sticky top-0 z-50 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -120,9 +152,16 @@ export default function EnterpriseLandingPage() {
                 <Sparkles className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gradient">OpsMind AI</h1>
+                <h1 className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">OpsMind AI</h1>
                 <p className="text-xs text-gray-600">Enterprise Edition</p>
               </div>
+            </div>
+
+            <div className="hidden md:flex items-center gap-8">
+              <a href="#features" className="text-gray-700 hover:text-indigo-600 transition-colors font-medium">Features</a>
+              <a href="#pricing" className="text-gray-700 hover:text-indigo-600 transition-colors font-medium">Pricing</a>
+              <a href="#testimonials" className="text-gray-700 hover:text-indigo-600 transition-colors font-medium">Testimonials</a>
+              <a href="#integrations" className="text-gray-700 hover:text-indigo-600 transition-colors font-medium">Integrations</a>
             </div>
 
             <div className="flex items-center gap-4">
@@ -138,7 +177,7 @@ export default function EnterpriseLandingPage() {
                 <>
                   <button
                     onClick={() => navigate('/login')}
-                    className="btn btn-ghost"
+                    className="text-gray-700 hover:text-indigo-600 font-medium transition-colors"
                   >
                     Sign In
                   </button>
@@ -157,8 +196,12 @@ export default function EnterpriseLandingPage() {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden py-20 px-6">
-        <div className="max-w-7xl mx-auto">
+      <section className="relative overflow-hidden py-20 px-6 bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+        {/* Decorative Elements */}
+        <div className="absolute top-0 left-0 w-96 h-96 bg-indigo-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse"></div>
+        <div className="absolute bottom-0 right-0 w-96 h-96 bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse" style={{ animationDelay: '2s' }}></div>
+
+        <div className="max-w-7xl mx-auto relative">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -173,7 +216,7 @@ export default function EnterpriseLandingPage() {
             <h1 className="text-6xl font-bold text-gray-900 mb-6 leading-tight">
               Your Company's Knowledge,
               <br />
-              <span className="text-gradient">Instantly Accessible</span>
+              <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Instantly Accessible</span>
             </h1>
 
             <p className="text-xl text-gray-600 mb-8 leading-relaxed">
@@ -181,15 +224,16 @@ export default function EnterpriseLandingPage() {
               Get accurate answers in seconds with zero hallucinations.
             </p>
 
-            <div className="flex items-center justify-center gap-4">
+            <div className="flex items-center justify-center gap-4 flex-wrap">
               <button
                 onClick={() => navigate('/register')}
-                className="btn btn-primary text-lg px-8 py-4 shadow-2xl hover:shadow-indigo-500/50"
+                className="btn btn-primary text-lg px-8 py-4 shadow-xl hover:shadow-2xl"
               >
                 Start Free Trial
                 <ArrowRight className="w-5 h-5" />
               </button>
-              <button className="btn btn-secondary text-lg px-8 py-4">
+              <button className="btn btn-secondary text-lg px-8 py-4 flex items-center gap-2">
+                <Play className="w-5 h-5" />
                 Watch Demo
               </button>
             </div>
@@ -206,11 +250,34 @@ export default function EnterpriseLandingPage() {
             transition={{ duration: 0.8, delay: 0.2 }}
             className="mt-16 relative"
           >
-            <div className="glass rounded-3xl p-8 shadow-2xl">
-              <div className="aspect-video bg-gradient-to-br from-indigo-600 to-purple-600 rounded-2xl flex items-center justify-center">
-                <div className="text-center text-white">
-                  <MessageSquare className="w-20 h-20 mx-auto mb-4 opacity-50" />
-                  <p className="text-lg font-medium">Interactive Demo Coming Soon</p>
+            <div className="bg-white rounded-3xl p-8 shadow-2xl border border-gray-200">
+              <div className="aspect-video bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl flex items-center justify-center border border-gray-200 relative overflow-hidden">
+                {/* Mock Chat Interface */}
+                <div className="absolute inset-0 p-8">
+                  <div className="bg-white rounded-xl shadow-lg h-full flex flex-col">
+                    <div className="border-b border-gray-200 p-4 flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center">
+                        <Sparkles className="w-5 h-5 text-white" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-gray-900">AI Assistant</p>
+                        <p className="text-xs text-gray-500">Online</p>
+                      </div>
+                    </div>
+                    <div className="flex-1 p-4 space-y-4 overflow-hidden">
+                      <div className="flex justify-end">
+                        <div className="bg-indigo-600 text-white px-4 py-2 rounded-2xl max-w-xs text-sm">
+                          What's our refund policy?
+                        </div>
+                      </div>
+                      <div className="flex justify-start">
+                        <div className="bg-gray-100 text-gray-900 px-4 py-2 rounded-2xl max-w-md text-sm">
+                          Refunds are processed within 7 business days...
+                          <span className="block text-xs text-gray-500 mt-1">(Source: Refund Policy, Page 12)</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -219,7 +286,7 @@ export default function EnterpriseLandingPage() {
       </section>
 
       {/* Stats Section */}
-      <section className="py-16 px-6 bg-white/50">
+      <section className="py-16 px-6 bg-white border-y border-gray-200">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {stats.map((stat, idx) => (
@@ -231,7 +298,7 @@ export default function EnterpriseLandingPage() {
                 viewport={{ once: true }}
                 className="text-center"
               >
-                <div className="text-4xl font-bold text-gradient mb-2">{stat.value}</div>
+                <div className="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-2">{stat.value}</div>
                 <div className="text-gray-600">{stat.label}</div>
               </motion.div>
             ))}
@@ -240,7 +307,7 @@ export default function EnterpriseLandingPage() {
       </section>
 
       {/* Features Section */}
-      <section className="py-20 px-6">
+      <section id="features" className="py-20 px-6 bg-gray-50">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">
@@ -261,7 +328,7 @@ export default function EnterpriseLandingPage() {
                   whileInView={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: idx * 0.1 }}
                   viewport={{ once: true }}
-                  className="glass rounded-2xl p-8 hover:shadow-xl transition-all hover-lift"
+                  className="bg-white rounded-2xl p-8 hover:shadow-xl transition-all hover-lift border border-gray-200"
                 >
                   <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center mb-6 shadow-lg">
                     <Icon className="w-7 h-7 text-white" />
@@ -275,8 +342,79 @@ export default function EnterpriseLandingPage() {
         </div>
       </section>
 
+      {/* Testimonials Section */}
+      <section id="testimonials" className="py-20 px-6 bg-white">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+              Loved by Teams Worldwide
+            </h2>
+            <p className="text-xl text-gray-600">
+              See what our customers have to say
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {testimonials.map((testimonial, idx) => (
+              <motion.div
+                key={idx}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: idx * 0.1 }}
+                viewport={{ once: true }}
+                className="bg-gray-50 rounded-2xl p-8 border border-gray-200"
+              >
+                <Quote className="w-10 h-10 text-indigo-600 mb-4" />
+                <p className="text-gray-700 mb-6 leading-relaxed">{testimonial.content}</p>
+                <div className="flex items-center gap-3">
+                  <img
+                    src={testimonial.image}
+                    alt={testimonial.name}
+                    className="w-12 h-12 rounded-full"
+                  />
+                  <div>
+                    <p className="font-semibold text-gray-900">{testimonial.name}</p>
+                    <p className="text-sm text-gray-600">{testimonial.role}</p>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Integrations Section */}
+      <section id="integrations" className="py-20 px-6 bg-gray-50">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+              Integrates with Your Favorite Tools
+            </h2>
+            <p className="text-xl text-gray-600">
+              Connect OpsMind AI with the tools you already use
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+            {integrations.map((integration, idx) => (
+              <motion.div
+                key={idx}
+                initial={{ opacity: 0, scale: 0.9 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.3, delay: idx * 0.05 }}
+                viewport={{ once: true }}
+                className="bg-white rounded-xl p-6 flex flex-col items-center justify-center gap-3 hover:shadow-lg transition-all border border-gray-200"
+              >
+                <div className="text-4xl">{integration.logo}</div>
+                <p className="text-sm font-medium text-gray-700 text-center">{integration.name}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Pricing Section */}
-      <section className="py-20 px-6 bg-white/50">
+      <section id="pricing" className="py-20 px-6 bg-white">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">
@@ -295,8 +433,8 @@ export default function EnterpriseLandingPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: idx * 0.1 }}
                 viewport={{ once: true }}
-                className={`glass rounded-2xl p-8 relative ${
-                  plan.popular ? 'ring-2 ring-indigo-600 shadow-2xl scale-105' : ''
+                className={`bg-white rounded-2xl p-8 relative border-2 ${
+                  plan.popular ? 'border-indigo-600 shadow-2xl scale-105' : 'border-gray-200'
                 }`}
               >
                 {plan.popular && (
@@ -309,7 +447,7 @@ export default function EnterpriseLandingPage() {
                   <h3 className="text-2xl font-bold text-gray-900 mb-2">{plan.name}</h3>
                   <p className="text-gray-600 mb-4">{plan.description}</p>
                   <div className="flex items-baseline justify-center gap-1">
-                    <span className="text-5xl font-bold text-gradient">{plan.price}</span>
+                    <span className="text-5xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">{plan.price}</span>
                     <span className="text-gray-600">{plan.period}</span>
                   </div>
                 </div>
@@ -324,6 +462,7 @@ export default function EnterpriseLandingPage() {
                 </ul>
 
                 <button
+                  onClick={() => navigate('/register')}
                   className={`w-full btn ${
                     plan.popular ? 'btn-primary' : 'btn-secondary'
                   }`}
@@ -337,24 +476,24 @@ export default function EnterpriseLandingPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 px-6">
+      <section className="py-20 px-6 bg-gradient-to-br from-indigo-600 to-purple-600">
         <div className="max-w-4xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             viewport={{ once: true }}
-            className="glass rounded-3xl p-12 text-center"
+            className="text-center text-white"
           >
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+            <h2 className="text-4xl font-bold mb-4">
               Ready to Transform Your Knowledge Management?
             </h2>
-            <p className="text-xl text-gray-600 mb-8">
+            <p className="text-xl mb-8 text-indigo-100">
               Join 500+ companies using OpsMind AI to empower their teams
             </p>
             <button
               onClick={() => navigate('/register')}
-              className="btn btn-primary text-lg px-8 py-4 shadow-2xl"
+              className="bg-white text-indigo-600 hover:bg-gray-100 px-8 py-4 rounded-xl font-semibold text-lg shadow-xl transition-all inline-flex items-center gap-2"
             >
               Start Free Trial
               <ArrowRight className="w-5 h-5" />
@@ -364,7 +503,7 @@ export default function EnterpriseLandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="glass border-t border-white/20 py-12 px-6">
+      <footer className="bg-gray-50 border-t border-gray-200 py-12 px-6">
         <div className="max-w-7xl mx-auto">
           <div className="grid md:grid-cols-4 gap-8 mb-8">
             <div>
@@ -372,7 +511,7 @@ export default function EnterpriseLandingPage() {
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center">
                   <Sparkles className="w-5 h-5 text-white" />
                 </div>
-                <span className="font-bold text-gradient">OpsMind AI</span>
+                <span className="font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">OpsMind AI</span>
               </div>
               <p className="text-sm text-gray-600">
                 Enterprise knowledge management powered by AI
@@ -382,10 +521,10 @@ export default function EnterpriseLandingPage() {
             <div>
               <h4 className="font-semibold text-gray-900 mb-4">Product</h4>
               <ul className="space-y-2 text-sm text-gray-600">
-                <li><a href="#" className="hover:text-indigo-600">Features</a></li>
-                <li><a href="#" className="hover:text-indigo-600">Pricing</a></li>
+                <li><a href="#features" className="hover:text-indigo-600">Features</a></li>
+                <li><a href="#pricing" className="hover:text-indigo-600">Pricing</a></li>
                 <li><a href="#" className="hover:text-indigo-600">Security</a></li>
-                <li><a href="#" className="hover:text-indigo-600">Integrations</a></li>
+                <li><a href="#integrations" className="hover:text-indigo-600">Integrations</a></li>
               </ul>
             </div>
 
