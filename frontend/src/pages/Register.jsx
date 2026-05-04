@@ -1,4 +1,4 @@
-import { SignUp } from '@clerk/clerk-react'
+import { SignUp } from '@clerk/react'
 import { Brain } from 'lucide-react'
 
 const Register = () => {

@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
 import './index.css'
 import './styles/enterprise.css'
-import { ClerkProvider, useAuth } from '@clerk/clerk-react'
+import { ClerkProvider, useAuth } from '@clerk/react'
 import { setClerkTokenGetter } from './utils/api.js'
 
 // Component to set up Clerk token getter
