@@ -1,11 +1,13 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import LandingPage from './pages/LandingPage'
+import EnterpriseLandingPage from './pages/EnterpriseLandingPage'
 import DashboardHome from './pages/DashboardHome'
 import DocumentsPage from './pages/DocumentsPage'
 import UploadPage from './pages/UploadPage'
 import ChatPage from './pages/ChatPage'
 import GroqChatPage from './pages/GroqChatPage'
+import EnterpriseChatPage from './pages/EnterpriseChatPage'
 import SettingsPage from './pages/SettingsPage'
 import Login from './pages/Login'
 import Register from './pages/Register'
@@ -38,7 +40,7 @@ function App() {
         }}
       />
       <Routes>
-        <Route path="/" element={<LandingPage />} />
+        <Route path="/" element={<EnterpriseLandingPage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route
@@ -69,7 +71,7 @@ function App() {
           path="/dashboard/chat"
           element={
             <PrivateRoute>
-              <GroqChatPage />
+              <EnterpriseChatPage />
             </PrivateRoute>
           }
         />

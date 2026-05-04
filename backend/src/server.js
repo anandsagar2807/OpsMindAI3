@@ -8,8 +8,11 @@ import authRoutes from './routes/authRoutes.js';
 import documentRoutes from './routes/documentRoutes.js';
 import chatRoutes from './routes/chatRoutes.js';
 import groqChatRoutes from './routes/groqChatRoutes.js';
+import chatManagementRoutes from './routes/chatManagementRoutes.js';
+import adminRoutes from './routes/adminRoutes.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { clerkAuth } from './middleware/clerkAuth.js';
+import { syncUser } from './middleware/rbac.js';
 
 dotenv.config();
 
@@ -49,6 +52,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 app.use(clerkAuth);
+app.use(syncUser);
 
 app.get('/health', (req, res) => {
   res.status(200).json({
@@ -62,6 +66,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/documents', documentRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/groq-chat', groqChatRoutes);
+app.use('/api/chat-management', chatManagementRoutes);
+app.use('/api/admin', adminRoutes);
 
 app.use((req, res) => {
   res.status(404).json({
