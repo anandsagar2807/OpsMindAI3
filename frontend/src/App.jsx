@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import LandingPage from './pages/LandingPage'
 import EnterpriseLandingPage from './pages/EnterpriseLandingPage'
@@ -12,6 +12,7 @@ import SettingsPage from './pages/SettingsPage'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import PrivateRoute from './components/PrivateRoute'
+import { AuthenticateWithRedirectCallback } from '@clerk/react'
 
 function App() {
   return (
@@ -43,6 +44,14 @@ function App() {
         <Route path="/" element={<EnterpriseLandingPage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route
+          path="/register/sso-callback"
+          element={<AuthenticateWithRedirectCallback />}
+        />
+        <Route
+          path="/login/sso-callback"
+          element={<AuthenticateWithRedirectCallback />}
+        />
         <Route
           path="/dashboard"
           element={

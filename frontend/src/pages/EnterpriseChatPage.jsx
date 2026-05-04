@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, StopCircle, RotateCcw, FileText, Trash2, MessageSquare, Sparkles, ChevronRight, X } from 'lucide-react';
+import { Send, StopCircle, RotateCcw, FileText, Trash2, MessageSquare, Sparkles, ChevronRight, X, Plus, Edit2, User, Bot, Clock, Hash } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import EnterpriseLayout from '../layouts/EnterpriseLayout';
@@ -251,11 +251,10 @@ export default function EnterpriseChatPage() {
             {filteredChats.map(chat => (
               <div
                 key={chat._id}
-                className={`group relative p-3 rounded-xl cursor-pointer transition-all animate-fade-in ${
-                  currentChatId === chat._id
-                    ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg'
-                    : 'bg-white/50 hover:bg-white/80 text-gray-700 hover:shadow-md'
-                }`}
+                className={`group relative p-3 rounded-xl cursor-pointer transition-all animate-fade-in ${currentChatId === chat._id
+                  ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg'
+                  : 'bg-white/50 hover:bg-white/80 text-gray-700 hover:shadow-md'
+                  }`}
                 onClick={() => loadChat(chat._id)}
               >
                 {editingChatId === chat._id ? (
@@ -272,7 +271,10 @@ export default function EnterpriseChatPage() {
                 ) : (
                   <>
                     <div className="flex items-start justify-between gap-2">
-                      <p className="text-sm font-medium line-clamp-2 flex-1">{chat.title}</p>
+                      <div className="flex items-center gap-2 flex-1">
+                        <Hash className="w-3 h-3 opacity-50" />
+                        <p className="text-sm font-medium line-clamp-2">{chat.title}</p>
+                      </div>
                       <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
                           onClick={(e) => {
@@ -346,19 +348,29 @@ export default function EnterpriseChatPage() {
                 {messages.map((msg, idx) => (
                   <div
                     key={idx}
-                    className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in`}
+                    className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} items-start gap-3 animate-fade-in`}
                   >
-                    <div
-                      className={`max-w-[80%] rounded-2xl px-5 py-4 shadow-md ${
-                        msg.role === 'user'
+                    {/* Avatar */}
+                    <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${msg.role === 'user' ? 'bg-indigo-100' : 'bg-purple-100'}`}>
+                      {msg.role === 'user' ? (
+                        <User className="w-4 h-4 text-indigo-600" />
+                      ) : (
+                        <Bot className="w-4 h-4 text-purple-600" />
+                      )}
+                    </div>
+                    <div className="flex flex-col">
+                      <div
+                        className={`max-w-[80%] rounded-2xl px-5 py-4 shadow-md ${msg.role === 'user'
                           ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white'
                           : 'glass text-gray-800'
-                      }`}
-                    >
-                      <p className="whitespace-pre-wrap leading-relaxed">{msg.content}</p>
-                      {msg.role === 'assistant' && idx === messages.length - 1 && isStreaming && (
-                        <span className="inline-block w-2 h-5 bg-indigo-600 animate-pulse ml-1 rounded"></span>
-                      )}
+                          }`}
+                      >
+                        <p className="whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+                        {msg.role === 'assistant' && idx === messages.length - 1 && isStreaming && (
+                          <span className="inline-block w-2 h-5 bg-indigo-600 animate-pulse ml-1 rounded"></span>
+                        )}
+                      </div>
+                      <span className="text-xs text-gray-500 mt-1 ml-2">{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
                   </div>
                 ))}
