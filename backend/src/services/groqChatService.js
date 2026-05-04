@@ -1,6 +1,6 @@
 import Groq from 'groq-sdk';
 import vectorSearchService from './vectorSearchService.js';
-import Chat from '../models/Chat.js';
+import Chat from '../models/ChatEnhanced.js';
 
 let groq = null;
 

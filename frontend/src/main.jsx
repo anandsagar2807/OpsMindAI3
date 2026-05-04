@@ -3,7 +3,19 @@ import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
 import './index.css'
 import './styles/enterprise.css'
-import { ClerkProvider } from '@clerk/react'
+import { ClerkProvider, useAuth } from '@clerk/clerk-react'
+import { setClerkTokenGetter } from './utils/api.js'
+
+// Component to set up Clerk token getter
+function ClerkTokenProvider({ children }) {
+  const { getToken } = useAuth()
+
+  React.useEffect(() => {
+    setClerkTokenGetter(() => getToken)
+  }, [getToken])
+
+  return children
+}
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
@@ -15,7 +27,9 @@ ReactDOM.createRoot(document.getElementById('root')).render(
       signInFallbackRedirectUrl="/dashboard"
       signUpFallbackRedirectUrl="/dashboard"
     >
-      <App />
+      <ClerkTokenProvider>
+        <App />
+      </ClerkTokenProvider>
     </ClerkProvider>
   </React.StrictMode>,
 )

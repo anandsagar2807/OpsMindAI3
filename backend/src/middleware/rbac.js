@@ -88,30 +88,34 @@ export const requireAdmin = async (req, res, next) => {
 // Middleware to sync Clerk user with database
 export const syncUser = async (req, res, next) => {
   try {
-    const clerkUser = req.user;
-
-    if (!clerkUser) {
+    // Check if user is authenticated via Clerk
+    if (!req.auth || !req.auth.userId) {
       return next();
     }
 
+    const clerkUserId = req.auth.userId;
+
     // Find or create user in database
-    let user = await User.findByClerkId(clerkUser.id);
+    let user = await User.findByClerkId(clerkUserId);
 
     if (!user) {
-      // Create new user
-      const role = clerkUser.publicMetadata?.role || 'employee';
+      // Create new user with default employee role
+      const role = 'employee';
       user = await User.create({
-        clerkId: clerkUser.id,
-        email: clerkUser.emailAddresses[0]?.emailAddress,
-        fullName: clerkUser.fullName || clerkUser.firstName + ' ' + clerkUser.lastName,
+        clerkId: clerkUserId,
+        email: req.auth.sessionClaims?.email || `user-${clerkUserId}@opsmind.ai`,
+        fullName: req.auth.sessionClaims?.fullName || 'User',
         role: role,
         permissions: User.getDefaultPermissions(role)
       });
+      console.log(`✅ Created new user: ${user.email}`);
     }
 
     // Update last login
     await user.updateLastLogin();
 
+    // Attach both Clerk auth and DB user to request
+    req.user = { id: clerkUserId, clerkId: clerkUserId };
     req.dbUser = user;
     next();
 
