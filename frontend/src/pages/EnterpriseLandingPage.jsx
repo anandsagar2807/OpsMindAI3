@@ -23,6 +23,22 @@ export default function EnterpriseLandingPage() {
   const navigate = useNavigate();
   const { isSignedIn } = useUser();
 
+  const handleContactSales = () => {
+    window.location.href = 'mailto:sales@opsmind.ai?subject=Enterprise Inquiry';
+  };
+
+  const handleWatchDemo = () => {
+    // Open demo video or demo page
+    window.open('https://www.youtube.com/watch?v=demo', '_blank');
+  };
+
+  const scrollToSection = (sectionId) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   const features = [
     {
       icon: Sparkles,
@@ -133,12 +149,12 @@ export default function EnterpriseLandingPage() {
   ];
 
   const integrations = [
-    { name: 'Slack', logo: '💬' },
-    { name: 'Microsoft Teams', logo: '👥' },
-    { name: 'Google Drive', logo: '📁' },
-    { name: 'Dropbox', logo: '📦' },
-    { name: 'Salesforce', logo: '☁️' },
-    { name: 'Zendesk', logo: '🎫' }
+    { name: 'Slack', logo: '💬', url: 'https://slack.com' },
+    { name: 'Microsoft Teams', logo: '👥', url: 'https://teams.microsoft.com' },
+    { name: 'Google Drive', logo: '📁', url: 'https://drive.google.com' },
+    { name: 'Dropbox', logo: '📦', url: 'https://dropbox.com' },
+    { name: 'Salesforce', logo: '☁️', url: 'https://salesforce.com' },
+    { name: 'Zendesk', logo: '🎫', url: 'https://zendesk.com' }
   ];
 
   return (
@@ -158,10 +174,10 @@ export default function EnterpriseLandingPage() {
             </div>
 
             <div className="hidden md:flex items-center gap-8">
-              <a href="#features" className="text-gray-700 hover:text-indigo-600 transition-colors font-medium">Features</a>
-              <a href="#pricing" className="text-gray-700 hover:text-indigo-600 transition-colors font-medium">Pricing</a>
-              <a href="#testimonials" className="text-gray-700 hover:text-indigo-600 transition-colors font-medium">Testimonials</a>
-              <a href="#integrations" className="text-gray-700 hover:text-indigo-600 transition-colors font-medium">Integrations</a>
+              <a href="#features" onClick={(e) => { e.preventDefault(); scrollToSection('features'); }} className="text-gray-700 hover:text-indigo-600 transition-colors font-medium">Features</a>
+              <a href="#pricing" onClick={(e) => { e.preventDefault(); scrollToSection('pricing'); }} className="text-gray-700 hover:text-indigo-600 transition-colors font-medium">Pricing</a>
+              <a href="#testimonials" onClick={(e) => { e.preventDefault(); scrollToSection('testimonials'); }} className="text-gray-700 hover:text-indigo-600 transition-colors font-medium">Testimonials</a>
+              <a href="#integrations" onClick={(e) => { e.preventDefault(); scrollToSection('integrations'); }} className="text-gray-700 hover:text-indigo-600 transition-colors font-medium">Integrations</a>
             </div>
 
             <div className="flex items-center gap-4">
@@ -232,7 +248,10 @@ export default function EnterpriseLandingPage() {
                 Start Free Trial
                 <ArrowRight className="w-5 h-5" />
               </button>
-              <button className="btn btn-secondary text-lg px-8 py-4 flex items-center gap-2">
+              <button
+                onClick={handleWatchDemo}
+                className="btn btn-secondary text-lg px-8 py-4 flex items-center gap-2"
+              >
                 <Play className="w-5 h-5" />
                 Watch Demo
               </button>
@@ -403,7 +422,8 @@ export default function EnterpriseLandingPage() {
                 whileInView={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.3, delay: idx * 0.05 }}
                 viewport={{ once: true }}
-                className="bg-white rounded-xl p-6 flex flex-col items-center justify-center gap-3 hover:shadow-lg transition-all border border-gray-200"
+                onClick={() => window.open(integration.url, '_blank')}
+                className="bg-white rounded-xl p-6 flex flex-col items-center justify-center gap-3 hover:shadow-lg transition-all border border-gray-200 cursor-pointer hover:scale-105"
               >
                 <div className="text-4xl">{integration.logo}</div>
                 <p className="text-sm font-medium text-gray-700 text-center">{integration.name}</p>
@@ -462,7 +482,13 @@ export default function EnterpriseLandingPage() {
                 </ul>
 
                 <button
-                  onClick={() => navigate('/register')}
+                  onClick={() => {
+                    if (plan.name === 'Enterprise') {
+                      handleContactSales();
+                    } else {
+                      navigate('/register');
+                    }
+                  }}
                   className={`w-full btn ${
                     plan.popular ? 'btn-primary' : 'btn-secondary'
                   }`}
@@ -521,30 +547,30 @@ export default function EnterpriseLandingPage() {
             <div>
               <h4 className="font-semibold text-gray-900 mb-4">Product</h4>
               <ul className="space-y-2 text-sm text-gray-600">
-                <li><a href="#features" className="hover:text-indigo-600">Features</a></li>
-                <li><a href="#pricing" className="hover:text-indigo-600">Pricing</a></li>
-                <li><a href="#" className="hover:text-indigo-600">Security</a></li>
-                <li><a href="#integrations" className="hover:text-indigo-600">Integrations</a></li>
+                <li><a href="#features" onClick={(e) => { e.preventDefault(); scrollToSection('features'); }} className="hover:text-indigo-600 cursor-pointer">Features</a></li>
+                <li><a href="#pricing" onClick={(e) => { e.preventDefault(); scrollToSection('pricing'); }} className="hover:text-indigo-600 cursor-pointer">Pricing</a></li>
+                <li><a href="#" onClick={(e) => { e.preventDefault(); alert('Security documentation coming soon!'); }} className="hover:text-indigo-600 cursor-pointer">Security</a></li>
+                <li><a href="#integrations" onClick={(e) => { e.preventDefault(); scrollToSection('integrations'); }} className="hover:text-indigo-600 cursor-pointer">Integrations</a></li>
               </ul>
             </div>
 
             <div>
               <h4 className="font-semibold text-gray-900 mb-4">Company</h4>
               <ul className="space-y-2 text-sm text-gray-600">
-                <li><a href="#" className="hover:text-indigo-600">About</a></li>
-                <li><a href="#" className="hover:text-indigo-600">Blog</a></li>
-                <li><a href="#" className="hover:text-indigo-600">Careers</a></li>
-                <li><a href="#" className="hover:text-indigo-600">Contact</a></li>
+                <li><a href="#" onClick={(e) => { e.preventDefault(); alert('About page coming soon!'); }} className="hover:text-indigo-600 cursor-pointer">About</a></li>
+                <li><a href="#" onClick={(e) => { e.preventDefault(); alert('Blog coming soon!'); }} className="hover:text-indigo-600 cursor-pointer">Blog</a></li>
+                <li><a href="#" onClick={(e) => { e.preventDefault(); alert('Careers page coming soon!'); }} className="hover:text-indigo-600 cursor-pointer">Careers</a></li>
+                <li><a href="#" onClick={(e) => { e.preventDefault(); handleContactSales(); }} className="hover:text-indigo-600 cursor-pointer">Contact</a></li>
               </ul>
             </div>
 
             <div>
               <h4 className="font-semibold text-gray-900 mb-4">Legal</h4>
               <ul className="space-y-2 text-sm text-gray-600">
-                <li><a href="#" className="hover:text-indigo-600">Privacy</a></li>
-                <li><a href="#" className="hover:text-indigo-600">Terms</a></li>
-                <li><a href="#" className="hover:text-indigo-600">Security</a></li>
-                <li><a href="#" className="hover:text-indigo-600">Compliance</a></li>
+                <li><a href="#" onClick={(e) => { e.preventDefault(); alert('Privacy Policy coming soon!'); }} className="hover:text-indigo-600 cursor-pointer">Privacy</a></li>
+                <li><a href="#" onClick={(e) => { e.preventDefault(); alert('Terms of Service coming soon!'); }} className="hover:text-indigo-600 cursor-pointer">Terms</a></li>
+                <li><a href="#" onClick={(e) => { e.preventDefault(); alert('Security documentation coming soon!'); }} className="hover:text-indigo-600 cursor-pointer">Security</a></li>
+                <li><a href="#" onClick={(e) => { e.preventDefault(); alert('Compliance documentation coming soon!'); }} className="hover:text-indigo-600 cursor-pointer">Compliance</a></li>
               </ul>
             </div>
           </div>

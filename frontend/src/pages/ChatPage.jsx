@@ -13,11 +13,24 @@ import {
   CheckCircle,
   TrendingUp,
   Clock,
-  Zap
+  Zap,
+  Copy,
+  ThumbsUp,
+  ThumbsDown,
+  MoreVertical,
+  Download,
+  Share2,
+  Bookmark,
+  Code,
+  Image as ImageIcon,
+  Paperclip,
+  Mic,
+  Settings
 } from 'lucide-react'
 import { Card, Button } from '../components/ui'
 import DashboardLayout from '../layouts/DashboardLayout'
 import { useAuth } from '@clerk/react'
+import toast from 'react-hot-toast'
 
 const API_URL = 'http://127.0.0.1:5000/api'
 
@@ -100,7 +113,10 @@ const ChatPage = () => {
   const [error, setError] = useState(null)
   const [searchMode, setSearchMode] = useState(false)
   const [searchResults, setSearchResults] = useState(null)
+  const [hoveredMessage, setHoveredMessage] = useState(null)
+  const [copiedMessage, setCopiedMessage] = useState(null)
   const messagesEndRef = useRef(null)
+  const textareaRef = useRef(null)
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -109,6 +125,24 @@ const ChatPage = () => {
   useEffect(() => {
     scrollToBottom()
   }, [messages])
+
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto'
+      textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px'
+    }
+  }, [input])
+
+  const handleCopy = (content, messageId) => {
+    navigator.clipboard.writeText(content)
+    setCopiedMessage(messageId)
+    toast.success('Copied to clipboard!')
+    setTimeout(() => setCopiedMessage(null), 2000)
+  }
+
+  const handleReaction = (messageId, reaction) => {
+    toast.success(`Feedback recorded: ${reaction}`)
+  }
 
   const handleSearch = async () => {
     if (!input.trim()) return
@@ -262,8 +296,18 @@ const ChatPage = () => {
         <div className="flex-1 flex flex-col">
           <div className="mb-4 flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-white mb-2">
-                {searchMode ? 'Search Documents' : 'Chat'}
+              <h1 className="text-3xl font-bold text-white mb-2 flex items-center gap-3">
+                {searchMode ? (
+                  <>
+                    <Search className="w-8 h-8 text-primary-400" />
+                    Search Documents
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-8 h-8 text-primary-400" />
+                    AI Chat
+                  </>
+                )}
               </h1>
               <p className="text-dark-400">
                 {searchMode ? 'Find relevant information in your documents' : 'Ask questions about your documents'}
@@ -295,6 +339,13 @@ const ChatPage = () => {
               >
                 New Chat
               </Button>
+              <Button
+                variant="secondary"
+                icon={Settings}
+                iconPosition="left"
+              >
+                Settings
+              </Button>
             </div>
           </div>
 
@@ -309,9 +360,9 @@ const ChatPage = () => {
             </motion.div>
           )}
 
-          <Card glass className="flex-1 flex flex-col overflow-hidden">
+          <Card glass className="flex-1 flex flex-col overflow-hidden backdrop-blur-xl">
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
               <AnimatePresence>
                 {messages.map((message) => (
                   <motion.div
@@ -319,11 +370,13 @@ const ChatPage = () => {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0 }}
-                    className={`flex gap-4 ${message.role === 'user' ? 'flex-row-reverse' : ''}`}
+                    onMouseEnter={() => setHoveredMessage(message.id)}
+                    onMouseLeave={() => setHoveredMessage(null)}
+                    className={`flex gap-4 ${message.role === 'user' ? 'flex-row-reverse' : ''} group`}
                   >
                     {/* Avatar */}
                     <div className={`
-                      w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0
+                      w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg
                       ${message.role === 'user'
                         ? 'bg-gradient-to-br from-primary-500 to-blue-600'
                         : 'bg-gradient-to-br from-purple-500 to-pink-600'
@@ -332,19 +385,19 @@ const ChatPage = () => {
                       {message.role === 'user' ? (
                         <User className="w-5 h-5 text-white" />
                       ) : (
-                        <Brain className="w-5 h-5 text-white" />
+                        <Brain className="w-5 h-5 text-white animate-pulse" />
                       )}
                     </div>
 
                     {/* Message Content */}
                     <div className={`flex-1 ${message.role === 'user' ? 'text-right' : ''}`}>
                       <div className={`
-                        inline-block max-w-3xl p-4 rounded-2xl
+                        inline-block max-w-3xl p-5 rounded-2xl relative
                         ${message.role === 'user'
-                          ? 'bg-primary-500/20 border border-primary-500/30'
+                          ? 'bg-gradient-to-br from-primary-500/20 to-blue-500/20 border border-primary-500/30'
                           : message.isError
                           ? 'bg-red-500/10 border border-red-500/30'
-                          : 'bg-white/5 border border-white/10'
+                          : 'bg-white/5 border border-white/10 backdrop-blur-sm'
                         }
                       `}>
                         <p className="text-white leading-relaxed whitespace-pre-wrap">
@@ -355,7 +408,8 @@ const ChatPage = () => {
                         {message.isSearch && message.searchResults && (
                           <div className="mt-4 pt-4 border-t border-white/10 space-y-3">
                             <div className="flex items-center justify-between mb-3">
-                              <p className="text-xs font-medium text-primary-300">
+                              <p className="text-xs font-medium text-primary-300 flex items-center gap-2">
+                                <CheckCircle className="w-4 h-4" />
                                 Found {message.searchResults.length} results
                               </p>
                               {message.metadata && (
@@ -373,15 +427,18 @@ const ChatPage = () => {
                         {/* Sources */}
                         {message.sources && message.sources.length > 0 && (
                           <div className="mt-4 pt-4 border-t border-white/10 space-y-2">
-                            <p className="text-xs font-medium text-primary-300 mb-2">Sources:</p>
+                            <p className="text-xs font-medium text-primary-300 mb-2 flex items-center gap-2">
+                              <FileText className="w-4 h-4" />
+                              Sources:
+                            </p>
                             {message.sources.map((source, idx) => (
-                              <div key={idx} className="flex items-center justify-between text-xs">
+                              <div key={idx} className="flex items-center justify-between text-xs p-2 bg-white/5 rounded-lg hover:bg-white/10 transition-colors">
                                 <div className="flex items-center gap-2 text-dark-400">
                                   <FileText className="w-3 h-3" />
                                   <span>{source.name}, Page {source.page}</span>
                                 </div>
                                 {source.score && (
-                                  <span className="text-primary-400 font-medium">
+                                  <span className="text-primary-400 font-medium px-2 py-0.5 bg-primary-500/20 rounded">
                                     {(source.score * 100).toFixed(1)}%
                                   </span>
                                 )}
@@ -389,10 +446,52 @@ const ChatPage = () => {
                             ))}
                           </div>
                         )}
+
+                        {/* Message Actions */}
+                        {message.role === 'assistant' && hoveredMessage === message.id && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className={`absolute ${message.role === 'user' ? 'left-0' : 'right-0'} -bottom-8 flex items-center gap-2 bg-dark-800/90 backdrop-blur-sm border border-white/10 rounded-lg p-1 shadow-xl`}
+                          >
+                            <button
+                              onClick={() => handleCopy(message.content, message.id)}
+                              className="p-1.5 hover:bg-white/10 rounded transition-colors"
+                              title="Copy"
+                            >
+                              {copiedMessage === message.id ? (
+                                <CheckCircle className="w-4 h-4 text-green-400" />
+                              ) : (
+                                <Copy className="w-4 h-4 text-dark-400 hover:text-white" />
+                              )}
+                            </button>
+                            <button
+                              onClick={() => handleReaction(message.id, 'like')}
+                              className="p-1.5 hover:bg-white/10 rounded transition-colors"
+                              title="Like"
+                            >
+                              <ThumbsUp className="w-4 h-4 text-dark-400 hover:text-green-400" />
+                            </button>
+                            <button
+                              onClick={() => handleReaction(message.id, 'dislike')}
+                              className="p-1.5 hover:bg-white/10 rounded transition-colors"
+                              title="Dislike"
+                            >
+                              <ThumbsDown className="w-4 h-4 text-dark-400 hover:text-red-400" />
+                            </button>
+                            <button
+                              className="p-1.5 hover:bg-white/10 rounded transition-colors"
+                              title="More"
+                            >
+                              <MoreVertical className="w-4 h-4 text-dark-400 hover:text-white" />
+                            </button>
+                          </motion.div>
+                        )}
                       </div>
-                      <p className="text-xs text-dark-500 mt-2">
-                        {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </p>
+                      <div className="flex items-center gap-2 mt-2 text-xs text-dark-500">
+                        <Clock className="w-3 h-3" />
+                        <span>{message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                      </div>
                     </div>
                   </motion.div>
                 ))}
@@ -405,10 +504,10 @@ const ChatPage = () => {
                   animate={{ opacity: 1, y: 0 }}
                   className="flex gap-4"
                 >
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center">
-                    <Brain className="w-5 h-5 text-white" />
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center shadow-lg">
+                    <Brain className="w-5 h-5 text-white animate-pulse" />
                   </div>
-                  <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+                  <div className="bg-white/5 border border-white/10 rounded-2xl p-4 backdrop-blur-sm">
                     <div className="flex gap-2">
                       <div className="w-2 h-2 bg-primary-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
                       <div className="w-2 h-2 bg-primary-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
@@ -422,10 +521,11 @@ const ChatPage = () => {
             </div>
 
             {/* Input Area */}
-            <div className="border-t border-white/10 p-4">
-              <div className="flex gap-3">
+            <div className="border-t border-white/10 p-4 bg-dark-900/50 backdrop-blur-sm">
+              <div className="flex gap-3 items-end">
                 <div className="flex-1 relative">
                   <textarea
+                    ref={textareaRef}
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyPress={handleKeyPress}
@@ -436,30 +536,39 @@ const ChatPage = () => {
                       bg-dark-800/50 border border-dark-700
                       rounded-xl text-white placeholder-dark-500
                       focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent
-                      resize-none
+                      resize-none max-h-32
                       transition-all
                     "
                   />
-                  {searchMode ? (
-                    <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-primary-400" />
-                  ) : (
-                    <Sparkles className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-primary-400" />
-                  )}
+                  <div className="absolute right-3 bottom-3 flex items-center gap-2">
+                    <button className="p-1 hover:bg-white/10 rounded transition-colors" title="Attach file">
+                      <Paperclip className="w-4 h-4 text-dark-400 hover:text-white" />
+                    </button>
+                    {searchMode ? (
+                      <Search className="w-5 h-5 text-primary-400" />
+                    ) : (
+                      <Sparkles className="w-5 h-5 text-primary-400" />
+                    )}
+                  </div>
                 </div>
                 <Button
                   onClick={handleSend}
                   disabled={!input.trim() || isTyping}
                   icon={searchMode ? Search : Send}
-                  className="px-6"
+                  className="px-6 py-3"
                 >
                   {searchMode ? 'Search' : 'Send'}
                 </Button>
+              </div>
+              <div className="flex items-center justify-between mt-2 text-xs text-dark-500">
+                <span>Press Enter to send, Shift+Enter for new line</span>
+                <span>{input.length} characters</span>
               </div>
             </div>
           </Card>
         </div>
 
-        {/* Sources Sidebar */}
+        {/* Enhanced Sources Sidebar */}
         <div className="w-80 space-y-4">
           {searchResults && searchResults.results && searchResults.results.length > 0 && (
             <Card glass>
@@ -511,13 +620,16 @@ const ChatPage = () => {
                 'Security guidelines',
                 'Password reset procedure'
               ].map((suggestion, idx) => (
-                <button
+                <motion.button
                   key={idx}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: idx * 0.1 }}
                   onClick={() => setInput(suggestion)}
-                  className="w-full text-left p-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-sm text-dark-300 hover:text-white transition-colors"
+                  className="w-full text-left p-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-sm text-dark-300 hover:text-white transition-all hover:scale-105"
                 >
                   {suggestion}
-                </button>
+                </motion.button>
               ))}
             </div>
           </Card>
@@ -525,21 +637,50 @@ const ChatPage = () => {
           <Card glass>
             <div className="flex items-center gap-2 mb-4">
               <Zap className="w-5 h-5 text-yellow-400" />
-              <h3 className="text-lg font-semibold text-white">Tips</h3>
+              <h3 className="text-lg font-semibold text-white">Pro Tips</h3>
             </div>
             <div className="space-y-3 text-xs text-dark-300">
-              <p className="flex items-start gap-2">
+              <p className="flex items-start gap-2 p-2 bg-white/5 rounded-lg">
                 <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" />
                 <span>Use Search Mode to find exact document chunks with similarity scores</span>
               </p>
-              <p className="flex items-start gap-2">
+              <p className="flex items-start gap-2 p-2 bg-white/5 rounded-lg">
                 <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" />
                 <span>Use Chat Mode to get AI-generated answers with source citations</span>
               </p>
-              <p className="flex items-start gap-2">
+              <p className="flex items-start gap-2 p-2 bg-white/5 rounded-lg">
                 <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" />
                 <span>Similarity scores above 70% indicate highly relevant results</span>
               </p>
+              <p className="flex items-start gap-2 p-2 bg-white/5 rounded-lg">
+                <CheckCircle className="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" />
+                <span>Hover over messages to copy, like, or provide feedback</span>
+              </p>
+            </div>
+          </Card>
+
+          <Card glass className="bg-gradient-to-br from-primary-500/10 to-purple-500/10 border-primary-500/30">
+            <div className="flex items-center gap-2 mb-3">
+              <Sparkles className="w-5 h-5 text-primary-400" />
+              <h3 className="text-sm font-semibold text-white">Premium Features</h3>
+            </div>
+            <div className="space-y-2 text-xs text-dark-300">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="w-3 h-3 text-green-400" />
+                <span>Unlimited queries</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle className="w-3 h-3 text-green-400" />
+                <span>Advanced AI models</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle className="w-3 h-3 text-green-400" />
+                <span>Priority support</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle className="w-3 h-3 text-green-400" />
+                <span>Export conversations</span>
+              </div>
             </div>
           </Card>
         </div>
