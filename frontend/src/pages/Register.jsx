@@ -34,7 +34,6 @@ const Register = () => {
                 formFieldLabel: 'text-white/70 text-sm',
                 formFieldInput:
                   'bg-white/5 border border-white/10 text-white placeholder-white/40 rounded-xl py-3 px-4 focus:outline-none focus:ring-2 focus:ring-fuchsia-500/40 focus:border-transparent transition-all duration-200',
-                formFieldInput: 'bg-white/5 border border-white/10 text-white placeholder-white/40 rounded-xl py-3 px-4 focus:outline-none focus:ring-2 focus:ring-fuchsia-500/40 focus:border-transparent transition-all duration-200',
                 footerActionLink:
                   'text-white/70 hover:text-white transition-colors font-semibold',
                 footer: 'text-white/60 text-xs mt-6 flex flex-col gap-2 items-center',
