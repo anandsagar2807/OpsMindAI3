@@ -1,38 +1,73 @@
 import { SignUp } from '@clerk/react'
-import { Brain } from 'lucide-react'
+import AuthSplitLayout from '../components/auth/AuthSplitLayout'
 
 const Register = () => {
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center p-4">
+    <AuthSplitLayout mode="register">
       <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-600 mb-4">
-            <Brain className="w-8 h-8 text-white" />
+        <div className="backdrop-blur-xl bg-white/5 border border-white/10 shadow-glass-card rounded-2xl p-8 sm:p-10">
+          <div className="mb-7 text-center">
+            <h2 className="text-2xl font-heading font-bold tracking-tight">
+              Create your account
+            </h2>
+            <p className="text-white/70 mt-2 text-sm">
+              Premium authentication experience for OpsMind AI
+            </p>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">OpsMind AI</h1>
-          <p className="text-gray-600">Corporate Knowledge Brain</p>
-        </div>
 
-        <div className="flex justify-center">
           <SignUp
-            appearance={{
-              elements: {
-                rootBox: "w-full",
-                card: "shadow-xl border border-gray-200 rounded-2xl",
-                headerTitle: "text-2xl font-semibold",
-                headerSubtitle: "text-gray-600",
-                socialButtonsBlockButton: "border-gray-300 hover:bg-gray-50",
-                formButtonPrimary: "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700",
-                footerActionLink: "text-indigo-600 hover:text-indigo-700"
-              }
-            }}
             routing="path"
             path="/register"
             signInUrl="/login"
+            appearance={{
+              elements: {
+                rootBox: 'w-full text-white',
+                card: 'shadow-none border-0 bg-transparent p-0',
+                header: 'hidden',
+                socialButtonsBlockButton:
+                  'w-full border border-white/10 bg-white/5 hover:bg-white/10 transition-all duration-200 rounded-xl py-3 flex items-center justify-center gap-3',
+                socialButtonsBlockButtonText: 'text-white font-semibold',
+                dividerLine: 'bg-white/10',
+                dividerText: 'text-white/60 font-semibold',
+                formButtonPrimary:
+                  'w-full rounded-xl py-3 font-semibold bg-gradient-to-r from-fuchsia-500 to-indigo-500 hover:from-fuchsia-400 hover:to-indigo-400 shadow-[0_0_30px_rgba(168,85,247,0.25)] hover:shadow-[0_0_50px_rgba(168,85,247,0.35)] transition-all duration-200',
+                formFieldLabel: 'text-white/70 text-sm',
+                formFieldInput:
+                  'bg-white/5 border border-white/10 text-white placeholder-white/40 rounded-xl py-3 px-4 focus:outline-none focus:ring-2 focus:ring-fuchsia-500/40 focus:border-transparent transition-all duration-200',
+                formFieldInput: 'bg-white/5 border border-white/10 text-white placeholder-white/40 rounded-xl py-3 px-4 focus:outline-none focus:ring-2 focus:ring-fuchsia-500/40 focus:border-transparent transition-all duration-200',
+                footerActionLink:
+                  'text-white/70 hover:text-white transition-colors font-semibold',
+                footer: 'text-white/60 text-xs mt-6 flex flex-col gap-2 items-center',
+                link: 'text-white/80 hover:text-white underline underline-offset-4',
+              },
+            }}
           />
+
+          <div className="mt-6 pt-6 border-t border-white/10 text-center">
+            <p className="text-white/60 text-xs">
+              Secured by <span className="text-white/80 font-semibold">Clerk</span>
+            </p>
+            <p className="text-white/60 text-xs mt-2">
+              By continuing, you agree to our{' '}
+              <a href="#" className="text-white/80 hover:text-white font-semibold">
+                Terms
+              </a>{' '}
+              and{' '}
+              <a href="#" className="text-white/80 hover:text-white font-semibold">
+                Privacy Policy
+              </a>
+            </p>
+          </div>
+
+          <div className="mt-6 text-center text-sm">
+            <span className="text-white/60">Already have an account? </span>
+            <a href="/login" className="text-white/90 font-semibold hover:text-white">
+              Sign in
+            </a>
+          </div>
         </div>
       </div>
-    </div>
+    </AuthSplitLayout>
   )
 }
 
