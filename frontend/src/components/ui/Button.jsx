@@ -10,7 +10,7 @@ const Button = ({
   ...props
 }) => {
   const variants = {
-    primary: 'bg-gradient-to-r from-primary-500 to-blue-600 hover:from-primary-600 hover:to-blue-700 text-white shadow-lg shadow-primary-500/30 hover:shadow-primary-500/50',
+    primary: 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50',
     secondary: 'bg-white/5 hover:bg-white/10 text-white border border-white/10 hover:border-white/20',
     ghost: 'bg-transparent hover:bg-white/5 text-white',
     danger: 'bg-red-500 hover:bg-red-600 text-white',

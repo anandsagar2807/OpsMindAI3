@@ -9,10 +9,12 @@ import {
   deleteUser
 } from '../controllers/adminController.js';
 import { requireAdmin } from '../middleware/rbac.js';
+import { protectWithClerk } from '../middleware/clerkAuth.js';
 
 const router = express.Router();
 
-// All routes require admin access
+// All routes require Clerk auth + admin access
+router.use(protectWithClerk);
 router.use(requireAdmin);
 
 // User management

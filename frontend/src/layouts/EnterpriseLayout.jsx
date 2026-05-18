@@ -44,12 +44,11 @@ export default function EnterpriseLayout({ children, activeTab = 'chat' }) {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+    <div className="flex h-screen overflow-hidden bg-gradient-to-br from-slate-950 via-indigo-950/80 to-slate-900">
       {/* Sidebar */}
       <aside
-        className={`glass border-r border-white/20 flex flex-col transition-all duration-300 ${
-          sidebarCollapsed ? 'w-20' : 'w-72'
-        }`}
+        className={`glass border-r border-white/20 flex flex-col transition-all duration-300 ${sidebarCollapsed ? 'w-20' : 'w-72'
+          }`}
       >
         {/* Logo */}
         <div className="p-6 border-b border-white/10">
@@ -59,7 +58,7 @@ export default function EnterpriseLayout({ children, activeTab = 'chat' }) {
             </div>
             {!sidebarCollapsed && (
               <div className="animate-fade-in">
-                <h1 className="text-xl font-bold text-gradient">OpsMind AI</h1>
+                <h1 className="text-xl font-bold text-white">OpsMind AI</h1>
                 <p className="text-xs text-gray-600">Enterprise Edition</p>
               </div>
             )}
@@ -76,11 +75,10 @@ export default function EnterpriseLayout({ children, activeTab = 'chat' }) {
               <button
                 key={item.key}
                 onClick={() => navigate(item.path)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
-                  isActive
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${isActive
                     ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-500/30'
                     : 'text-gray-700 hover:bg-white/50 hover:shadow-md'
-                }`}
+                  }`}
               >
                 <Icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-gray-600'}`} />
                 {!sidebarCollapsed && (

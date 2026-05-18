@@ -2,10 +2,12 @@ import { useState, useRef, useEffect } from 'react';
 import { Send, StopCircle, RotateCcw, FileText, Trash2, MessageSquare } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { useUser } from '@clerk/react';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5002';
 
 export default function GroqChatPage() {
+  const { user } = useUser();
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
@@ -29,7 +31,7 @@ export default function GroqChatPage() {
 
   const loadChatHistory = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = await user?.getToken();
       const response = await axios.get(`${API_URL}/api/groq-chat/history`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -41,7 +43,7 @@ export default function GroqChatPage() {
 
   const loadChat = async (chatId) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = await user?.getToken();
       const response = await axios.get(`${API_URL}/api/groq-chat/${chatId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -60,7 +62,7 @@ export default function GroqChatPage() {
 
   const deleteChat = async (chatId) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = await user?.getToken();
       await axios.delete(`${API_URL}/api/groq-chat/${chatId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -98,7 +100,7 @@ export default function GroqChatPage() {
     setMessages(prev => [...prev, assistantMessage]);
 
     try {
-      const token = localStorage.getItem('token');
+      const token = await user?.getToken();
       abortControllerRef.current = new AbortController();
 
       const response = await fetch(`${API_URL}/api/groq-chat/ask/stream`, {
@@ -209,11 +211,10 @@ export default function GroqChatPage() {
           {chatHistory.map(chat => (
             <div
               key={chat._id}
-              className={`group p-3 rounded-lg mb-2 cursor-pointer transition-colors ${
-                currentChatId === chat._id
-                  ? 'bg-indigo-50 border border-indigo-200'
-                  : 'hover:bg-gray-50 border border-transparent'
-              }`}
+              className={`group p-3 rounded-lg mb-2 cursor-pointer transition-colors ${currentChatId === chat._id
+                ? 'bg-indigo-50 border border-indigo-200'
+                : 'hover:bg-gray-50 border border-transparent'
+                }`}
               onClick={() => loadChat(chat._id)}
             >
               <div className="flex items-start justify-between gap-2">
@@ -262,11 +263,10 @@ export default function GroqChatPage() {
                   className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   <div
-                    className={`max-w-[80%] rounded-2xl px-4 py-3 ${
-                      msg.role === 'user'
-                        ? 'bg-indigo-600 text-white'
-                        : 'bg-white border border-gray-200 text-gray-800'
-                    }`}
+                    className={`max-w-[80%] rounded-2xl px-4 py-3 ${msg.role === 'user'
+                      ? 'bg-indigo-600 text-white'
+                      : 'bg-white border border-gray-200 text-gray-800'
+                      }`}
                   >
                     <p className="whitespace-pre-wrap">{msg.content}</p>
                     {msg.role === 'assistant' && idx === messages.length - 1 && isStreaming && (

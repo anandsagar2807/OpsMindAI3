@@ -29,10 +29,10 @@ import {
 } from 'lucide-react'
 import { Card, Button } from '../components/ui'
 import DashboardLayout from '../layouts/DashboardLayout'
-import { useAuth } from '@clerk/react'
+import { useUser } from '@clerk/react'
 import toast from 'react-hot-toast'
 
-const API_URL = 'http://127.0.0.1:5000/api'
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5002'
 
 const SourceCard = ({ source, index }) => (
   <motion.div
@@ -99,7 +99,7 @@ const SearchResultCard = ({ result, index }) => (
 )
 
 const ChatPage = () => {
-  const { getToken } = useAuth()
+  const { user } = useUser()
   const [messages, setMessages] = useState([
     {
       id: 1,
@@ -162,9 +162,9 @@ const ChatPage = () => {
     setSearchResults(null)
 
     try {
-      const token = await getToken()
+      const token = await user?.getToken()
 
-      const response = await fetch(`${API_URL}/chat/search`, {
+      const response = await fetch(`${API_URL}/api/chat/search`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -226,9 +226,9 @@ const ChatPage = () => {
     setError(null)
 
     try {
-      const token = await getToken()
+      const token = await user?.getToken()
 
-      const response = await fetch(`${API_URL}/chat/query`, {
+      const response = await fetch(`${API_URL}/api/chat/query`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -339,13 +339,6 @@ const ChatPage = () => {
               >
                 New Chat
               </Button>
-              <Button
-                variant="secondary"
-                icon={Settings}
-                iconPosition="left"
-              >
-                Settings
-              </Button>
             </div>
           </div>
 
@@ -396,8 +389,8 @@ const ChatPage = () => {
                         ${message.role === 'user'
                           ? 'bg-gradient-to-br from-primary-500/20 to-blue-500/20 border border-primary-500/30'
                           : message.isError
-                          ? 'bg-red-500/10 border border-red-500/30'
-                          : 'bg-white/5 border border-white/10 backdrop-blur-sm'
+                            ? 'bg-red-500/10 border border-red-500/30'
+                            : 'bg-white/5 border border-white/10 backdrop-blur-sm'
                         }
                       `}>
                         <p className="text-white leading-relaxed whitespace-pre-wrap">
@@ -607,82 +600,6 @@ const ChatPage = () => {
             </Card>
           )}
 
-          <Card glass>
-            <div className="flex items-center gap-2 mb-4">
-              <Sparkles className="w-5 h-5 text-primary-400" />
-              <h3 className="text-lg font-semibold text-white">Quick Searches</h3>
-            </div>
-            <div className="space-y-2">
-              {[
-                'What is our refund policy?',
-                'How do I request leave?',
-                'What is the escalation matrix?',
-                'Security guidelines',
-                'Password reset procedure'
-              ].map((suggestion, idx) => (
-                <motion.button
-                  key={idx}
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: idx * 0.1 }}
-                  onClick={() => setInput(suggestion)}
-                  className="w-full text-left p-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-sm text-dark-300 hover:text-white transition-all hover:scale-105"
-                >
-                  {suggestion}
-                </motion.button>
-              ))}
-            </div>
-          </Card>
-
-          <Card glass>
-            <div className="flex items-center gap-2 mb-4">
-              <Zap className="w-5 h-5 text-yellow-400" />
-              <h3 className="text-lg font-semibold text-white">Pro Tips</h3>
-            </div>
-            <div className="space-y-3 text-xs text-dark-300">
-              <p className="flex items-start gap-2 p-2 bg-white/5 rounded-lg">
-                <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" />
-                <span>Use Search Mode to find exact document chunks with similarity scores</span>
-              </p>
-              <p className="flex items-start gap-2 p-2 bg-white/5 rounded-lg">
-                <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" />
-                <span>Use Chat Mode to get AI-generated answers with source citations</span>
-              </p>
-              <p className="flex items-start gap-2 p-2 bg-white/5 rounded-lg">
-                <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" />
-                <span>Similarity scores above 70% indicate highly relevant results</span>
-              </p>
-              <p className="flex items-start gap-2 p-2 bg-white/5 rounded-lg">
-                <CheckCircle className="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" />
-                <span>Hover over messages to copy, like, or provide feedback</span>
-              </p>
-            </div>
-          </Card>
-
-          <Card glass className="bg-gradient-to-br from-primary-500/10 to-purple-500/10 border-primary-500/30">
-            <div className="flex items-center gap-2 mb-3">
-              <Sparkles className="w-5 h-5 text-primary-400" />
-              <h3 className="text-sm font-semibold text-white">Premium Features</h3>
-            </div>
-            <div className="space-y-2 text-xs text-dark-300">
-              <div className="flex items-center gap-2">
-                <CheckCircle className="w-3 h-3 text-green-400" />
-                <span>Unlimited queries</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="w-3 h-3 text-green-400" />
-                <span>Advanced AI models</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="w-3 h-3 text-green-400" />
-                <span>Priority support</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="w-3 h-3 text-green-400" />
-                <span>Export conversations</span>
-              </div>
-            </div>
-          </Card>
         </div>
       </div>
     </DashboardLayout>

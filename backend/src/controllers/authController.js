@@ -22,7 +22,7 @@ export const register = async (req, res, next) => {
     const user = await User.create({
       email,
       password,
-      name,
+      fullName: name,
       role: 'admin'
     });
 
@@ -35,7 +35,7 @@ export const register = async (req, res, next) => {
         user: {
           id: user._id,
           email: user.email,
-          name: user.name,
+          name: user.fullName,
           role: user.role
         },
         token
@@ -75,7 +75,7 @@ export const login = async (req, res, next) => {
         user: {
           id: user._id,
           email: user.email,
-          name: user.name,
+          name: user.fullName,
           role: user.role
         },
         token
@@ -95,7 +95,7 @@ export const getMe = async (req, res, next) => {
       data: {
         id: user._id,
         email: user.email,
-        name: user.name,
+        name: user.fullName,
         role: user.role
       }
     });

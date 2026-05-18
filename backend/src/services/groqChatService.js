@@ -1,23 +1,9 @@
-import Groq from 'groq-sdk';
-import vectorSearchService from './vectorSearchService.js';
-import Chat from '../models/ChatEnhanced.js';
+import vectorSearchService from './vectorSearchService.js'
+import Chat from '../models/ChatEnhanced.js'
 
-let groq = null;
-
-const getGroqClient = () => {
-  if (!groq) {
-    if (!process.env.GROQ_API_KEY) {
-      throw new Error('GROQ_API_KEY is not configured');
-    }
-    groq = new Groq({
-      apiKey: process.env.GROQ_API_KEY
-    });
-  }
-  return groq;
-};
-
-const GROQ_MODEL = 'llama3-70b-8192';
-const FALLBACK_MODEL = 'mixtral-8x7b-32768';
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY
+const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || 'zhipu/glm-4.5'
+const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions'
 
 const SYSTEM_PROMPT = `You are OpsMind AI, a corporate knowledge assistant.
 
@@ -31,7 +17,76 @@ CRITICAL RULES:
 Context from company documents:
 {CONTEXT}
 
-Remember: If you cannot find the answer in the context above, say "I don't know based on available company SOPs."`;
+Remember: If you cannot find the answer in the context above, say "I don't know based on available company SOPs."`
+
+const openRouterChat = async ({
+  messages,
+  temperature = 0.1,
+  max_tokens = 2048,
+  top_p = 0.9,
+  stream = false,
+  model,
+}) => {
+  if (!OPENROUTER_API_KEY) {
+    throw new Error('OPENROUTER_API_KEY is not configured')
+  }
+
+  const res = await fetch(OPENROUTER_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: model || OPENROUTER_MODEL,
+      messages,
+      temperature,
+      max_tokens,
+      top_p,
+      stream,
+    }),
+  })
+
+  if (!res.ok) {
+    const txt = await res.text().catch(() => '')
+    throw new Error(`OpenRouter request failed: ${res.status} ${txt}`)
+  }
+
+  return res
+}
+
+const parseSSEText = async (readable, onEvent) => {
+  const reader = readable.getReader()
+  const decoder = new TextDecoder('utf-8')
+  let buffer = ''
+
+  while (true) {
+    const { value, done } = await reader.read()
+    if (done) break
+
+    buffer += decoder.decode(value, { stream: true })
+
+    // OpenRouter streams SSE lines; split by newline
+    const lines = buffer.split('\n')
+    buffer = lines.pop() || ''
+
+    for (const line of lines) {
+      const trimmed = line.trim()
+      if (!trimmed) continue
+      if (!trimmed.startsWith('data:')) continue
+
+      const data = trimmed.replace(/^data:\s*/, '')
+      if (data === '[DONE]') continue
+
+      try {
+        const json = JSON.parse(data)
+        await onEvent(json)
+      } catch {
+        // ignore non-json data
+      }
+    }
+  }
+}
 
 class GroqChatService {
   async ask(question, userId, chatId = null) {
@@ -39,81 +94,80 @@ class GroqChatService {
       const searchResult = await vectorSearchService.search(question, userId, {
         topK: 5,
         minSimilarity: 0.3,
-        includeContext: true
-      });
+        includeContext: true,
+      })
 
       if (!searchResult.success || !searchResult.context) {
         return {
           response: "I don't know based on available company SOPs.",
           sources: [],
-          chatId: null
-        };
+          chatId: null,
+        }
       }
 
       const contextText = searchResult.context.chunks
-        .map(chunk => {
-          const docName = searchResult.results.find(r => r.chunkIndex === chunk.chunkIndex)?.documentName || 'Unknown';
-          return `[Document: ${docName} | Page: ${chunk.pageNumber}]\n${chunk.text}`;
+        .map((chunk) => {
+          const docName =
+            searchResult.results.find((r) => r.chunkIndex === chunk.chunkIndex)
+              ?.documentName || 'Unknown'
+          return `[Document: ${docName} | Page: ${chunk.pageNumber}]\n${chunk.text}`
         })
-        .join('\n\n');
+        .join('\n\n')
 
-      const systemPrompt = SYSTEM_PROMPT.replace('{CONTEXT}', contextText);
+      const systemPrompt = SYSTEM_PROMPT.replace('{CONTEXT}', contextText)
 
-      const completion = await getGroqClient().chat.completions.create({
+      const res = await openRouterChat({
         messages: [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: question }
+          { role: 'user', content: question },
         ],
-        model: GROQ_MODEL,
         temperature: 0.1,
         max_tokens: 2048,
         top_p: 0.9,
-        stream: false
-      });
+        stream: false,
+      })
 
-      const response = completion.choices[0]?.message?.content || "I don't know based on available company SOPs.";
+      const completion = await res.json()
+      const response =
+        completion?.choices?.[0]?.message?.content ||
+        "I don't know based on available company SOPs."
 
-      const sources = searchResult.results.map(r => ({
+      const sources = searchResult.results.map((r) => ({
         documentId: r.documentId,
         filename: r.documentName,
         pageNumber: r.pageNumber,
-        similarity: r.score
-      }));
+        similarity: r.score,
+      }))
 
-      let chat;
+      let chat
       if (chatId) {
-        chat = await Chat.findById(chatId);
+        chat = await Chat.findById(chatId)
         if (chat && chat.userId === userId) {
           chat.messages.push(
             { role: 'user', content: question },
-            { role: 'assistant', content: response, sources }
-          );
-          await chat.save();
+            { role: 'assistant', content: response, sources },
+          )
+          await chat.save()
         }
       } else {
         chat = await Chat.create({
           userId,
           messages: [
             { role: 'user', content: question },
-            { role: 'assistant', content: response, sources }
-          ]
-        });
+            { role: 'assistant', content: response, sources },
+          ],
+        })
       }
 
-      return {
-        response,
-        sources,
-        chatId: chat._id
-      };
-
+      return { response, sources, chatId: chat._id }
     } catch (error) {
-      console.error('Groq chat service error:', error);
+      console.error('Chat service error:', error)
 
-      if (error.message.includes('rate_limit')) {
-        throw new Error('Rate limit exceeded. Please try again in a moment.');
+      if (error.message?.includes('rate_limit')) {
+        throw new Error('Rate limit exceeded. Please try again in a moment.')
       }
 
-      throw new Error(`Failed to generate response: ${error.message}`);
+      throw new Error(`Failed to generate response: ${error.message}`)
     }
   }
 
@@ -122,94 +176,91 @@ class GroqChatService {
       const searchResult = await vectorSearchService.search(question, userId, {
         topK: 5,
         minSimilarity: 0.3,
-        includeContext: true
-      });
+        includeContext: true,
+      })
 
       if (!searchResult.success || !searchResult.context) {
-        const noAnswerMsg = "I don't know based on available company SOPs.";
-        onChunk(noAnswerMsg);
+        const noAnswerMsg = "I don't know based on available company SOPs."
+        onChunk(noAnswerMsg)
         return {
           sources: [],
           chatId: null,
-          fullResponse: noAnswerMsg
-        };
-      }
-
-      const contextText = searchResult.context.chunks
-        .map(chunk => {
-          const docName = searchResult.results.find(r => r.chunkIndex === chunk.chunkIndex)?.documentName || 'Unknown';
-          return `[Document: ${docName} | Page: ${chunk.pageNumber}]\n${chunk.text}`;
-        })
-        .join('\n\n');
-
-      const systemPrompt = SYSTEM_PROMPT.replace('{CONTEXT}', contextText);
-
-      const stream = await getGroqClient().chat.completions.create({
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: question }
-        ],
-        model: GROQ_MODEL,
-        temperature: 0.1,
-        max_tokens: 2048,
-        top_p: 0.9,
-        stream: true
-      });
-
-      let fullResponse = '';
-      for await (const chunk of stream) {
-        const content = chunk.choices[0]?.delta?.content || '';
-        if (content) {
-          fullResponse += content;
-          onChunk(content);
+          fullResponse: noAnswerMsg,
         }
       }
 
+      const contextText = searchResult.context.chunks
+        .map((chunk) => {
+          const docName =
+            searchResult.results.find((r) => r.chunkIndex === chunk.chunkIndex)
+              ?.documentName || 'Unknown'
+          return `[Document: ${docName} | Page: ${chunk.pageNumber}]\n${chunk.text}`
+        })
+        .join('\n\n')
+
+      const systemPrompt = SYSTEM_PROMPT.replace('{CONTEXT}', contextText)
+
+      const res = await openRouterChat({
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: question },
+        ],
+        temperature: 0.1,
+        max_tokens: 2048,
+        top_p: 0.9,
+        stream: true,
+      })
+
+      let fullResponse = ''
+      await parseSSEText(res.body, async (json) => {
+        const delta = json?.choices?.[0]?.delta
+        const content = delta?.content || ''
+        if (content) {
+          fullResponse += content
+          await onChunk(content)
+        }
+      })
+
       if (!fullResponse.trim()) {
-        fullResponse = "I don't know based on available company SOPs.";
+        fullResponse = "I don't know based on available company SOPs."
       }
 
-      const sources = searchResult.results.map(r => ({
+      const sources = searchResult.results.map((r) => ({
         documentId: r.documentId,
         filename: r.documentName,
         pageNumber: r.pageNumber,
-        similarity: r.score
-      }));
+        similarity: r.score,
+      }))
 
-      let chat;
+      let chat
       if (chatId) {
-        chat = await Chat.findById(chatId);
+        chat = await Chat.findById(chatId)
         if (chat && chat.userId === userId) {
           chat.messages.push(
             { role: 'user', content: question },
-            { role: 'assistant', content: fullResponse, sources }
-          );
-          await chat.save();
+            { role: 'assistant', content: fullResponse, sources },
+          )
+          await chat.save()
         }
       } else {
         chat = await Chat.create({
           userId,
           messages: [
             { role: 'user', content: question },
-            { role: 'assistant', content: fullResponse, sources }
-          ]
-        });
+            { role: 'assistant', content: fullResponse, sources },
+          ],
+        })
       }
 
-      return {
-        sources,
-        chatId: chat._id,
-        fullResponse
-      };
-
+      return { sources, chatId: chat._id, fullResponse }
     } catch (error) {
-      console.error('Groq streaming service error:', error);
+      console.error('Chat streaming service error:', error)
 
-      if (error.message.includes('rate_limit')) {
-        throw new Error('Rate limit exceeded. Please try again in a moment.');
+      if (error.message?.includes('rate_limit')) {
+        throw new Error('Rate limit exceeded. Please try again in a moment.')
       }
 
-      throw new Error(`Failed to generate streaming response: ${error.message}`);
+      throw new Error(`Failed to generate streaming response: ${error.message}`)
     }
   }
 
@@ -218,44 +269,50 @@ class GroqChatService {
       const chats = await Chat.find({ userId })
         .sort({ updatedAt: -1 })
         .limit(limit)
-        .select('_id title messages createdAt updatedAt');
+        .select('_id title messages createdAt updatedAt')
 
-      return chats;
+      return chats
     } catch (error) {
-      console.error('Get chat history error:', error);
-      throw new Error('Failed to retrieve chat history');
+      console.error('Get chat history error:', error)
+      throw new Error('Failed to retrieve chat history')
     }
   }
 
   async getChat(chatId, userId) {
     try {
-      const chat = await Chat.findOne({ _id: chatId, userId });
-
-      if (!chat) {
-        throw new Error('Chat not found');
-      }
-
-      return chat;
+      const chat = await Chat.findOne({ _id: chatId, userId })
+      if (!chat) throw new Error('Chat not found')
+      return chat
     } catch (error) {
-      console.error('Get chat error:', error);
-      throw new Error('Failed to retrieve chat');
+      console.error('Get chat error:', error)
+      throw new Error('Failed to retrieve chat')
     }
   }
 
   async deleteChat(chatId, userId) {
     try {
-      const result = await Chat.deleteOne({ _id: chatId, userId });
-
-      if (result.deletedCount === 0) {
-        throw new Error('Chat not found');
-      }
-
-      return { success: true };
+      const result = await Chat.deleteOne({ _id: chatId, userId })
+      if (result.deletedCount === 0) throw new Error('Chat not found')
+      return { success: true }
     } catch (error) {
-      console.error('Delete chat error:', error);
-      throw new Error('Failed to delete chat');
+      console.error('Delete chat error:', error)
+      throw new Error('Failed to delete chat')
+    }
+  }
+
+  async updateChat(chatId, userId, updates) {
+    try {
+      const chat = await Chat.findOne({ _id: chatId, userId })
+      if (!chat) throw new Error('Chat not found')
+
+      if (updates.title) chat.title = updates.title
+      await chat.save()
+      return chat
+    } catch (error) {
+      console.error('Update chat error:', error)
+      throw new Error('Failed to update chat')
     }
   }
 }
 
-export default new GroqChatService();
+export default new GroqChatService()

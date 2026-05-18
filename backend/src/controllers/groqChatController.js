@@ -136,3 +136,32 @@ export const deleteChat = async (req, res) => {
     });
   }
 };
+
+export const updateChat = async (req, res) => {
+  try {
+    const { chatId } = req.params;
+    const { title } = req.body;
+    const userId = req.user.id;
+
+    if (!title || title.trim().length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Title is required'
+      });
+    }
+
+    const chat = await groqChatService.updateChat(chatId, userId, { title });
+
+    res.status(200).json({
+      success: true,
+      data: chat
+    });
+
+  } catch (error) {
+    console.error('Update chat controller error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to update chat'
+    });
+  }
+};

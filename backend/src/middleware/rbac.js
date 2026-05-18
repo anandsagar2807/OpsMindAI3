@@ -90,17 +90,22 @@ export const syncUser = async (req, res, next) => {
   try {
     // Check if user is authenticated via Clerk
     if (!req.auth || !req.auth.userId) {
+      console.log('[syncUser] No Clerk auth on request - skipping sync');
       return next();
     }
 
     const clerkUserId = req.auth.userId;
+    console.log(`[syncUser] Syncing Clerk user: ${clerkUserId}`);
+    console.log(`[syncUser] Session claims:`, JSON.stringify(req.auth.sessionClaims || {}));
 
     // Find or create user in database
     let user = await User.findByClerkId(clerkUserId);
+    console.log(`[syncUser] findByClerkId result:`, user ? `Found user ${user._id}` : 'null');
 
     if (!user) {
       // Create new user with default employee role
       const role = 'employee';
+      console.log(`[syncUser] Creating new user with clerkId: ${clerkUserId}`);
       user = await User.create({
         clerkId: clerkUserId,
         email: req.auth.sessionClaims?.email || `user-${clerkUserId}@opsmind.ai`,
@@ -108,7 +113,7 @@ export const syncUser = async (req, res, next) => {
         role: role,
         permissions: User.getDefaultPermissions(role)
       });
-      console.log(`✅ Created new user: ${user.email}`);
+      console.log(`✅ Created new user: ${user.email} (${user._id})`);
     }
 
     // Update last login
@@ -117,10 +122,12 @@ export const syncUser = async (req, res, next) => {
     // Attach both Clerk auth and DB user to request
     req.user = { id: clerkUserId, clerkId: clerkUserId };
     req.dbUser = user;
+    console.log(`[syncUser] ✅ req.dbUser set: ${user._id}`);
     next();
 
   } catch (error) {
-    console.error('User sync error:', error);
+    console.error('[syncUser] ❌ ERROR:', error.message);
+    console.error('[syncUser] Stack:', error.stack);
     next(); // Continue even if sync fails
   }
 };

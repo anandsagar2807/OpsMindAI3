@@ -10,8 +10,11 @@ import {
   addTag,
   removeTag
 } from '../controllers/chatManagementController.js';
+import { protectWithClerk } from '../middleware/clerkAuth.js';
 
 const router = express.Router();
+
+router.use(protectWithClerk);
 
 // Chat management
 router.patch('/:chatId/rename', renameChat);

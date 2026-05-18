@@ -19,11 +19,12 @@ export const uploadDocument = async (req, res, next) => {
       filePath: req.file.path,
       fileSize: req.file.size,
       mimeType: req.file.mimetype,
-      uploadedBy: req.user._id,
+      uploadedBy: req.dbUser._id,
       status: 'processing'
     });
 
-    processDocumentAsync(document._id, req.file.path, req.user._id);
+    // Pass Clerk ID (string) for Vector.userId, not MongoDB ObjectId
+    processDocumentAsync(document._id, req.file.path, req.user.id);
 
     res.status(201).json({
       success: true,
@@ -102,7 +103,7 @@ export const getDocuments = async (req, res, next) => {
   try {
     const { page = 1, limit = 10, status } = req.query;
 
-    const query = { uploadedBy: req.user._id };
+    const query = { uploadedBy: req.dbUser._id };
     if (status) query.status = status;
 
     const documents = await Document.find(query)
@@ -131,7 +132,7 @@ export const getDocumentById = async (req, res, next) => {
   try {
     const document = await Document.findOne({
       _id: req.params.id,
-      uploadedBy: req.user._id
+      uploadedBy: req.dbUser._id
     }).select('-filePath');
 
     if (!document) {
@@ -159,7 +160,7 @@ export const deleteDocument = async (req, res, next) => {
   try {
     const document = await Document.findOne({
       _id: req.params.id,
-      uploadedBy: req.user._id
+      uploadedBy: req.dbUser._id
     });
 
     if (!document) {
@@ -194,7 +195,7 @@ export const getDocumentVectors = async (req, res, next) => {
 
     const document = await Document.findOne({
       _id: req.params.id,
-      uploadedBy: req.user._id
+      uploadedBy: req.dbUser._id
     });
 
     if (!document) {

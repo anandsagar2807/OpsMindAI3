@@ -16,13 +16,15 @@ import {
   Monitor,
   Check,
   Crown,
-  Settings as SettingsIcon
+  Settings as SettingsIcon,
+  Loader
 } from 'lucide-react'
 import { useUser } from '@clerk/react'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
+import { dashboardAPI } from '../services/api'
 
 const SettingsPage = () => {
   const { user } = useUser()
@@ -34,6 +36,25 @@ const SettingsPage = () => {
     updates: false
   })
   const [language, setLanguage] = useState('en')
+  const [usageData, setUsageData] = useState(null)
+  const [loadingUsage, setLoadingUsage] = useState(true)
+
+  useEffect(() => {
+    loadUsageData()
+  }, [])
+
+  const loadUsageData = async () => {
+    try {
+      setLoadingUsage(true)
+      const token = await user?.getToken()
+      const response = await dashboardAPI.getStats(token)
+      setUsageData(response.data.data)
+    } catch (error) {
+      console.error('Failed to load usage data:', error)
+    } finally {
+      setLoadingUsage(false)
+    }
+  }
 
   const handleProfileSettings = () => {
     window.open('https://accounts.clerk.dev/user', '_blank')
@@ -74,6 +95,11 @@ const SettingsPage = () => {
     { code: 'de', name: 'Deutsch', flag: '🇩🇪' }
   ]
 
+  const docCount = usageData?.documents?.total || 0
+  const queryCount = usageData?.chats?.totalQueries || 0
+  const storageUsedGB = usageData?.storage?.usedGB || 0
+  const storageLimitGB = usageData?.storage?.limitGB || 10
+
   return (
     <DashboardLayout>
       <div className="max-w-6xl mx-auto space-y-8">
@@ -85,10 +111,6 @@ const SettingsPage = () => {
               Settings
             </h1>
             <p className="text-dark-400">Manage your account and preferences</p>
-          </div>
-          <div className="px-4 py-2 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full flex items-center gap-2">
-            <Crown className="w-4 h-4 text-white" />
-            <span className="text-sm font-bold text-white">PRO PLAN</span>
           </div>
         </div>
 
@@ -114,7 +136,7 @@ const SettingsPage = () => {
                       <h3 className="text-lg font-bold text-white">Profile Settings</h3>
                     </div>
                     <p className="text-dark-400 text-sm">Manage your profile through Clerk</p>
-                    <p className="text-xs text-primary-400 mt-2">{user?.primaryEmailAddress?.emailAddress}</p>
+                    <p className="text-xs text-primary-400 mt-2">{user?.primaryEmailAddress?.emailAddress || ''}</p>
                   </div>
                   <Button variant="secondary" size="sm">Manage</Button>
                 </div>
@@ -136,7 +158,7 @@ const SettingsPage = () => {
                       <h3 className="text-lg font-bold text-white">Security</h3>
                     </div>
                     <p className="text-dark-400 text-sm">Manage security settings</p>
-                    <p className="text-xs text-green-400 mt-2">2FA Enabled</p>
+                    <p className="text-xs text-green-400 mt-2">Secured by Clerk</p>
                   </div>
                   <Button variant="secondary" size="sm">Manage</Button>
                 </div>
@@ -165,11 +187,10 @@ const SettingsPage = () => {
                     <button
                       key={themeOption.id}
                       onClick={() => handleThemeChange(themeOption.id)}
-                      className={`p-4 rounded-xl border-2 transition-all ${
-                        theme === themeOption.id
-                          ? 'border-primary-500 bg-primary-500/10'
-                          : 'border-white/10 bg-white/5 hover:bg-white/10'
-                      }`}
+                      className={`p-4 rounded-xl border-2 transition-all ${theme === themeOption.id
+                        ? 'border-primary-500 bg-primary-500/10'
+                        : 'border-white/10 bg-white/5 hover:bg-white/10'
+                        }`}
                     >
                       <div className={`w-full h-20 rounded-lg bg-gradient-to-br ${themeOption.color} mb-3 flex items-center justify-center`}>
                         <Icon className="w-8 h-8 text-white" />
@@ -212,11 +233,10 @@ const SettingsPage = () => {
                     <button
                       key={lang.code}
                       onClick={() => handleLanguageChange(lang.code)}
-                      className={`w-full p-3 rounded-lg border transition-all flex items-center justify-between ${
-                        language === lang.code
-                          ? 'border-primary-500 bg-primary-500/10'
-                          : 'border-white/10 bg-white/5 hover:bg-white/10'
-                      }`}
+                      className={`w-full p-3 rounded-lg border transition-all flex items-center justify-between ${language === lang.code
+                        ? 'border-primary-500 bg-primary-500/10'
+                        : 'border-white/10 bg-white/5 hover:bg-white/10'
+                        }`}
                     >
                       <div className="flex items-center gap-3">
                         <span className="text-2xl">{lang.flag}</span>
@@ -250,14 +270,12 @@ const SettingsPage = () => {
                       <p className="text-dark-400 text-xs">Receive updates via email</p>
                     </div>
                     <button
-                      onClick={() => setNotifications({...notifications, email: !notifications.email})}
-                      className={`w-12 h-6 rounded-full transition-colors ${
-                        notifications.email ? 'bg-primary-500' : 'bg-dark-700'
-                      }`}
+                      onClick={() => setNotifications({ ...notifications, email: !notifications.email })}
+                      className={`w-12 h-6 rounded-full transition-colors ${notifications.email ? 'bg-primary-500' : 'bg-dark-700'
+                        }`}
                     >
-                      <div className={`w-5 h-5 bg-white rounded-full transition-transform ${
-                        notifications.email ? 'translate-x-6' : 'translate-x-0.5'
-                      }`} />
+                      <div className={`w-5 h-5 bg-white rounded-full transition-transform ${notifications.email ? 'translate-x-6' : 'translate-x-0.5'
+                        }`} />
                     </button>
                   </div>
                   <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
@@ -266,14 +284,12 @@ const SettingsPage = () => {
                       <p className="text-dark-400 text-xs">Browser notifications</p>
                     </div>
                     <button
-                      onClick={() => setNotifications({...notifications, push: !notifications.push})}
-                      className={`w-12 h-6 rounded-full transition-colors ${
-                        notifications.push ? 'bg-primary-500' : 'bg-dark-700'
-                      }`}
+                      onClick={() => setNotifications({ ...notifications, push: !notifications.push })}
+                      className={`w-12 h-6 rounded-full transition-colors ${notifications.push ? 'bg-primary-500' : 'bg-dark-700'
+                        }`}
                     >
-                      <div className={`w-5 h-5 bg-white rounded-full transition-transform ${
-                        notifications.push ? 'translate-x-6' : 'translate-x-0.5'
-                      }`} />
+                      <div className={`w-5 h-5 bg-white rounded-full transition-transform ${notifications.push ? 'translate-x-6' : 'translate-x-0.5'
+                        }`} />
                     </button>
                   </div>
                   <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
@@ -282,14 +298,12 @@ const SettingsPage = () => {
                       <p className="text-dark-400 text-xs">New features & updates</p>
                     </div>
                     <button
-                      onClick={() => setNotifications({...notifications, updates: !notifications.updates})}
-                      className={`w-12 h-6 rounded-full transition-colors ${
-                        notifications.updates ? 'bg-primary-500' : 'bg-dark-700'
-                      }`}
+                      onClick={() => setNotifications({ ...notifications, updates: !notifications.updates })}
+                      className={`w-12 h-6 rounded-full transition-colors ${notifications.updates ? 'bg-primary-500' : 'bg-dark-700'
+                        }`}
                     >
-                      <div className={`w-5 h-5 bg-white rounded-full transition-transform ${
-                        notifications.updates ? 'translate-x-6' : 'translate-x-0.5'
-                      }`} />
+                      <div className={`w-5 h-5 bg-white rounded-full transition-transform ${notifications.updates ? 'translate-x-6' : 'translate-x-0.5'
+                        }`} />
                     </button>
                   </div>
                 </div>
@@ -298,17 +312,69 @@ const SettingsPage = () => {
           </div>
         </div>
 
-        {/* Advanced Section */}
+        {/* Usage Section - Dynamic */}
         <div>
           <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
             <Zap className="w-5 h-5 text-primary-400" />
+            Usage & Resources
+          </h2>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+          >
+            <Card glass>
+              {loadingUsage ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader className="w-6 h-6 text-primary-400 animate-spin" />
+                  <span className="ml-3 text-slate-400">Loading usage data...</span>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm text-slate-400">Storage Used</span>
+                      <span className="text-sm font-medium text-white">{storageUsedGB.toFixed(1)} GB / {storageLimitGB} GB</span>
+                    </div>
+                    <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
+                      <div className="h-full bg-gradient-to-r from-indigo-600 to-purple-600 rounded-full" style={{ width: `${Math.min((storageUsedGB / storageLimitGB) * 100, 100)}%` }} />
+                    </div>
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm text-slate-400">API Queries</span>
+                      <span className="text-sm font-medium text-white">{queryCount} / 5,000</span>
+                    </div>
+                    <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
+                      <div className="h-full bg-gradient-to-r from-purple-500 to-pink-600 rounded-full" style={{ width: `${Math.min((queryCount / 5000) * 100, 100)}%` }} />
+                    </div>
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm text-slate-400">Documents</span>
+                      <span className="text-sm font-medium text-white">{docCount} / 100</span>
+                    </div>
+                    <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
+                      <div className="h-full bg-gradient-to-r from-green-500 to-emerald-600 rounded-full" style={{ width: `${Math.min((docCount / 100) * 100, 100)}%` }} />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </Card>
+          </motion.div>
+        </div>
+
+        {/* Advanced Section */}
+        <div>
+          <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+            <Shield className="w-5 h-5 text-primary-400" />
             Advanced
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.6 }}
+              transition={{ delay: 0.7 }}
             >
               <Card glass className="cursor-pointer hover:scale-105 transition-transform">
                 <div className="flex items-center justify-between">
@@ -320,7 +386,7 @@ const SettingsPage = () => {
                       <h3 className="text-lg font-bold text-white">API Keys</h3>
                     </div>
                     <p className="text-dark-400 text-sm">Manage your API keys</p>
-                    <p className="text-xs text-yellow-400 mt-2">2 active keys</p>
+                    <p className="text-xs text-yellow-400 mt-2">API key configured in backend</p>
                   </div>
                   <Button variant="secondary" size="sm">Manage</Button>
                 </div>
@@ -330,7 +396,7 @@ const SettingsPage = () => {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.7 }}
+              transition={{ delay: 0.8 }}
             >
               <Card glass className="cursor-pointer hover:scale-105 transition-transform">
                 <div className="flex items-center justify-between">
@@ -342,7 +408,7 @@ const SettingsPage = () => {
                       <h3 className="text-lg font-bold text-white">Team</h3>
                     </div>
                     <p className="text-dark-400 text-sm">Manage team members</p>
-                    <p className="text-xs text-pink-400 mt-2">5 members</p>
+                    <p className="text-xs text-pink-400 mt-2">Personal account</p>
                   </div>
                   <Button variant="secondary" size="sm">Manage</Button>
                 </div>
@@ -355,7 +421,7 @@ const SettingsPage = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.8 }}
+          transition={{ delay: 0.9 }}
         >
           <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
             <CreditCard className="w-5 h-5 text-primary-400" />
@@ -369,22 +435,22 @@ const SettingsPage = () => {
                     <Crown className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-white">Professional Plan</h3>
-                    <p className="text-dark-400 text-sm">$199/month • Renews on June 5, 2026</p>
+                    <h3 className="text-xl font-bold text-white">Current Plan</h3>
+                    <p className="text-dark-400 text-sm">Usage-based billing</p>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4 mt-4">
                   <div className="p-3 bg-white/5 rounded-lg">
                     <p className="text-xs text-dark-400 mb-1">Storage</p>
-                    <p className="text-white font-bold">Unlimited</p>
+                    <p className="text-white font-bold">{storageUsedGB.toFixed(1)} GB used</p>
                   </div>
                   <div className="p-3 bg-white/5 rounded-lg">
                     <p className="text-xs text-dark-400 mb-1">API Calls</p>
-                    <p className="text-white font-bold">10,000/month</p>
+                    <p className="text-white font-bold">{queryCount} used</p>
                   </div>
                   <div className="p-3 bg-white/5 rounded-lg">
-                    <p className="text-xs text-dark-400 mb-1">Team Members</p>
-                    <p className="text-white font-bold">Up to 50</p>
+                    <p className="text-xs text-dark-400 mb-1">Documents</p>
+                    <p className="text-white font-bold">{docCount} uploaded</p>
                   </div>
                   <div className="p-3 bg-white/5 rounded-lg">
                     <p className="text-xs text-dark-400 mb-1">Support</p>

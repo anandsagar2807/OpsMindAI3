@@ -1,6 +1,9 @@
 import { motion } from 'framer-motion'
 import { useDropzone } from 'react-dropzone'
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useUser } from '@clerk/react'
+import toast from 'react-hot-toast'
 import {
   Upload,
   FileText,
@@ -9,9 +12,14 @@ import {
   Loader
 } from 'lucide-react'
 import { Card, Button } from '../components/ui'
+import Badge from '../components/ui/Badge.jsx'
 import DashboardLayout from '../layouts/DashboardLayout'
+import { documentAPI } from '../services/api'
 
 const UploadPage = () => {
+  const { user } = useUser()
+  const navigate = useNavigate()
+
   const [files, setFiles] = useState([])
   const [uploading, setUploading] = useState(false)
 
@@ -21,48 +29,76 @@ const UploadPage = () => {
     },
     maxSize: 20971520,
     onDrop: (acceptedFiles) => {
-      const newFiles = acceptedFiles.map(file => ({
+      if (!acceptedFiles?.length) return
+      const newFiles = acceptedFiles.map((file) => ({
         file,
         name: file.name,
         size: file.size,
         status: 'pending',
         progress: 0
       }))
-      setFiles([...files, ...newFiles])
+      setFiles((prev) => [...prev, ...newFiles])
     }
   })
 
-  const handleUpload = () => {
-    setUploading(true)
-    files.forEach((file, index) => {
-      setTimeout(() => {
-        setFiles(prev => prev.map((f, i) =>
-          i === index ? { ...f, status: 'uploading', progress: 0 } : f
-        ))
-
-        const interval = setInterval(() => {
-          setFiles(prev => prev.map((f, i) => {
-            if (i === index && f.progress < 100) {
-              const newProgress = f.progress + 10
-              if (newProgress >= 100) {
-                clearInterval(interval)
-                return { ...f, status: 'completed', progress: 100 }
-              }
-              return { ...f, progress: newProgress }
-            }
-            return f
-          }))
-        }, 200)
-      }, index * 500)
-    })
-
-    setTimeout(() => {
-      setUploading(false)
-    }, files.length * 500 + 2000)
+  const removeFile = (index) => {
+    setFiles((prev) => prev.filter((_, i) => i !== index))
   }
 
-  const removeFile = (index) => {
-    setFiles(files.filter((_, i) => i !== index))
+  const handleUpload = async () => {
+    if (!files.length) return
+
+    setUploading(true)
+    try {
+      const token = await user?.getToken()
+
+      if (!token) {
+        toast.error('Please sign in again to upload documents.')
+        return
+      }
+
+      // Upload sequentially to keep server load + progress predictable
+      for (let i = 0; i < files.length; i++) {
+        const f = files[i]
+        if (f.status !== 'pending') continue
+
+        setFiles((prev) =>
+          prev.map((x, idx) =>
+            idx === i ? { ...x, status: 'uploading', progress: 5 } : x
+          )
+        )
+
+        const formData = new FormData()
+        formData.append('file', f.file)
+
+        try {
+          // Upload
+          await documentAPI.upload(formData, token)
+
+          // Mark completed (server may still be processing embeddings)
+          setFiles((prev) =>
+            prev.map((x, idx) =>
+              idx === i ? { ...x, status: 'completed', progress: 100 } : x
+            )
+          )
+        } catch (err) {
+          console.error('Upload failed:', err)
+          const msg = err?.response?.data?.message || err?.message || 'Upload failed'
+          setFiles((prev) =>
+            prev.map((x, idx) =>
+              idx === i ? { ...x, status: 'failed', progress: x.progress, error: msg } : x
+            )
+          )
+          toast.error(msg)
+          // continue uploading other files
+        }
+      }
+
+      toast.success('Upload started. Documents will appear once processing completes.')
+      navigate('/dashboard/documents')
+    } finally {
+      setUploading(false)
+    }
   }
 
   return (
@@ -73,7 +109,7 @@ const UploadPage = () => {
           <p className="text-dark-400">Add new documents to your knowledge base</p>
         </div>
 
-        <Card glass>
+        <Card glass hover={true}>
           <div
             {...getRootProps()}
             className={`
@@ -107,10 +143,10 @@ const UploadPage = () => {
         </Card>
 
         {files.length > 0 && (
-          <Card glass>
+          <Card glass hover={true}>
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-bold text-white">Files ({files.length})</h3>
-              {!uploading && files.some(f => f.status === 'pending') && (
+              {!uploading && files.some((f) => f.status === 'pending') && (
                 <Button onClick={handleUpload} icon={Upload}>
                   Upload All
                 </Button>
@@ -123,11 +159,11 @@ const UploadPage = () => {
                   key={index}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="p-4 bg-white/5 border border-white/10 rounded-xl"
+                  className="p-4 bg-gradient-to-br from-indigo-600/10 via-purple-600/10 to-pink-600/10 border border-white/10 rounded-xl"
                 >
                   <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-red-500/20 border border-red-500/30 flex items-center justify-center flex-shrink-0">
-                      <FileText className="w-6 h-6 text-red-400" />
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-600/20 to-purple-600/20 border border-indigo-500/30 flex items-center justify-center flex-shrink-0">
+                      <FileText className="w-6 h-6 text-indigo-400" />
                     </div>
 
                     <div className="flex-1 min-w-0">
@@ -154,6 +190,9 @@ const UploadPage = () => {
                           {file.status === 'completed' && (
                             <CheckCircle2 className="w-5 h-5 text-green-400" />
                           )}
+                          {file.status === 'failed' && (
+                            <AlertCircle className="w-5 h-5 text-red-400" />
+                          )}
                         </div>
                       </div>
 
@@ -163,11 +202,17 @@ const UploadPage = () => {
                             <motion.div
                               initial={{ width: 0 }}
                               animate={{ width: `${file.progress}%` }}
-                              className="h-full bg-gradient-to-r from-primary-500 to-blue-600 rounded-full"
+                              className="h-full bg-gradient-to-r from-indigo-600 to-purple-600 rounded-full"
                             />
                           </div>
                           <p className="text-xs text-dark-400">
-                            {file.status === 'uploading' ? `Uploading... ${file.progress}%` : 'Upload complete'}
+                            {file.status === 'uploading'
+                              ? `Uploading...`
+                              : file.status === 'completed'
+                                ? 'Upload complete'
+                                : file.error
+                                  ? file.error
+                                  : 'Upload failed'}
                           </p>
                         </div>
                       )}
@@ -179,7 +224,7 @@ const UploadPage = () => {
           </Card>
         )}
 
-        <Card glass>
+        <Card glass hover={true}>
           <h3 className="text-lg font-semibold text-white mb-4">Upload Guidelines</h3>
           <ul className="space-y-3 text-dark-300">
             <li className="flex items-start gap-3">
@@ -197,6 +242,12 @@ const UploadPage = () => {
             <li className="flex items-start gap-3">
               <CheckCircle2 className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
               <span>Processing typically takes 1-2 minutes per document</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <Badge variant="default" className="mt-1">
+                <CheckCircle2 className="w-4 h-4 mr-1" />
+                Enterprise Security
+              </Badge>
             </li>
           </ul>
         </Card>

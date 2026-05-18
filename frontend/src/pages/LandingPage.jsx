@@ -1,5 +1,6 @@
 // Premium Landing Page with Clerk Authentication
 import { motion } from 'framer-motion'
+import { useEffect, useState } from 'react'
 import { SignInButton, SignUpButton, useUser } from '@clerk/react'
 import {
   Brain,
@@ -21,8 +22,52 @@ import {
 import { Button, Card } from '../components/ui'
 import { Link } from 'react-router-dom'
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5002'
+
 const LandingPage = () => {
   const { isSignedIn } = useUser()
+
+  const [health, setHealth] = useState(null)
+  const [healthError, setHealthError] = useState(null)
+  const [publicStats, setPublicStats] = useState(null)
+
+  useEffect(() => {
+    let cancelled = false
+
+    const loadHealth = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/health`, {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+        })
+        if (!res.ok) throw new Error(`Health request failed: ${res.status}`)
+        const data = await res.json()
+        if (!cancelled) setHealth(data)
+      } catch (e) {
+        if (!cancelled) setHealthError(e?.message || 'Failed to load health')
+      }
+    }
+
+    const loadStats = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/public/stats`, {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+        })
+        if (!res.ok) throw new Error(`Stats request failed: ${res.status}`)
+        const data = await res.json()
+        if (!cancelled && data.success) setPublicStats(data.data)
+      } catch (e) {
+        console.error('Failed to load public stats:', e)
+      }
+    }
+
+    loadHealth()
+    loadStats()
+    return () => {
+      cancelled = true
+    }
+  }, [])
   const features = [
     {
       icon: Brain,
@@ -56,11 +101,18 @@ const LandingPage = () => {
     }
   ]
 
+  const formatStat = (num) => {
+    if (!num && num !== 0) return '...'
+    if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M+`
+    if (num >= 1000) return `${(num / 1000).toFixed(1)}K+`
+    return num.toString()
+  }
+
   const stats = [
-    { value: '10M+', label: 'Documents Processed' },
-    { value: '50K+', label: 'Active Users' },
-    { value: '99.9%', label: 'Uptime SLA' },
-    { value: '<100ms', label: 'Avg Response Time' }
+    { value: publicStats ? formatStat(publicStats.totalDocuments) : '...', label: 'Documents Processed' },
+    { value: publicStats ? formatStat(publicStats.totalUsers) : '...', label: 'Active Users' },
+    { value: publicStats?.uptime || '99.9%', label: 'Uptime SLA' },
+    { value: publicStats?.avgResponseTime || '< 3s', label: 'Avg Response Time' }
   ]
 
   const testimonials = [
@@ -146,14 +198,83 @@ const LandingPage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary-500 to-blue-600 flex items-center justify-center shadow-lg shadow-primary-500/30">
-                <Brain className="w-7 h-7 text-white" />
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/25 overflow-hidden relative">
+                {/* Premium "human-generated" mark (inline SVG) */}
+                <svg
+                  viewBox="0 0 64 64"
+                  width="44"
+                  height="44"
+                  className="relative z-10"
+                  aria-hidden="true"
+                >
+                  <defs>
+                    <linearGradient id="bb-g" x1="0" y1="0" x2="1" y2="1">
+                      <stop offset="0%" stopColor="#60a5fa" />
+                      <stop offset="50%" stopColor="#a78bfa" />
+                      <stop offset="100%" stopColor="#f472b6" />
+                    </linearGradient>
+                    <filter id="bb-soft" x="-20%" y="-20%" width="140%" height="140%">
+                      <feGaussianBlur stdDeviation="1.2" result="blur" />
+                      <feColorMatrix
+                        in="blur"
+                        type="matrix"
+                        values="
+                          1 0 0 0 0
+                          0 1 0 0 0
+                          0 0 1 0 0
+                          0 0 0 0.9 0"
+                      />
+                      <feMerge>
+                        <feMergeNode />
+                        <feMergeNode in="SourceGraphic" />
+                      </feMerge>
+                    </filter>
+                  </defs>
+
+                  {/* Abstract brain/node glyph */}
+                  <g filter="url(#bb-soft)">
+                    <path
+                      d="M29.5 16.5c4-5.2 12.2-4.8 15.1 0.9 2.2 4.3 0.8 9.7-3.1 12.3 3.1 1.7 4.9 5.4 4.2 9.2-1 5.5-7.1 9-12.7 7.2-3.1-1-5.4-3.5-6.1-6.5-2.9 1.1-6.4 0.4-8.5-2.1-3.2-3.8-2.3-9.8 2-12.6-2.2-3.9-1.1-9.2 2.8-11.4"
+                      fill="none"
+                      stroke="url(#bb-g)"
+                      strokeWidth="3.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <circle cx="38.5" cy="28.5" r="3.2" fill="url(#bb-g)" />
+                    <circle cx="27.5" cy="35.2" r="2.4" fill="url(#bb-g)" opacity="0.95" />
+                    <path
+                      d="M21 25c2.5-1.6 6.1-1.1 8 .9"
+                      fill="none"
+                      stroke="url(#bb-g)"
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                      opacity="0.9"
+                    />
+                  </g>
+
+                  {/* subtle halftone overlay */}
+                  <g opacity="0.25">
+                    {Array.from({ length: 26 }).map((_, i) => {
+                      const x = 10 + (i % 7) * 6;
+                      const y = 12 + Math.floor(i / 7) * 8;
+                      const r = (i % 3) + 1;
+                      return <circle key={i} cx={x} cy={y} r={r * 0.55} fill="#ffffff" />;
+                    })}
+                  </g>
+                </svg>
+
+                <div className="absolute inset-0 opacity-10">
+                  {/* extra "human" glow */}
+                  <div className="absolute -top-6 -left-6 w-20 h-20 rounded-full bg-white blur-2xl"></div>
+                </div>
               </div>
+
               <div>
-                <span className="text-xl font-bold text-white">OpsMind AI</span>
+                <span className="text-xl font-bold text-white tracking-tight">OpsMind AI</span>
                 <div className="flex items-center gap-1">
-                  <Sparkles className="w-3 h-3 text-primary-400" />
-                  <span className="text-xs text-primary-400 font-medium">Enterprise</span>
+                  <Sparkles className="w-3 h-3 text-primary-300" />
+                  <span className="text-xs text-primary-300 font-medium">Enterprise</span>
                 </div>
               </div>
             </div>
@@ -169,7 +290,7 @@ const LandingPage = () => {
                     redirectUrl="/dashboard"
                     fallbackRedirectUrl="/dashboard"
                   >
-                    <button className="text-dark-300 hover:text-white transition px-6 py-2 font-medium">
+                    <button className="px-6 py-2 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 hover:border-white/25 transition-colors text-white/90 font-semibold shadow-sm">
                       Sign In
                     </button>
                   </SignInButton>
@@ -189,6 +310,16 @@ const LandingPage = () => {
 
       {/* Hero Section */}
       <section className="relative overflow-hidden pt-32 pb-20 lg:pt-40 lg:pb-32">
+        {/* Floating Chat Icon */}
+        {isSignedIn && (
+          <div className="fixed right-6 bottom-6 z-50">
+            <Link to="/dashboard/chat" aria-label="Open chat">
+              <button className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary-500 to-blue-600 shadow-lg shadow-primary-500/30 hover:shadow-primary-500/40 transition-all duration-300 flex items-center justify-center">
+                <MessageSquare className="w-6 h-6 text-white" />
+              </button>
+            </Link>
+          </div>
+        )}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary-500/10 rounded-full blur-3xl animate-pulse-slow"></div>
           <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-pulse-slow" style={{ animationDelay: '1s' }}></div>
@@ -203,7 +334,11 @@ const LandingPage = () => {
           >
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-primary-500/30 mb-8">
               <Sparkles className="w-4 h-4 text-primary-400" />
-              <span className="text-sm text-primary-300 font-medium">Powered by Advanced AI Technology</span>
+              <span className="text-sm text-primary-300 font-medium">
+                {health?.success
+                  ? `Platform Online • ${new Date(health.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                  : `Platform Status • ${healthError ? 'Offline' : 'Loading...'}`}
+              </span>
             </div>
 
             <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-white mb-6 leading-tight">
