@@ -20,10 +20,11 @@ const Login = () => {
             path="/login"
             signUpUrl="/register"
             appearance={{
+              baseTheme: 'dark',
               elements: {
-                rootBox: 'w-full text-white',
                 card: 'shadow-none border-0 bg-transparent p-0',
-                header: 'hidden',
+                headerTitle: 'hidden',
+                headerSubtitle: 'hidden',
                 socialButtonsBlockButton:
                   'w-full border border-white/10 bg-white/5 hover:bg-white/10 transition-all duration-200 rounded-xl py-3 flex items-center justify-center gap-3',
                 socialButtonsBlockButtonText: 'text-white font-semibold',

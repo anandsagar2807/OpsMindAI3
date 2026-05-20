@@ -76,7 +76,7 @@ export default function EnterpriseLandingPage() {
 
   const handleWatchDemo = () => {
     // Open demo video or demo page
-    window.open('https://www.youtube.com/watch?v=demo', '_blank');
+    window.open('https://www.youtube.com/watch?v=ILRl6Xir0J0', '_blank');
   };
 
   const scrollToSection = (sectionId) => {
@@ -354,7 +354,7 @@ export default function EnterpriseLandingPage() {
             </p>
           </motion.div>
 
-          {/* Hero Image/Demo */}
+          {/* Hero Image/Demo - Relevance AI Agent Chat */}
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
@@ -363,33 +363,40 @@ export default function EnterpriseLandingPage() {
           >
             <div className="bg-white rounded-3xl p-8 shadow-2xl border border-gray-200">
               <div className="aspect-video bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl flex items-center justify-center border border-gray-200 relative overflow-hidden">
-                {/* Mock Chat Interface */}
-                <div className="absolute inset-0 p-8">
-                  <div className="bg-white rounded-xl shadow-lg h-full flex flex-col">
-                    <div className="border-b border-gray-200 p-4 flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center">
-                        <Sparkles className="w-5 h-5 text-white" />
-                      </div>
-                      <div>
-                        <p className="font-semibold text-gray-900">AI Assistant</p>
-                        <p className="text-xs text-gray-500">Online</p>
-                      </div>
-                    </div>
-                    <div className="flex-1 p-4 space-y-4 overflow-hidden">
-                      <div className="flex justify-end">
-                        <div className="bg-indigo-600 text-white px-4 py-2 rounded-2xl max-w-xs text-sm">
-                          What's our refund policy?
-                        </div>
-                      </div>
-                      <div className="flex justify-start">
-                        <div className="bg-gray-100 text-gray-900 px-4 py-2 rounded-2xl max-w-md text-sm">
-                          Refunds are processed within 7 business days...
-                          <span className="block text-xs text-gray-500 mt-1">(Source: Refund Policy, Page 12)</span>
-                        </div>
+                <iframe
+                  src="https://app.relevanceai.com/agents/f1db6c/0b7a4882-502d-43b3-a4c7-a188ae52e4ca/9671bbca-9c52-422d-8dd5-e2a7618eff4a/embed-chat?hide_tool_steps=false&hide_file_uploads=false&hide_conversation_list=false&bubble_style=agent&primary_color=%23685FFF&bubble_icon=pd%2Fchat&input_placeholder_text=Type+your+message...&hide_logo=false&hide_description=false"
+                  className="w-full h-full"
+                  style={{ border: 'none', minHeight: '450px' }}
+                  title="OpsMind AI Agent"
+                  allow="clipboard-write"
+                />
+                {/* Lock overlay - only shown when user is NOT signed in */}
+                {!isSignedIn && (
+                  <div
+                    className="absolute inset-0 z-10 flex items-center justify-center bg-gray-900/60 backdrop-blur-sm"
+                    style={{ cursor: 'crosshair' }}
+                  >
+                    <div className="text-center px-6 py-8 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20">
+                      <Lock className="w-10 h-10 text-white/80 mx-auto mb-3" />
+                      <p className="text-white font-semibold text-lg mb-2">Sign in to chat with AI</p>
+                      <p className="text-white/70 text-sm mb-4">Ask questions about your documents and get instant answers</p>
+                      <div className="flex items-center justify-center gap-3">
+                        <button
+                          onClick={() => navigate('/login')}
+                          className="px-5 py-2.5 rounded-xl border border-white/20 bg-white/10 hover:bg-white/20 text-white font-medium transition-colors"
+                        >
+                          Sign In
+                        </button>
+                        <button
+                          onClick={() => navigate('/register')}
+                          className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-medium transition-colors shadow-lg"
+                        >
+                          Get Started
+                        </button>
                       </div>
                     </div>
                   </div>
-                </div>
+                )}
               </div>
             </div>
           </motion.div>
