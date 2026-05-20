@@ -51,6 +51,7 @@ To make the chat work, you need to add these API keys to `backend/.env`:
 3. Try the chat again
 4. Upload documents first, then ask questions about them
 
+
 ## Note
 
 The chat currently has a **temporary auth bypass** so you can test it without Clerk. Once you add the Clerk secret key, remove the bypass for production use.
