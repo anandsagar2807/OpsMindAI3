@@ -1,10 +1,6 @@
 # OpsMind AI - Production RAG Chat System
 
-> Enterprise-grade conversational AI agent with RAG, Groq API streaming, and strict no-hallucination policy.
-
-![Status](https://img.shields.io/badge/status-production--ready-green)
-![Node](https://img.shields.io/badge/node-18%2B-brightgreen)
-![License](https://img.shields.io/badge/license-MIT-blue)
+> Enterprise-grade conversational AI agent with RAG, Groq API streaming, and strict no-hallucination policy
 
 ## 🎯 What is OpsMind AI?
 
