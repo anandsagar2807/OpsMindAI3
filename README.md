@@ -8,7 +8,7 @@
 
 ## 🎯 What is OpsMind AI?
 
-OpsMind AI is a context-aware corporate knowledge brain that helps employees find information from company documents instantly. Upload your SOPs, policies, and manuals - then ask questions in natural language.
+OpsMind AI is a context-aware corporate knowledge brain that helps employees find information from company documents instantly. Upload your SOPs, policies, and manuals then ask questions in natural language.
 
 ### Key Features
 
