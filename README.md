@@ -265,12 +265,6 @@ Contributions welcome! Please:
 
 MIT License - see LICENSE file for details
 
-## 🆘 Support
-
-- **Issues**: Check [TEST_INSTRUCTIONS.md](TEST_INSTRUCTIONS.md)
-- **Technical**: Review [GROQ_CHAT_IMPLEMENTATION.md](GROQ_CHAT_IMPLEMENTATION.md)
-- **Setup**: See [SETUP_GUIDE.md](SETUP_GUIDE.md)
-
 ## 🎉 Acknowledgments
 
 - Groq for lightning-fast LLM inference
