@@ -1,11 +1,18 @@
 import express from 'express';
-import { chat, chatStream, search } from '../controllers/chatController.js';
-import { protectWithClerk } from '../middleware/clerkAuth.js';
+import {
+    createConversation,
+    getConversations,
+    getConversation,
+    updateConversationTitle,
+    deleteConversation
+} from '../controllers/chatController.js';
 
 const router = express.Router();
 
-router.post('/search', protectWithClerk, search);
-router.post('/query', protectWithClerk, chat);
-router.post('/stream', protectWithClerk, chatStream);
+router.post('/', createConversation);
+router.get('/', getConversations);
+router.get('/:id', getConversation);
+router.patch('/:id', updateConversationTitle);
+router.delete('/:id', deleteConversation);
 
 export default router;

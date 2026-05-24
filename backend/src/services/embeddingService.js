@@ -1,58 +1,44 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import OpenAI from 'openai';
+
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
 class EmbeddingService {
   constructor() {
-    this.provider = process.env.EMBEDDING_PROVIDER || 'gemini';
-
-    if (this.provider === 'gemini') {
-      this.genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    } else if (this.provider === 'openai') {
-      this.openai = new OpenAI({
-        apiKey: process.env.OPENAI_API_KEY
-      });
+    this.model = 'embedding-001';
+    if (GEMINI_API_KEY && GEMINI_API_KEY !== 'your-gemini-api-key-here') {
+      this.genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+    } else {
+      this.genAI = null;
+      console.warn('⚠️  [embeddingService] GEMINI_API_KEY is a placeholder — embedding features will be unavailable until a valid key is provided.');
+      console.warn('⚠️  [embeddingService] Get your key from https://aistudio.google.com');
     }
   }
 
   async generateEmbedding(text) {
+    if (!this.genAI) {
+      throw new Error('Gemini API key is not configured. Set GEMINI_API_KEY in .env to enable embeddings.');
+    }
     try {
-      if (this.provider === 'gemini') {
-        return await this.generateGeminiEmbedding(text);
-      } else if (this.provider === 'openai') {
-        return await this.generateOpenAIEmbedding(text);
-      } else {
-        throw new Error('Invalid embedding provider');
-      }
+      const model = this.genAI.getGenerativeModel({ model: this.model });
+      const result = await model.embedContent(text);
+      return result.embedding.values;
     } catch (error) {
       console.error('Embedding generation error:', error);
-      throw new Error('Failed to generate embedding');
+      throw new Error('Failed to generate embedding: ' + error.message);
     }
-  }
-
-  async generateGeminiEmbedding(text) {
-    const model = this.genAI.getGenerativeModel({ model: 'embedding-001' });
-    const result = await model.embedContent(text);
-    return result.embedding.values;
-  }
-
-  async generateOpenAIEmbedding(text) {
-    const response = await this.openai.embeddings.create({
-      model: 'text-embedding-3-small',
-      input: text,
-    });
-    return response.data[0].embedding;
   }
 
   async generateBatchEmbeddings(texts) {
     const embeddings = [];
-
-    for (const text of texts) {
-      const embedding = await this.generateEmbedding(text);
+    for (let i = 0; i < texts.length; i++) {
+      const embedding = await this.generateEmbedding(texts[i]);
       embeddings.push(embedding);
 
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // Rate limiting: pause between requests
+      if (i < texts.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
     }
-
     return embeddings;
   }
 }

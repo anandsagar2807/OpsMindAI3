@@ -1,103 +1,104 @@
-import { generateChatResponse, generateStreamingResponse } from '../services/chatService.js';
-import vectorSearchService from '../services/vectorSearchService.js';
+import chatService from '../services/chatService.js';
 
-export const search = async (req, res) => {
+export const createConversation = async (req, res) => {
+  const userId = req.auth?.userId || req.dbUser?.clerkId;
+  const orgId = req.auth?.orgId || null;
+  const { title } = req.body;
+
   try {
-    const { query } = req.body;
-    const userId = req.user.id;
-
-    if (!query || query.trim().length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'Query is required'
-      });
-    }
-
-    const searchResult = await vectorSearchService.search(query, userId, {
-      topK: 5,
-      minSimilarity: 0.3,
-      includeContext: true
-    });
-
-    res.status(200).json({
-      success: searchResult.success,
-      message: searchResult.message,
-      data: {
-        results: searchResult.results,
-        context: searchResult.context,
-        metadata: searchResult.metadata
-      }
-    });
-
-  } catch (error) {
-    console.error('Search controller error:', error);
-    res.status(500).json({
-      success: false,
-      message: error.message || 'Failed to process search request'
-    });
-  }
-};
-
-export const chat = async (req, res) => {
-  try {
-    const { query } = req.body;
-    const userId = req.user.id;
-
-    if (!query || query.trim().length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'Query is required'
-      });
-    }
-
-    const result = await generateChatResponse(query, userId);
-
-    res.status(200).json({
+    const conversation = await chatService.createConversation(userId, orgId, title || 'New Conversation');
+    res.status(201).json({
       success: true,
-      data: {
-        response: result.response,
-        sources: result.sources
-      }
+      data: conversation
     });
-
   } catch (error) {
-    console.error('Chat controller error:', error);
     res.status(500).json({
       success: false,
-      message: error.message || 'Failed to process chat request'
+      message: 'Failed to create conversation: ' + error.message
     });
   }
 };
 
-export const chatStream = async (req, res) => {
+export const getConversations = async (req, res) => {
+  const userId = req.auth?.userId || req.dbUser?.clerkId;
+  const { page, limit, search } = req.query;
+
   try {
-    const { query } = req.body;
-    const userId = req.user.id;
-
-    if (!query || query.trim().length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'Query is required'
-      });
-    }
-
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection', 'keep-alive');
-
-    const onChunk = (content) => {
-      res.write(`data: ${JSON.stringify({ type: 'content', content })}\n\n`);
-    };
-
-    const result = await generateStreamingResponse(query, userId, onChunk);
-
-    res.write(`data: ${JSON.stringify({ type: 'sources', sources: result.sources })}\n\n`);
-    res.write(`data: ${JSON.stringify({ type: 'done' })}\n\n`);
-    res.end();
-
+    const result = await chatService.getConversations(userId, {
+      page: parseInt(page) || 1,
+      limit: parseInt(limit) || 20,
+      search: search || ''
+    });
+    res.json({
+      success: true,
+      data: result
+    });
   } catch (error) {
-    console.error('Chat stream controller error:', error);
-    res.write(`data: ${JSON.stringify({ type: 'error', message: error.message })}\n\n`);
-    res.end();
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch conversations: ' + error.message
+    });
+  }
+};
+
+export const getConversation = async (req, res) => {
+  const userId = req.auth?.userId || req.dbUser?.clerkId;
+  const { id } = req.params;
+
+  try {
+    const conversation = await chatService.getConversation(id, userId);
+    res.json({
+      success: true,
+      data: conversation
+    });
+  } catch (error) {
+    const status = error.message === 'Conversation not found' ? 404 : 500;
+    res.status(status).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+export const updateConversationTitle = async (req, res) => {
+  const userId = req.auth?.userId || req.dbUser?.clerkId;
+  const { id } = req.params;
+  const { title } = req.body;
+
+  if (!title) {
+    return res.status(400).json({ success: false, message: 'Title is required' });
+  }
+
+  try {
+    const conversation = await chatService.updateConversationTitle(id, userId, title);
+    res.json({
+      success: true,
+      data: conversation
+    });
+  } catch (error) {
+    const status = error.message === 'Conversation not found' ? 404 : 500;
+    res.status(status).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+export const deleteConversation = async (req, res) => {
+  const userId = req.auth?.userId || req.dbUser?.clerkId;
+  const { id } = req.params;
+
+  try {
+    await chatService.deleteConversation(id, userId);
+    res.json({
+      success: true,
+      message: 'Conversation deleted successfully'
+    });
+  } catch (error) {
+    const status = error.message === 'Conversation not found' ? 404 : 500;
+    res.status(status).json({
+      success: false,
+      message: error.message
+    });
   }
 };

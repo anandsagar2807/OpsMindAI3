@@ -1,5 +1,5 @@
 import { Navigate } from 'react-router-dom'
-import { useAuth } from '@clerk/react'
+import { useAuth } from '../hooks/useAuthContext'
 
 const PrivateRoute = ({ children }) => {
   const { isSignedIn, isLoaded } = useAuth()
@@ -12,7 +12,7 @@ const PrivateRoute = ({ children }) => {
     )
   }
 
-  return isSignedIn ? children : <Navigate to="/" replace />
+  return isSignedIn ? children : <Navigate to="/login" replace />
 }
 
 export default PrivateRoute

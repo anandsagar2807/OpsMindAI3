@@ -1,100 +1,76 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
-import { Toaster } from 'react-hot-toast'
-import LandingPage from './pages/LandingPage'
-import EnterpriseLandingPage from './pages/EnterpriseLandingPage'
-import DashboardHome from './pages/DashboardHome'
-import DocumentsPage from './pages/DocumentsPage'
-import UploadPage from './pages/UploadPage'
-import ChatPage from './pages/ChatPage'
-import GroqChatPage from './pages/GroqChatPage'
-import EnterpriseChatPage from './pages/EnterpriseChatPage'
-import SettingsPage from './pages/SettingsPage'
-import Login from './pages/Login'
-import Register from './pages/Register'
-import PrivateRoute from './components/PrivateRoute'
-import { AuthenticateWithRedirectCallback } from '@clerk/react'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
+import EnterpriseLandingPage from './pages/EnterpriseLandingPage';
+import AgentPage from './pages/AgentPage';
+import DashboardPage from './pages/DashboardPage';
+import DocumentsPage from './pages/DocumentsPage';
+import UploadPage from './pages/UploadPage';
+import SettingsPage from './pages/SettingsPage';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+import DashboardLayout from './layouts/EnterpriseLayout';
+import PrivateRoute from './components/PrivateRoute';
+import ErrorBoundary from './components/ErrorBoundary';
 
 function App() {
   return (
-    <Router>
-      <Toaster
-        position="top-right"
-        toastOptions={{
-          duration: 4000,
-          style: {
-            background: '#1e293b',
-            color: '#f1f5f9',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-          },
-          success: {
-            iconTheme: {
-              primary: '#0ea5e9',
-              secondary: '#f1f5f9',
+    <ErrorBoundary>
+      <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            duration: 4000,
+            style: {
+              background: '#1e293b',
+              color: '#f1f5f9',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
             },
-          },
-          error: {
-            iconTheme: {
-              primary: '#ef4444',
-              secondary: '#f1f5f9',
+            success: {
+              iconTheme: { primary: '#0ea5e9', secondary: '#f1f5f9' },
             },
-          },
-        }}
-      />
-      <Routes>
-        <Route path="/" element={<EnterpriseLandingPage />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route
-          path="/register/sso-callback"
-          element={<AuthenticateWithRedirectCallback />}
+            error: {
+              iconTheme: { primary: '#ef4444', secondary: '#f1f5f9' },
+              duration: 6000,
+            },
+          }}
         />
-        <Route
-          path="/login/sso-callback"
-          element={<AuthenticateWithRedirectCallback />}
-        />
-        <Route
-          path="/dashboard"
-          element={
-            <PrivateRoute>
-              <DashboardHome />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/dashboard/documents"
-          element={
-            <PrivateRoute>
-              <DocumentsPage />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/dashboard/upload"
-          element={
-            <PrivateRoute>
-              <UploadPage />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/dashboard/chat"
-          element={
-            <PrivateRoute>
-              <EnterpriseChatPage />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/dashboard/settings"
-          element={
-            <PrivateRoute>
-              <SettingsPage />
-            </PrivateRoute>
-          }
-        />
-      </Routes>
-    </Router>
-  )
+        <Routes>
+          {/* Public routes */}
+          <Route path="/" element={<EnterpriseLandingPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+
+          {/* Protected routes with dashboard layout */}
+          <Route
+            path="/dashboard"
+            element={
+              <PrivateRoute>
+                <DashboardLayout />
+              </PrivateRoute>
+            }
+          >
+            <Route index element={<DashboardPage />} />
+            <Route path="documents" element={<DocumentsPage />} />
+            <Route path="upload" element={<UploadPage />} />
+            <Route path="settings" element={<SettingsPage />} />
+          </Route>
+
+          {/* Agent page - standalone layout */}
+          <Route
+            path="/agent"
+            element={
+              <PrivateRoute>
+                <AgentPage />
+              </PrivateRoute>
+            }
+          />
+
+          {/* Catch all */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Router>
+    </ErrorBoundary>
+  );
 }
 
-export default App
+export default App;

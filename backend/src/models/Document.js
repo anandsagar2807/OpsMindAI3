@@ -20,17 +20,21 @@ const documentSchema = new mongoose.Schema({
   },
   mimeType: {
     type: String,
-    required: true
+    default: 'application/pdf'
   },
   uploadedBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
+    type: String,
+    required: true,
+    index: true
+  },
+  orgId: {
+    type: String,
+    default: null
   },
   status: {
     type: String,
-    enum: ['processing', 'completed', 'failed'],
-    default: 'processing'
+    enum: ['uploading', 'processing', 'chunking', 'embedding', 'completed', 'failed'],
+    default: 'uploading'
   },
   totalPages: {
     type: Number,
@@ -40,8 +44,22 @@ const documentSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  totalEmbeddings: {
+    type: Number,
+    default: 0
+  },
+  processingProgress: {
+    type: Number,
+    default: 0,
+    min: 0,
+    max: 100
+  },
   processingError: {
     type: String
+  },
+  textPreview: {
+    type: String,
+    maxlength: 500
   },
   createdAt: {
     type: Date,
@@ -55,5 +73,6 @@ const documentSchema = new mongoose.Schema({
 
 documentSchema.index({ uploadedBy: 1, createdAt: -1 });
 documentSchema.index({ status: 1 });
+documentSchema.index({ orgId: 1 });
 
 export default mongoose.model('Document', documentSchema);

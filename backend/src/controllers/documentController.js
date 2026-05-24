@@ -1,228 +1,329 @@
 import Document from '../models/Document.js';
-import Vector from '../models/Vector.js';
-import { extractTextFromPDF, chunkText, estimatePageNumber } from '../services/pdfProcessor.js';
+import SOPChunk from '../models/SOPChunk.js';
+import UploadLog from '../models/UploadLog.js';
+import upload from '../config/multer.js';
+import { extractTextFromPDF, chunkText } from '../services/pdfProcessor.js';
 import embeddingService from '../services/embeddingService.js';
 import fs from 'fs/promises';
+import path from 'path';
 
-export const uploadDocument = async (req, res, next) => {
-  try {
+export const uploadDocument = async (req, res) => {
+  const userId = req.auth?.userId || req.dbUser?.clerkId;
+  const orgId = req.auth?.orgId || null;
+
+  upload.single('file')(req, res, async (err) => {
+    if (err) {
+      return res.status(400).json({
+        success: false,
+        message: err.message || 'Upload error'
+      });
+    }
+
     if (!req.file) {
       return res.status(400).json({
         success: false,
-        message: 'Please upload a PDF file'
+        message: 'No file provided'
       });
     }
 
-    const document = await Document.create({
-      name: req.body.name || req.file.originalname,
-      originalName: req.file.originalname,
-      filePath: req.file.path,
-      fileSize: req.file.size,
-      mimeType: req.file.mimetype,
-      uploadedBy: req.dbUser._id,
-      status: 'processing'
-    });
+    try {
+      // Create document record
+      const document = await Document.create({
+        name: path.basename(req.file.originalname, path.extname(req.file.originalname)),
+        originalName: req.file.originalname,
+        filePath: req.file.path,
+        fileSize: req.file.size,
+        mimeType: req.file.mimetype,
+        uploadedBy: userId,
+        orgId,
+        status: 'processing',
+        processingProgress: 10
+      });
 
-    // Pass Clerk ID (string) for Vector.userId, not MongoDB ObjectId
-    processDocumentAsync(document._id, req.file.path, req.user.id);
-
-    res.status(201).json({
-      success: true,
-      message: 'Document uploaded successfully and processing started',
-      data: {
+      // Create upload log
+      const uploadLog = await UploadLog.create({
+        userId,
+        orgId,
         documentId: document._id,
-        name: document.name,
-        status: document.status
-      }
-    });
-  } catch (error) {
-    next(error);
-  }
-};
+        fileName: req.file.originalname,
+        fileSize: req.file.size,
+        status: 'uploaded',
+        steps: [
+          { step: 'upload', status: 'completed', completedAt: new Date() }
+        ]
+      });
 
-const processDocumentAsync = async (documentId, filePath, userId) => {
-  try {
-    const document = await Document.findById(documentId);
-
-    const { text, numPages } = await extractTextFromPDF(filePath);
-
-    const chunks = chunkText(text, 1000, 100);
-
-    document.totalPages = numPages;
-    document.totalChunks = chunks.length;
-    await document.save();
-
-    const vectors = [];
-
-    for (let i = 0; i < chunks.length; i++) {
-      const chunk = chunks[i];
-
-      const embedding = await embeddingService.generateEmbedding(chunk.text);
-
-      const pageNumber = estimatePageNumber(chunk.startPosition, text);
-
-      vectors.push({
-        documentId: document._id,
-        userId: userId,
-        text: chunk.text,
-        embedding: embedding,
-        pageNumber: pageNumber,
-        chunkIndex: chunk.chunkIndex,
-        metadata: {
-          documentName: document.name,
-          uploadedAt: document.createdAt,
-          chunkSize: chunk.chunkSize,
-          startPosition: chunk.startPosition,
-          endPosition: chunk.endPosition
+      // Return initial response - processing happens in background
+      res.status(201).json({
+        success: true,
+        data: {
+          document: {
+            id: document._id,
+            name: document.name,
+            originalName: document.originalName,
+            fileSize: document.fileSize,
+            status: document.status,
+            processingProgress: document.processingProgress,
+            createdAt: document.createdAt
+          },
+          uploadLogId: uploadLog._id
         }
       });
 
-      if (vectors.length >= 10 || i === chunks.length - 1) {
-        await Vector.insertMany(vectors);
-        vectors.length = 0;
+      // Process document in background
+      processDocument(document._id, req.file.path, userId, orgId, uploadLog._id).catch(error => {
+        console.error('Background processing error:', error);
+      });
+
+    } catch (error) {
+      console.error('Upload error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to upload document: ' + error.message
+      });
+    }
+  });
+};
+
+async function processDocument(documentId, filePath, userId, orgId, uploadLogId) {
+  const uploadLog = await UploadLog.findById(uploadLogId);
+
+  try {
+    // Step 1: Parse PDF
+    uploadLog.steps.push({ step: 'parse', status: 'in_progress', startedAt: new Date() });
+    await uploadLog.save();
+
+    const parseStart = Date.now();
+    const pdfData = await extractTextFromPDF(filePath);
+    const parseDuration = Date.now() - parseStart;
+
+    uploadLog.steps[uploadLog.steps.length - 1].status = 'completed';
+    uploadLog.steps[uploadLog.steps.length - 1].completedAt = new Date();
+    uploadLog.steps[uploadLog.steps.length - 1].durationMs = parseDuration;
+    await uploadLog.save();
+
+    // Update document
+    await Document.findByIdAndUpdate(documentId, {
+      totalPages: pdfData.numPages,
+      textPreview: pdfData.textPreview,
+      status: 'chunking',
+      processingProgress: 30
+    });
+
+    // Step 2: Chunk text
+    uploadLog.steps.push({ step: 'chunk', status: 'in_progress', startedAt: new Date() });
+    await uploadLog.save();
+
+    const chunkStart = Date.now();
+    const chunks = chunkText(pdfData.text, pdfData.pages, 1000, 100);
+    const chunkDuration = Date.now() - chunkStart;
+
+    uploadLog.steps[uploadLog.steps.length - 1].status = 'completed';
+    uploadLog.steps[uploadLog.steps.length - 1].completedAt = new Date();
+    uploadLog.steps[uploadLog.steps.length - 1].durationMs = chunkDuration;
+    uploadLog.steps[uploadLog.steps.length - 1].details = `${chunks.length} chunks generated`;
+    await uploadLog.save();
+
+    await Document.findByIdAndUpdate(documentId, {
+      totalChunks: chunks.length,
+      status: 'embedding',
+      processingProgress: 50
+    });
+
+    // Step 3: Generate embeddings and store chunks
+    uploadLog.steps.push({ step: 'embed', status: 'in_progress', startedAt: new Date() });
+    await uploadLog.save();
+
+    const embedStart = Date.now();
+    const document = await Document.findById(documentId);
+
+    for (let i = 0; i < chunks.length; i++) {
+      const chunk = chunks[i];
+      let embedding = null;
+
+      try {
+        embedding = await embeddingService.generateEmbedding(chunk.text);
+      } catch (embedError) {
+        console.error(`Embedding failed for chunk ${i}:`, embedError.message);
+      }
+
+      await SOPChunk.create({
+        documentId: documentId,
+        userId,
+        orgId,
+        text: chunk.text,
+        chunkIndex: chunk.chunkIndex,
+        pageNumber: chunk.pageNumber,
+        sectionTitle: chunk.sectionTitle,
+        startPosition: chunk.startPosition,
+        endPosition: chunk.endPosition,
+        chunkSize: chunk.chunkSize,
+        embedding,
+        embeddingModel: embedding ? 'embedding-001' : null,
+        metadata: {
+          documentName: document.name,
+          originalFileName: document.originalName,
+          uploadedAt: document.createdAt,
+          totalPages: pdfData.numPages
+        }
+      });
+
+      // Update progress
+      const progress = 50 + Math.floor((i / chunks.length) * 40);
+      await Document.findByIdAndUpdate(documentId, {
+        processingProgress: progress,
+        totalEmbeddings: i + 1
+      });
+
+      // Rate limiting
+      if (i < chunks.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 100));
       }
     }
 
-    document.status = 'completed';
-    document.updatedAt = new Date();
-    await document.save();
+    const embedDuration = Date.now() - embedStart;
+    uploadLog.steps[uploadLog.steps.length - 1].status = 'completed';
+    uploadLog.steps[uploadLog.steps.length - 1].completedAt = new Date();
+    uploadLog.steps[uploadLog.steps.length - 1].durationMs = embedDuration;
+    uploadLog.steps[uploadLog.steps.length - 1].details = `${chunks.length} embeddings generated`;
+    await uploadLog.save();
 
-    console.log(`✅ Document ${documentId} processed successfully`);
+    // Step 4: Mark as completed
+    await Document.findByIdAndUpdate(documentId, {
+      status: 'completed',
+      processingProgress: 100
+    });
+
+    uploadLog.status = 'completed';
+    uploadLog.totalDurationMs = Date.now() - uploadLog.createdAt.getTime();
+    await uploadLog.save();
+
+    console.log(`✅ Document processed: ${documentId} (${chunks.length} chunks, ${pdfData.numPages} pages)`);
+
+    // Clean up uploaded file
+    try {
+      await fs.unlink(filePath);
+    } catch (e) {
+      // File cleanup is non-critical
+    }
+
   } catch (error) {
-    console.error(`❌ Error processing document ${documentId}:`, error);
+    console.error('Document processing error:', error);
 
     await Document.findByIdAndUpdate(documentId, {
       status: 'failed',
-      processingError: error.message,
-      updatedAt: new Date()
+      processingError: error.message
     });
+
+    uploadLog.status = 'failed';
+    uploadLog.errorMessage = error.message;
+    if (uploadLog.steps.length > 0) {
+      const lastStep = uploadLog.steps[uploadLog.steps.length - 1];
+      if (lastStep.status === 'in_progress') {
+        lastStep.status = 'failed';
+        lastStep.error = error.message;
+      }
+    }
+    await uploadLog.save();
   }
-};
+}
 
-export const getDocuments = async (req, res, next) => {
+export const getDocuments = async (req, res) => {
+  const userId = req.auth?.userId || req.dbUser?.clerkId;
+
   try {
-    const { page = 1, limit = 10, status } = req.query;
-
-    const query = { uploadedBy: req.dbUser._id };
-    if (status) query.status = status;
-
-    const documents = await Document.find(query)
+    const documents = await Document.find({ uploadedBy: userId })
       .sort({ createdAt: -1 })
-      .limit(limit * 1)
-      .skip((page - 1) * limit)
-      .select('-filePath');
+      .lean();
 
-    const count = await Document.countDocuments(query);
-
-    res.status(200).json({
+    res.json({
       success: true,
-      data: documents,
-      pagination: {
-        total: count,
-        page: parseInt(page),
-        pages: Math.ceil(count / limit)
-      }
+      data: documents
     });
   } catch (error) {
-    next(error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch documents: ' + error.message
+    });
   }
 };
 
-export const getDocumentById = async (req, res, next) => {
-  try {
-    const document = await Document.findOne({
-      _id: req.params.id,
-      uploadedBy: req.dbUser._id
-    }).select('-filePath');
+export const getDocument = async (req, res) => {
+  const userId = req.auth?.userId || req.dbUser?.clerkId;
+  const { id } = req.params;
 
+  try {
+    const document = await Document.findOne({ _id: id, uploadedBy: userId }).lean();
     if (!document) {
-      return res.status(404).json({
-        success: false,
-        message: 'Document not found'
-      });
+      return res.status(404).json({ success: false, message: 'Document not found' });
     }
 
-    const vectorCount = await Vector.countDocuments({ documentId: document._id });
+    const chunks = await SOPChunk.find({ documentId: id })
+      .select('-embedding')
+      .sort({ chunkIndex: 1 })
+      .lean();
 
-    res.status(200).json({
+    res.json({
       success: true,
-      data: {
-        ...document.toObject(),
-        vectorCount
-      }
+      data: { document, chunks }
     });
   } catch (error) {
-    next(error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch document: ' + error.message
+    });
   }
 };
 
-export const deleteDocument = async (req, res, next) => {
+export const deleteDocument = async (req, res) => {
+  const userId = req.auth?.userId || req.dbUser?.clerkId;
+  const { id } = req.params;
+
   try {
-    const document = await Document.findOne({
-      _id: req.params.id,
-      uploadedBy: req.dbUser._id
-    });
-
+    const document = await Document.findOne({ _id: id, uploadedBy: userId });
     if (!document) {
-      return res.status(404).json({
-        success: false,
-        message: 'Document not found'
-      });
+      return res.status(404).json({ success: false, message: 'Document not found' });
     }
 
-    await Vector.deleteMany({ documentId: document._id });
+    await SOPChunk.deleteMany({ documentId: id });
+    await Document.deleteOne({ _id: id });
+    await UploadLog.deleteMany({ documentId: id });
 
-    try {
-      await fs.unlink(document.filePath);
-    } catch (err) {
-      console.error('Error deleting file:', err);
-    }
-
-    await document.deleteOne();
-
-    res.status(200).json({
+    res.json({
       success: true,
       message: 'Document deleted successfully'
     });
   } catch (error) {
-    next(error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to delete document: ' + error.message
+    });
   }
 };
 
-export const getDocumentVectors = async (req, res, next) => {
+export const getUploadStatus = async (req, res) => {
+  const userId = req.auth?.userId || req.dbUser?.clerkId;
+  const { id } = req.params;
+
   try {
-    const { page = 1, limit = 20 } = req.query;
-
-    const document = await Document.findOne({
-      _id: req.params.id,
-      uploadedBy: req.dbUser._id
-    });
-
+    const document = await Document.findOne({ _id: id, uploadedBy: userId }).lean();
     if (!document) {
-      return res.status(404).json({
-        success: false,
-        message: 'Document not found'
-      });
+      return res.status(404).json({ success: false, message: 'Document not found' });
     }
 
-    const vectors = await Vector.find({ documentId: document._id })
-      .select('-embedding')
-      .sort({ chunkIndex: 1 })
-      .limit(limit * 1)
-      .skip((page - 1) * limit);
+    const uploadLog = await UploadLog.findOne({ documentId: id }).lean();
 
-    const count = await Vector.countDocuments({ documentId: document._id });
-
-    res.status(200).json({
+    res.json({
       success: true,
-      data: vectors,
-      pagination: {
-        total: count,
-        page: parseInt(page),
-        pages: Math.ceil(count / limit)
+      data: {
+        document,
+        uploadLog
       }
     });
   } catch (error) {
-    next(error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch upload status: ' + error.message
+    });
   }
 };

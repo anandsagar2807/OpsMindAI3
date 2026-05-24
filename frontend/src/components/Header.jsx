@@ -1,14 +1,20 @@
 import { useState, useEffect } from 'react'
-import { Link, useLocation } from 'react-router-dom'
-import { Brain, Sparkles, ChevronRight, Zap, Menu, X } from 'lucide-react'
-import { Show, SignInButton, SignUpButton, UserButton } from '@clerk/react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Brain, Sparkles, ChevronRight, Zap, Menu, X, LogOut, User } from 'lucide-react'
+import { Show as ClerkShow, SignInButton as ClerkSignInButton, SignUpButton as ClerkSignUpButton, UserButton as ClerkUserButton } from '@clerk/react'
+import { DEV_MODE } from '../lib/devAuth'
+import { useAuth, useUser } from '../hooks/useAuthContext'
 
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false)
   const [isHovered, setIsHovered] = useState(null)
   const [mobileOpen, setMobileOpen] = useState(false)
   const location = useLocation()
+  const navigate = useNavigate()
   const isHomePage = location.pathname === '/'
+
+  const { isSignedIn, signOut } = useAuth()
+  const { user } = useUser()
 
   useEffect(() => {
     const handleScroll = () => {
@@ -204,93 +210,185 @@ const Header = () => {
 
             {/* ========== Auth Buttons ========== */}
             <div className="flex items-center gap-3">
-              <Show when="signed-out">
-                {/* Sign In - Refined ghost button */}
-                <SignInButton mode="modal">
-                  <button className="
-                    relative group px-5 py-2.5 text-sm font-medium
-                    text-neutral-300 hover:text-white
-                    transition-all duration-300 ease-out
-                    hover:bg-[rgba(255,255,255,0.04)]
-                    rounded-lg
-                    focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#060a12]
-                  ">
-                    <span className="relative z-10">Sign In</span>
-                    {/* Hover gradient */}
-                    <span className="absolute inset-0 rounded-lg bg-gradient-to-r from-blue-500/8 via-cyan-400/4 to-blue-600/8 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                    {/* Subtle border */}
-                    <span className="absolute inset-0 rounded-lg border border-white/0 group-hover:border-white/[0.06] transition-all duration-300" />
-                  </button>
-                </SignInButton>
+              {DEV_MODE ? (
+                /* ===== Dev Mode Auth UI ===== */
+                <>
+                  {!isSignedIn ? (
+                    <>
+                      {/* Dev mode: Sign In button (just navigates to agent) */}
+                      <button
+                        onClick={() => navigate('/agent')}
+                        className="
+                          relative group px-5 py-2.5 text-sm font-medium
+                          text-neutral-300 hover:text-white
+                          transition-all duration-300 ease-out
+                          hover:bg-[rgba(255,255,255,0.04)]
+                          rounded-lg
+                          focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#060a12]
+                        "
+                      >
+                        <span className="relative z-10">Sign In</span>
+                        <span className="absolute inset-0 rounded-lg bg-gradient-to-r from-blue-500/8 via-cyan-400/4 to-blue-600/8 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                        <span className="absolute inset-0 rounded-lg border border-white/0 group-hover:border-white/[0.06] transition-all duration-300" />
+                      </button>
 
-                {/* Get Started - Premium CTA */}
-                <SignUpButton mode="modal">
-                  <button className="
-                    relative group px-6 py-2.5 text-sm font-semibold
-                    text-white overflow-hidden
-                    transition-all duration-300 ease-out
-                    rounded-lg
-                    shadow-[0_4px_20px_rgba(59,130,246,0.35)]
-                    hover:shadow-[0_8px_30px_rgba(59,130,246,0.5)]
-                    hover:-translate-y-[1px]
-                    active:scale-[0.98]
-                    focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#060a12]
-                  ">
-                    {/* Animated gradient background */}
-                    <span className="absolute inset-0 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 bg-[length:200%_100%] animate-gradient-x" />
+                      {/* Dev mode: Get Started button */}
+                      <button
+                        onClick={() => navigate('/agent')}
+                        className="
+                          relative group px-6 py-2.5 text-sm font-semibold
+                          text-white overflow-hidden
+                          transition-all duration-300 ease-out
+                          rounded-lg
+                          shadow-[0_4px_20px_rgba(59,130,246,0.35)]
+                          hover:shadow-[0_8px_30px_rgba(59,130,246,0.5)]
+                          hover:-translate-y-[1px]
+                          active:scale-[0.98]
+                          focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#060a12]
+                        "
+                      >
+                        <span className="absolute inset-0 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 bg-[length:200%_100%] animate-gradient-x" />
+                        <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.08] to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out" />
+                        <span className="absolute top-0 left-4 right-4 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                        <span className="relative flex items-center gap-2 z-10">
+                          Get Started
+                          <ChevronRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
+                        </span>
+                        <span className="absolute inset-0 rounded-lg border border-blue-400/20 group-hover:border-blue-400/40 transition-all duration-300" />
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      {/* Dashboard link */}
+                      <Link
+                        to="/agent"
+                        className="
+                          relative group px-5 py-2.5 text-sm font-medium
+                          text-neutral-300 hover:text-white
+                          transition-all duration-300 ease-out
+                          hover:bg-[rgba(255,255,255,0.04)]
+                          rounded-lg
+                          focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50
+                        "
+                      >
+                        <span className="relative flex items-center gap-2">
+                          Dashboard
+                          <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_6px_rgba(34,211,238,0.5)] opacity-0 group-hover:opacity-100 transition-all duration-300" />
+                        </span>
+                        <span className="absolute inset-0 rounded-lg bg-gradient-to-r from-blue-500/8 via-cyan-400/4 to-blue-600/8 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      </Link>
 
-                    {/* Shimmer sweep */}
-                    <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.08] to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out" />
+                      {/* Dev mode user avatar */}
+                      <div className="relative">
+                        <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/0 via-blue-500/10 to-blue-500/0 rounded-xl blur-md opacity-0 hover:opacity-100 transition-opacity duration-300" />
+                        <button
+                          onClick={signOut}
+                          className="w-[42px] h-[42px] rounded-xl overflow-hidden ring-2 ring-white/[0.08] hover:ring-blue-500/40 transition-all duration-300 shadow-[0_4px_12px_rgba(0,0,0,0.2)] bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center"
+                          title="Dev User — Click to sign out"
+                        >
+                          <User className="w-5 h-5 text-white" />
+                        </button>
+                      </div>
 
-                    {/* Top highlight */}
-                    <span className="absolute top-0 left-4 right-4 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      {/* Dev mode badge */}
+                      <span className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full bg-gradient-to-r from-orange-500/20 to-yellow-500/20 border border-orange-400/30 text-orange-300">
+                        DEV
+                      </span>
+                    </>
+                  )}
+                </>
+              ) : (
+                /* ===== Clerk Auth UI (production) ===== */
+                <>
+                  <ClerkShow when="signed-out">
+                    {/* Sign In - Refined ghost button */}
+                    <ClerkSignInButton mode="modal">
+                      <button className="
+                        relative group px-5 py-2.5 text-sm font-medium
+                        text-neutral-300 hover:text-white
+                        transition-all duration-300 ease-out
+                        hover:bg-[rgba(255,255,255,0.04)]
+                        rounded-lg
+                        focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#060a12]
+                      ">
+                        <span className="relative z-10">Sign In</span>
+                        {/* Hover gradient */}
+                        <span className="absolute inset-0 rounded-lg bg-gradient-to-r from-blue-500/8 via-cyan-400/4 to-blue-600/8 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                        {/* Subtle border */}
+                        <span className="absolute inset-0 rounded-lg border border-white/0 group-hover:border-white/[0.06] transition-all duration-300" />
+                      </button>
+                    </ClerkSignInButton>
 
-                    {/* Content */}
-                    <span className="relative flex items-center gap-2 z-10">
-                      Get Started
-                      <ChevronRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
-                    </span>
+                    {/* Get Started - Premium CTA */}
+                    <ClerkSignUpButton mode="modal">
+                      <button className="
+                        relative group px-6 py-2.5 text-sm font-semibold
+                        text-white overflow-hidden
+                        transition-all duration-300 ease-out
+                        rounded-lg
+                        shadow-[0_4px_20px_rgba(59,130,246,0.35)]
+                        hover:shadow-[0_8px_30px_rgba(59,130,246,0.5)]
+                        hover:-translate-y-[1px]
+                        active:scale-[0.98]
+                        focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#060a12]
+                      ">
+                        {/* Animated gradient background */}
+                        <span className="absolute inset-0 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 bg-[length:200%_100%] animate-gradient-x" />
 
-                    {/* Border glow */}
-                    <span className="absolute inset-0 rounded-lg border border-blue-400/20 group-hover:border-blue-400/40 transition-all duration-300" />
-                  </button>
-                </SignUpButton>
-              </Show>
+                        {/* Shimmer sweep */}
+                        <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.08] to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out" />
 
-              <Show when="signed-in">
-                {/* Dashboard link */}
-                <Link
-                  to="/dashboard"
-                  className="
-                    relative group px-5 py-2.5 text-sm font-medium
-                    text-neutral-300 hover:text-white
-                    transition-all duration-300 ease-out
-                    hover:bg-[rgba(255,255,255,0.04)]
-                    rounded-lg
-                    focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50
-                  "
-                >
-                  <span className="relative flex items-center gap-2">
-                    Dashboard
-                    <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_6px_rgba(34,211,238,0.5)] opacity-0 group-hover:opacity-100 transition-all duration-300" />
-                  </span>
-                  <span className="absolute inset-0 rounded-lg bg-gradient-to-r from-blue-500/8 via-cyan-400/4 to-blue-600/8 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                </Link>
+                        {/* Top highlight */}
+                        <span className="absolute top-0 left-4 right-4 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
-                {/* User button with premium styling */}
-                <div className="relative">
-                  <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/0 via-blue-500/10 to-blue-500/0 rounded-xl blur-md opacity-0 hover:opacity-100 transition-opacity duration-300" />
-                  <UserButton
-                    afterSignOutUrl="/"
-                    appearance={{
-                      elements: {
-                        avatarBox: "w-[42px] h-[42px] rounded-xl overflow-hidden ring-2 ring-white/[0.08] hover:ring-blue-500/40 transition-all duration-300 shadow-[0_4px_12px_rgba(0,0,0,0.2)]",
-                        userAvatarBox: "w-full h-full"
-                      }
-                    }}
-                  />
-                </div>
-              </Show>
+                        {/* Content */}
+                        <span className="relative flex items-center gap-2 z-10">
+                          Get Started
+                          <ChevronRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
+                        </span>
+
+                        {/* Border glow */}
+                        <span className="absolute inset-0 rounded-lg border border-blue-400/20 group-hover:border-blue-400/40 transition-all duration-300" />
+                      </button>
+                    </ClerkSignUpButton>
+                  </ClerkShow>
+
+                  <ClerkShow when="signed-in">
+                    {/* Dashboard link */}
+                    <Link
+                      to="/agent"
+                      className="
+                        relative group px-5 py-2.5 text-sm font-medium
+                        text-neutral-300 hover:text-white
+                        transition-all duration-300 ease-out
+                        hover:bg-[rgba(255,255,255,0.04)]
+                        rounded-lg
+                        focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50
+                      "
+                    >
+                      <span className="relative flex items-center gap-2">
+                        Dashboard
+                        <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_6px_rgba(34,211,238,0.5)] opacity-0 group-hover:opacity-100 transition-all duration-300" />
+                      </span>
+                      <span className="absolute inset-0 rounded-lg bg-gradient-to-r from-blue-500/8 via-cyan-400/4 to-blue-600/8 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    </Link>
+
+                    {/* User button with premium styling */}
+                    <div className="relative">
+                      <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/0 via-blue-500/10 to-blue-500/0 rounded-xl blur-md opacity-0 hover:opacity-100 transition-opacity duration-300" />
+                      <ClerkUserButton
+                        afterSignOutUrl="/"
+                        appearance={{
+                          elements: {
+                            avatarBox: "w-[42px] h-[42px] rounded-xl overflow-hidden ring-2 ring-white/[0.08] hover:ring-blue-500/40 transition-all duration-300 shadow-[0_4px_12px_rgba(0,0,0,0.2)]",
+                            userAvatarBox: "w-full h-full"
+                          }
+                        }}
+                      />
+                    </div>
+                  </ClerkShow>
+                </>
+              )}
 
               {/* Mobile menu toggle */}
               <button

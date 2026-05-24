@@ -18,7 +18,7 @@ import {
   Play
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useUser } from '@clerk/react';
+import { useUser } from '../hooks/useAuthContext';
 import Card from '../components/ui/Card.jsx';
 import Button from '../components/ui/Button.jsx';
 
@@ -525,7 +525,7 @@ export default function EnterpriseLandingPage() {
                 className="card-premium hover:scale-105 cursor-pointer"
               >
                 <div className="text-4xl">{integration.logo}</div>
-                <p className="text-sm font-medium text-gray-700 text-center">{integration.name}</p>
+                <p className="text-sm font-medium text-gray-300 text-center">{integration.name}</p>
               </motion.div>
             ))}
           </div>
@@ -533,13 +533,13 @@ export default function EnterpriseLandingPage() {
       </section>
 
       {/* Pricing Section */}
-      <section id="pricing" className="py-20 px-6 bg-white">
+      <section id="pricing" className="py-20 px-6 bg-gradient-to-br from-[#0d1525] to-[#0a0f1a]">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+            <h2 className="text-4xl font-bold text-white mb-4">
               Simple, Transparent Pricing
             </h2>
-            <p className="text-xl text-gray-700">
+            <p className="text-xl text-gray-300">
               Choose the plan that fits your organization
             </p>
           </div>
@@ -552,7 +552,7 @@ export default function EnterpriseLandingPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: idx * 0.1 }}
                 viewport={{ once: true }}
-                className={`bg-white rounded-2xl p-8 relative border-2 ${plan.popular ? 'border-indigo-600 shadow-2xl scale-105' : 'border-gray-200'
+                className={`bg-gradient-to-br from-white/[0.06] to-white/[0.02] rounded-2xl p-8 relative border-2 ${plan.popular ? 'border-violet-500/50 shadow-2xl shadow-violet-500/20 scale-105' : 'border-white/[0.08]'
                   }`}
               >
                 {plan.popular && (
@@ -562,19 +562,19 @@ export default function EnterpriseLandingPage() {
                 )}
 
                 <div className="text-center mb-8">
-                  <h3 className="text-2xl font-bold text-gray-900 mb-2">{plan.name}</h3>
-                  <p className="text-gray-700 mb-4">{plan.description}</p>
+                  <h3 className="text-2xl font-bold text-white mb-2">{plan.name}</h3>
+                  <p className="text-gray-400 mb-4">{plan.description}</p>
                   <div className="flex items-baseline justify-center gap-1">
                     <span className="text-5xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">{plan.price}</span>
-                    <span className="text-gray-700">{plan.period}</span>
+                    <span className="text-gray-400">{plan.period}</span>
                   </div>
                 </div>
 
                 <ul className="space-y-4 mb-8">
                   {plan.features.map((feature, fIdx) => (
                     <li key={fIdx} className="flex items-start gap-3">
-                      <Check className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
-                      <span className="text-gray-700">{feature}</span>
+                      <Check className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
+                      <span className="text-gray-300">{feature}</span>
                     </li>
                   ))}
                 </ul>
@@ -672,7 +672,7 @@ export default function EnterpriseLandingPage() {
             </div>
           </div>
 
-          <div className="border-t border-gray-200 pt-8 text-center text-sm text-gray-700">
+          <div className="border-t border-white/10 pt-8 text-center text-sm text-gray-400">
             <p>&copy; 2026 OpsMind AI. All rights reserved.</p>
           </div>
         </div>

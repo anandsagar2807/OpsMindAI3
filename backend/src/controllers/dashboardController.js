@@ -1,106 +1,217 @@
+import Conversation from '../models/Conversation.js';
 import Document from '../models/Document.js';
-import ChatEnhanced from '../models/ChatEnhanced.js';
-import Vector from '../models/Vector.js';
+import Message from '../models/Message.js';
+import UploadLog from '../models/UploadLog.js';
+import User from '../models/User.js';
 
-export const getDashboardStats = async (req, res, next) => {
+/**
+ * Get dashboard overview stats for the authenticated user
+ */
+export const getDashboardStats = async (req, res) => {
     try {
-        // Document.uploadedBy uses MongoDB ObjectId → use req.dbUser._id
-        const dbUserId = req.dbUser._id;
-        // ChatEnhanced.userId and Vector.userId use Clerk ID string → use req.user.id
-        const clerkUserId = req.user.id;
+        const userId = req.auth?.userId || req.userId || 'dev-user-001';
 
-        // Document stats (uses ObjectId)
-        const totalDocuments = await Document.countDocuments({ uploadedBy: dbUserId });
-        const completedDocuments = await Document.countDocuments({ uploadedBy: dbUserId, status: 'completed' });
-        const processingDocuments = await Document.countDocuments({ uploadedBy: dbUserId, status: 'processing' });
-        const failedDocuments = await Document.countDocuments({ uploadedBy: dbUserId, status: 'failed' });
+        // Conversation stats
+        const totalConversations = await Conversation.countDocuments({ userId, isArchived: false });
+        const activeConversations = await Conversation.countDocuments({
+            userId,
+            isArchived: false,
+            lastMessageAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) }
+        });
 
-        // Storage used (sum of all file sizes)
-        const storageAgg = await Document.aggregate([
-            { $match: { uploadedBy: dbUserId } },
-            { $group: { _id: null, totalSize: { $sum: '$fileSize' } } }
+        // Document stats
+        const totalDocuments = await Document.countDocuments({ uploadedBy: userId });
+        const completedDocuments = await Document.countDocuments({ uploadedBy: userId, status: 'completed' });
+        const processingDocuments = await Document.countDocuments({
+            uploadedBy: userId,
+            status: { $in: ['uploading', 'processing', 'chunking', 'embedding'] }
+        });
+        const failedDocuments = await Document.countDocuments({ uploadedBy: userId, status: 'failed' });
+
+        // Message stats
+        const totalMessages = await Message.countDocuments({ userId });
+        const userMessages = await Message.countDocuments({ userId, role: 'user' });
+        const assistantMessages = await Message.countDocuments({ userId, role: 'assistant' });
+
+        // Recent activity counts (last 30 days)
+        const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+        const recentConversations = await Conversation.countDocuments({
+            userId,
+            createdAt: { $gte: thirtyDaysAgo }
+        });
+        const recentMessages = await Message.countDocuments({
+            userId,
+            createdAt: { $gte: thirtyDaysAgo }
+        });
+        const recentDocuments = await Document.countDocuments({
+            uploadedBy: userId,
+            createdAt: { $gte: thirtyDaysAgo }
+        });
+
+        // Total chunks and embeddings
+        const docAggregation = await Document.aggregate([
+            { $match: { uploadedBy: userId } },
+            {
+                $group: {
+                    _id: null,
+                    totalChunks: { $sum: '$totalChunks' },
+                    totalEmbeddings: { $sum: '$totalEmbeddings' },
+                    totalPages: { $sum: '$totalPages' },
+                    totalSize: { $sum: '$fileSize' }
+                }
+            }
         ]);
-        const storageUsedBytes = storageAgg.length > 0 ? storageAgg[0].totalSize : 0;
-        const storageUsedGB = (storageUsedBytes / (1024 * 1024 * 1024)).toFixed(2);
-        const storageUsedMB = (storageUsedBytes / (1024 * 1024)).toFixed(1);
+        const docStats = docAggregation[0] || { totalChunks: 0, totalEmbeddings: 0, totalPages: 0, totalSize: 0 };
 
-        // Chat stats (uses Clerk ID string)
-        const totalChats = await ChatEnhanced.countDocuments({ userId: clerkUserId });
-        const chatAgg = await ChatEnhanced.aggregate([
-            { $match: { userId: clerkUserId } },
-            { $unwind: { path: '$messages', preserveNullAndEmptyArrays: false } },
-            { $match: { 'messages.role': 'user' } },
-            { $count: 'totalQueries' }
-        ]);
-        const totalQueries = chatAgg.length > 0 ? chatAgg[0].totalQueries : 0;
-
-        // Recent documents (uses ObjectId)
-        const recentDocuments = await Document.find({ uploadedBy: dbUserId })
-            .sort({ createdAt: -1 })
-            .limit(5)
-            .select('name originalName status fileSize createdAt');
-
-        // Recent chats (uses Clerk ID string)
-        const recentChats = await ChatEnhanced.find({ userId: clerkUserId })
-            .sort({ updatedAt: -1 })
-            .limit(5)
-            .select('title updatedAt messages');
-
-        // Vector/chunk stats (uses Clerk ID string)
-        const totalVectors = await Vector.countDocuments({ userId: clerkUserId });
-
-        // Activity feed (combined recent docs + chats)
-        const recentDocs = recentDocuments.map(doc => ({
-            type: 'upload',
-            title: doc.originalName || doc.name,
-            description: doc.status === 'completed' ? 'Document processed successfully' : `Document ${doc.status}`,
-            time: doc.createdAt,
-            status: doc.status,
-            icon: 'upload'
-        }));
-
-        const recentChatItems = recentChats.map(chat => ({
-            type: 'chat',
-            title: chat.title,
-            description: `${chat.messages?.length || 0} messages`,
-            time: chat.updatedAt,
-            status: 'active',
-            icon: 'chat'
-        }));
-
-        // Merge and sort by time
-        const activityFeed = [...recentDocs, ...recentChatItems]
-            .sort((a, b) => new Date(b.time) - new Date(a.time))
-            .slice(0, 8);
-
-        res.status(200).json({
+        res.json({
             success: true,
             data: {
+                conversations: {
+                    total: totalConversations,
+                    active: activeConversations,
+                    recent: recentConversations
+                },
                 documents: {
                     total: totalDocuments,
                     completed: completedDocuments,
                     processing: processingDocuments,
-                    failed: failedDocuments
+                    failed: failedDocuments,
+                    recent: recentDocuments,
+                    totalChunks: docStats.totalChunks,
+                    totalEmbeddings: docStats.totalEmbeddings,
+                    totalPages: docStats.totalPages,
+                    totalSize: docStats.totalSize
                 },
-                chats: {
-                    total: totalChats,
-                    totalQueries: totalQueries
-                },
-                storage: {
-                    usedBytes: storageUsedBytes,
-                    usedGB: parseFloat(storageUsedGB),
-                    usedMB: parseFloat(storageUsedMB),
-                    limitGB: 10
-                },
-                vectors: {
-                    total: totalVectors
-                },
-                recentDocuments: recentDocuments,
-                recentChats: recentChats,
-                activityFeed: activityFeed
+                messages: {
+                    total: totalMessages,
+                    user: userMessages,
+                    assistant: assistantMessages,
+                    recent: recentMessages
+                }
             }
         });
     } catch (error) {
-        next(error);
+        console.error('Dashboard stats error:', error);
+        res.status(500).json({ success: false, message: 'Failed to fetch dashboard stats' });
+    }
+};
+
+/**
+ * Get recent activity for the dashboard
+ */
+export const getRecentActivity = async (req, res) => {
+    try {
+        const userId = req.auth?.userId || req.userId || 'dev-user-001';
+        const limit = parseInt(req.query.limit) || 10;
+
+        // Recent conversations with last message info
+        const recentConversations = await Conversation.find({ userId, isArchived: false })
+            .sort({ updatedAt: -1 })
+            .limit(limit)
+            .lean();
+
+        // Recent documents
+        const recentDocuments = await Document.find({ uploadedBy: userId })
+            .sort({ createdAt: -1 })
+            .limit(limit)
+            .lean();
+
+        // Recent upload logs
+        const recentUploads = await UploadLog.find({ userId })
+            .sort({ createdAt: -1 })
+            .limit(limit)
+            .lean();
+
+        // Build activity timeline
+        const activities = [];
+
+        recentConversations.forEach(conv => {
+            activities.push({
+                type: 'conversation',
+                id: conv._id,
+                title: conv.title,
+                messageCount: conv.messageCount,
+                timestamp: conv.updatedAt || conv.createdAt,
+                status: 'active'
+            });
+        });
+
+        recentDocuments.forEach(doc => {
+            activities.push({
+                type: 'document',
+                id: doc._id,
+                title: doc.originalName,
+                status: doc.status,
+                size: doc.fileSize,
+                chunks: doc.totalChunks,
+                timestamp: doc.createdAt
+            });
+        });
+
+        // Sort by timestamp descending
+        activities.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+        res.json({
+            success: true,
+            data: {
+                conversations: recentConversations,
+                documents: recentDocuments,
+                uploads: recentUploads,
+                timeline: activities.slice(0, limit)
+            }
+        });
+    } catch (error) {
+        console.error('Recent activity error:', error);
+        res.status(500).json({ success: false, message: 'Failed to fetch recent activity' });
+    }
+};
+
+/**
+ * Get documents overview with status breakdown
+ */
+export const getDocumentsOverview = async (req, res) => {
+    try {
+        const userId = req.auth?.userId || req.userId || 'dev-user-001';
+
+        const statusBreakdown = await Document.aggregate([
+            { $match: { uploadedBy: userId } },
+            {
+                $group: {
+                    _id: '$status',
+                    count: { $sum: 1 },
+                    totalSize: { $sum: '$fileSize' },
+                    totalChunks: { $sum: '$totalChunks' },
+                    totalPages: { $sum: '$totalPages' }
+                }
+            }
+        ]);
+
+        const documents = await Document.find({ uploadedBy: userId })
+            .sort({ createdAt: -1 })
+            .limit(20)
+            .select('originalName status fileSize totalChunks totalPages createdAt')
+            .lean();
+
+        // Format status breakdown
+        const statusMap = {};
+        statusBreakdown.forEach(item => {
+            statusMap[item._id] = {
+                count: item.count,
+                totalSize: item.totalSize,
+                totalChunks: item.totalChunks,
+                totalPages: item.totalPages
+            };
+        });
+
+        res.json({
+            success: true,
+            data: {
+                statusBreakdown: statusMap,
+                documents
+            }
+        });
+    } catch (error) {
+        console.error('Documents overview error:', error);
+        res.status(500).json({ success: false, message: 'Failed to fetch documents overview' });
     }
 };

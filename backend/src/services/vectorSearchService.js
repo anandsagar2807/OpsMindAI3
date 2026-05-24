@@ -1,7 +1,6 @@
-import Vector from '../models/Vector.js';
+import SOPChunk from '../models/SOPChunk.js';
 import Document from '../models/Document.js';
-import simpleEmbeddingService from './simpleEmbeddingService.js';
-import contextOptimizer from './contextOptimizer.js';
+import embeddingService from './embeddingService.js';
 
 const SIMILARITY_THRESHOLD = 0.3;
 const TOP_K_RESULTS = 5;
@@ -9,9 +8,12 @@ const TOP_K_RESULTS = 5;
 class VectorSearchService {
   async searchSimilarChunks(queryEmbedding, userId, topK = TOP_K_RESULTS) {
     try {
-      const results = await Vector.aggregate([
+      const results = await SOPChunk.aggregate([
         {
-          $match: { userId: userId }
+          $match: {
+            userId: userId,
+            embedding: { $ne: null }
+          }
         },
         {
           $addFields: {
@@ -34,9 +36,53 @@ class VectorSearchService {
                         ]
                       }
                     }
+                  },
+                  normA: {
+                    $sqrt: {
+                      $reduce: {
+                        input: { $range: [0, { $size: '$embedding' }] },
+                        initialValue: 0,
+                        in: {
+                          $add: [
+                            '$$value',
+                            {
+                              $multiply: [
+                                { $arrayElemAt: ['$embedding', '$$this'] },
+                                { $arrayElemAt: ['$embedding', '$$this'] }
+                              ]
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  normB: {
+                    $sqrt: {
+                      $reduce: {
+                        input: { $range: [0, { $size: { $literal: queryEmbedding } }] },
+                        initialValue: 0,
+                        in: {
+                          $add: [
+                            '$$value',
+                            {
+                              $multiply: [
+                                { $arrayElemAt: [{ $literal: queryEmbedding }, '$$this'] },
+                                { $arrayElemAt: [{ $literal: queryEmbedding }, '$$this'] }
+                              ]
+                            }
+                          ]
+                        }
+                      }
+                    }
                   }
                 },
-                in: '$$dotProduct'
+                in: {
+                  $cond: {
+                    if: { $gt: [{ $multiply: ['$$normA', '$$normB'] }, 0] },
+                    then: { $divide: ['$$dotProduct', { $multiply: ['$$normA', '$$normB'] }] },
+                    else: 0
+                  }
+                }
               }
             }
           }
@@ -58,8 +104,11 @@ class VectorSearchService {
             text: 1,
             pageNumber: 1,
             chunkIndex: 1,
+            sectionTitle: 1,
             similarity: 1,
-            metadata: 1
+            metadata: 1,
+            startPosition: 1,
+            endPosition: 1
           }
         }
       ]);
@@ -67,116 +116,83 @@ class VectorSearchService {
       return results;
     } catch (error) {
       console.error('Vector search error:', error);
-      throw new Error('Failed to perform vector search');
+      throw new Error('Failed to perform vector search: ' + error.message);
     }
   }
 
   async search(query, userId, options = {}) {
+    const startTime = Date.now();
+
     try {
-      const {
-        topK = TOP_K_RESULTS,
-        minSimilarity = SIMILARITY_THRESHOLD,
-        includeContext = true
-      } = options;
+      const { topK = TOP_K_RESULTS, minSimilarity = SIMILARITY_THRESHOLD } = options;
 
-      const queryEmbedding = await simpleEmbeddingService.generateEmbedding(query);
-
+      const queryEmbedding = await embeddingService.generateEmbedding(query);
       const chunks = await this.searchSimilarChunks(queryEmbedding, userId, topK);
 
+      const retrievalTimeMs = Date.now() - startTime;
+
       if (chunks.length === 0) {
-        const userDocCount = await Document.countDocuments({ uploadedBy: userId });
+        const userDocCount = await Document.countDocuments({
+          uploadedBy: userId,
+          status: 'completed'
+        });
 
         return {
           success: false,
           message: userDocCount === 0
-            ? "No documents found in your knowledge base. Please upload documents first."
-            : "No relevant information found. Try rephrasing your question or upload more documents.",
+            ? "No documents found in your knowledge base. Please upload SOP documents first."
+            : "No relevant information found in your uploaded SOP documents. Try rephrasing your question or upload more documents.",
           results: [],
           context: null,
           metadata: {
             totalChunks: 0,
             documentsSearched: userDocCount,
-            queryTokens: contextOptimizer.estimateTokens(query)
+            retrievalTimeMs,
+            queryTokens: Math.ceil(query.length / 4)
           }
         };
       }
 
-      const belowThreshold = chunks.filter(c => c.similarity < minSimilarity);
-      if (belowThreshold.length === chunks.length) {
-        return {
-          success: false,
-          message: "No relevant policy found. The similarity scores are too low to provide a confident answer.",
-          results: chunks.map(chunk => ({
-            text: chunk.text,
-            score: chunk.similarity,
-            pageNumber: chunk.pageNumber,
-            documentId: chunk.documentId,
-            chunkIndex: chunk.chunkIndex,
-            belowThreshold: true
-          })),
-          context: null,
-          metadata: {
-            totalChunks: chunks.length,
-            maxSimilarity: Math.max(...chunks.map(c => c.similarity)),
-            threshold: minSimilarity
-          }
-        };
-      }
+      // Build context from retrieved chunks
+      const context = chunks.map(chunk => ({
+        text: chunk.text,
+        source: chunk.metadata?.documentName || 'Unknown Document',
+        pageNumber: chunk.pageNumber,
+        sectionTitle: chunk.sectionTitle,
+        similarity: chunk.similarity,
+        chunkIndex: chunk.chunkIndex
+      }));
 
+      // Enrich with document names
       const documentIds = [...new Set(chunks.map(c => c.documentId))];
       const documents = await Document.find({ _id: { $in: documentIds } });
 
-      const results = chunks.map(chunk => {
+      const enrichedResults = chunks.map(chunk => {
         const doc = documents.find(d => d._id.toString() === chunk.documentId.toString());
         return {
-          text: chunk.text,
-          score: chunk.similarity,
-          pageNumber: chunk.pageNumber,
-          documentName: doc?.filename || 'Unknown',
-          documentId: chunk.documentId,
-          chunkIndex: chunk.chunkIndex,
-          metadata: chunk.metadata
+          ...chunk,
+          documentName: doc?.originalName || doc?.name || chunk.metadata?.documentName || 'Unknown',
+          documentId: chunk.documentId
         };
       });
 
-      let contextWindow = null;
-      if (includeContext) {
-        contextWindow = contextOptimizer.buildContextWindow(chunks, documents);
-      }
-
       return {
         success: true,
-        message: `Found ${results.length} relevant chunks from ${documentIds.length} documents`,
-        results,
-        context: contextWindow,
+        results: enrichedResults,
+        context,
         metadata: {
           totalChunks: chunks.length,
-          documentsSearched: documentIds.length,
-          avgSimilarity: chunks.reduce((sum, c) => sum + c.similarity, 0) / chunks.length,
-          maxSimilarity: Math.max(...chunks.map(c => c.similarity)),
-          minSimilarity: Math.min(...chunks.map(c => c.similarity))
+          documentsSearched: documents.length,
+          retrievalTimeMs,
+          queryTokens: Math.ceil(query.length / 4),
+          topSimilarity: chunks[0]?.similarity || 0,
+          avgSimilarity: chunks.reduce((sum, c) => sum + c.similarity, 0) / chunks.length
         }
       };
-
     } catch (error) {
-      console.error('Search service error:', error);
-      throw new Error(`Search failed: ${error.message}`);
+      console.error('Search error:', error);
+      throw error;
     }
-  }
-
-  async searchWithLLMContext(query, userId) {
-    const searchResult = await this.search(query, userId, { includeContext: true });
-
-    if (!searchResult.success || !searchResult.context) {
-      return searchResult;
-    }
-
-    const llmPrompt = contextOptimizer.formatForLLM(searchResult.context, query);
-
-    return {
-      ...searchResult,
-      llmPrompt
-    };
   }
 }
 

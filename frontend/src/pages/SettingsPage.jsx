@@ -1,477 +1,385 @@
-import { Card, Button } from '../components/ui'
-import DashboardLayout from '../layouts/DashboardLayout'
+import { useState } from 'react';
+import { motion } from 'framer-motion';
 import {
-  User,
-  Bell,
-  Lock,
-  CreditCard,
-  Palette,
-  Globe,
-  Shield,
-  Key,
-  Users,
-  Zap,
-  Moon,
-  Sun,
-  Monitor,
-  Check,
-  Crown,
-  Settings as SettingsIcon,
-  Loader
-} from 'lucide-react'
-import { useUser } from '@clerk/react'
-import { useNavigate } from 'react-router-dom'
-import toast from 'react-hot-toast'
-import { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
-import { dashboardAPI } from '../services/api'
+    Settings,
+    User,
+    Shield,
+    Bell,
+    Palette,
+    Key,
+    Globe,
+    Save,
+    Loader2,
+    CheckCircle2,
+    Sparkles,
+    ChevronRight,
+    Lock,
+    RefreshCw
+} from 'lucide-react';
+import { useAuth, useUser } from '../hooks/useAuthContext';
+import toast from 'react-hot-toast';
 
-const SettingsPage = () => {
-  const { user } = useUser()
-  const navigate = useNavigate()
-  const [theme, setTheme] = useState('dark')
-  const [notifications, setNotifications] = useState({
-    email: true,
-    push: true,
-    updates: false
-  })
-  const [language, setLanguage] = useState('en')
-  const [usageData, setUsageData] = useState(null)
-  const [loadingUsage, setLoadingUsage] = useState(true)
+const fadeInUp = {
+    initial: { opacity: 0, y: 16 },
+    animate: { opacity: 1, y: 0 },
+    transition: { duration: 0.4, ease: [0.4, 0, 0.2, 1] }
+};
 
-  useEffect(() => {
-    loadUsageData()
-  }, [])
+const tabs = [
+    { id: 'profile', label: 'Profile', icon: User },
+    { id: 'security', label: 'Security', icon: Shield },
+    { id: 'notifications', label: 'Notifications', icon: Bell },
+    { id: 'appearance', label: 'Appearance', icon: Palette },
+    { id: 'api', label: 'API Keys', icon: Key },
+];
 
-  const loadUsageData = async () => {
-    try {
-      setLoadingUsage(true)
-      const token = await user?.getToken()
-      const response = await dashboardAPI.getStats(token)
-      setUsageData(response.data.data)
-    } catch (error) {
-      console.error('Failed to load usage data:', error)
-    } finally {
-      setLoadingUsage(false)
-    }
-  }
+export default function SettingsPage() {
+    const [activeTab, setActiveTab] = useState('profile');
+    const [saving, setSaving] = useState(false);
+    const { user, isSignedIn } = useAuth();
 
-  const handleProfileSettings = () => {
-    window.open('https://accounts.clerk.dev/user', '_blank')
-  }
+    const userName = user?.fullName || user?.username || 'User';
+    const userEmail = user?.primaryEmailAddress?.emailAddress || user?.email || 'user@opsmind.ai';
+    const userInitials = userName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 
-  const handleNotifications = () => {
-    toast.success('Notification settings updated!')
-  }
+    const handleSave = async () => {
+        setSaving(true);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        setSaving(false);
+        toast.success('Settings saved successfully');
+    };
 
-  const handleSecurity = () => {
-    toast.info('Security settings - Coming soon!')
-  }
-
-  const handleBilling = () => {
-    navigate('/#pricing')
-  }
-
-  const handleThemeChange = (newTheme) => {
-    setTheme(newTheme)
-    toast.success(`Theme changed to ${newTheme}`)
-  }
-
-  const handleLanguageChange = (lang) => {
-    setLanguage(lang)
-    toast.success('Language updated!')
-  }
-
-  const themes = [
-    { id: 'dark', name: 'Dark', icon: Moon, color: 'from-slate-700 to-slate-900' },
-    { id: 'light', name: 'Light', icon: Sun, color: 'from-blue-100 to-purple-100' },
-    { id: 'auto', name: 'Auto', icon: Monitor, color: 'from-gray-400 to-gray-600' }
-  ]
-
-  const languages = [
-    { code: 'en', name: 'English', flag: '🇺🇸' },
-    { code: 'es', name: 'Español', flag: '🇪🇸' },
-    { code: 'fr', name: 'Français', flag: '🇫🇷' },
-    { code: 'de', name: 'Deutsch', flag: '🇩🇪' }
-  ]
-
-  const docCount = usageData?.documents?.total || 0
-  const queryCount = usageData?.chats?.totalQueries || 0
-  const storageUsedGB = usageData?.storage?.usedGB || 0
-  const storageLimitGB = usageData?.storage?.limitGB || 10
-
-  return (
-    <DashboardLayout>
-      <div className="max-w-6xl mx-auto space-y-8">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-white mb-2 flex items-center gap-3">
-              <SettingsIcon className="w-8 h-8 text-primary-400" />
-              Settings
-            </h1>
-            <p className="text-dark-400">Manage your account and preferences</p>
-          </div>
-        </div>
-
-        {/* Account Section */}
-        <div>
-          <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-            <User className="w-5 h-5 text-primary-400" />
-            Account
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-            >
-              <Card glass className="cursor-pointer hover:scale-105 transition-transform" onClick={handleProfileSettings}>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="w-10 h-10 rounded-lg bg-primary-500/20 flex items-center justify-center">
-                        <User className="w-5 h-5 text-primary-400" />
-                      </div>
-                      <h3 className="text-lg font-bold text-white">Profile Settings</h3>
+    return (
+        <div className="max-w-[960px] mx-auto space-y-5">
+            {/* Header */}
+            <motion.div {...fadeInUp}>
+                <h1 className="text-[24px] font-bold text-white tracking-[-0.02em] flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-violet-500/[0.10] border border-violet-500/[0.15] flex items-center justify-center">
+                        <Settings className="w-5 h-5 text-violet-400" />
                     </div>
-                    <p className="text-dark-400 text-sm">Manage your profile through Clerk</p>
-                    <p className="text-xs text-primary-400 mt-2">{user?.primaryEmailAddress?.emailAddress || ''}</p>
-                  </div>
-                  <Button variant="secondary" size="sm">Manage</Button>
-                </div>
-              </Card>
+                    Settings
+                </h1>
+                <p className="text-[13px] text-gray-400/70 mt-1.5 ml-[46px]">Manage your account and preferences</p>
             </motion.div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-            >
-              <Card glass className="cursor-pointer hover:scale-105 transition-transform" onClick={handleSecurity}>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center">
-                        <Lock className="w-5 h-5 text-green-400" />
-                      </div>
-                      <h3 className="text-lg font-bold text-white">Security</h3>
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-5">
+                {/* Sidebar tabs */}
+                <motion.div
+                    initial={{ opacity: 0, x: -12 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.08, duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+                    className="lg:col-span-1"
+                >
+                    <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-1.5 space-y-1">
+                        {tabs.map((tab) => (
+                            <button
+                                key={tab.id}
+                                onClick={() => setActiveTab(tab.id)}
+                                className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg w-full text-left transition-all duration-200
+                                    ${activeTab === tab.id
+                                        ? 'bg-gradient-to-r from-violet-500/[0.12] to-transparent text-white border border-violet-500/[0.20]'
+                                        : 'text-gray-400 hover:text-white hover:bg-white/[0.04] border border-transparent'
+                                    }`}
+                            >
+                                <tab.icon className={`w-4 h-4 ${activeTab === tab.id ? 'text-violet-400' : 'text-gray-500/70'}`} />
+                                <span className="text-[13px] font-medium">{tab.label}</span>
+                                <ChevronRight className={`w-3.5 h-3.5 ml-auto transition-opacity duration-200 ${activeTab === tab.id ? 'opacity-100 text-violet-400/60' : 'opacity-0'}`} />
+                            </button>
+                        ))}
                     </div>
-                    <p className="text-dark-400 text-sm">Manage security settings</p>
-                    <p className="text-xs text-green-400 mt-2">Secured by Clerk</p>
-                  </div>
-                  <Button variant="secondary" size="sm">Manage</Button>
-                </div>
-              </Card>
-            </motion.div>
-          </div>
-        </div>
+                </motion.div>
 
-        {/* Appearance Section */}
-        <div>
-          <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-            <Palette className="w-5 h-5 text-primary-400" />
-            Appearance
-          </h2>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-          >
-            <Card glass>
-              <h3 className="text-lg font-bold text-white mb-4">Theme</h3>
-              <div className="grid grid-cols-3 gap-4">
-                {themes.map((themeOption) => {
-                  const Icon = themeOption.icon
-                  return (
-                    <button
-                      key={themeOption.id}
-                      onClick={() => handleThemeChange(themeOption.id)}
-                      className={`p-4 rounded-xl border-2 transition-all ${theme === themeOption.id
-                        ? 'border-primary-500 bg-primary-500/10'
-                        : 'border-white/10 bg-white/5 hover:bg-white/10'
-                        }`}
-                    >
-                      <div className={`w-full h-20 rounded-lg bg-gradient-to-br ${themeOption.color} mb-3 flex items-center justify-center`}>
-                        <Icon className="w-8 h-8 text-white" />
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-white font-medium">{themeOption.name}</span>
-                        {theme === themeOption.id && (
-                          <Check className="w-5 h-5 text-primary-400" />
+                {/* Content area */}
+                <motion.div
+                    initial={{ opacity: 0, x: 12 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.16, duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+                    className="lg:col-span-3"
+                >
+                    <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-5">
+                        {activeTab === 'profile' && (
+                            <div className="space-y-5">
+                                <div>
+                                    <h2 className="text-[16px] font-semibold text-white/90 mb-4">Profile Information</h2>
+                                    <div className="space-y-4">
+                                        {/* Avatar */}
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center text-white font-bold text-[16px] shadow-md shadow-violet-500/20">
+                                                {userInitials}
+                                            </div>
+                                            <div>
+                                                <p className="text-[14px] font-semibold text-white/90">{userName}</p>
+                                                <p className="text-[12px] text-gray-400/70">{userEmail}</p>
+                                            </div>
+                                        </div>
+
+                                        {/* Name fields */}
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div>
+                                                <label className="text-[12px] font-medium text-gray-300/70 mb-1.5 block">First Name</label>
+                                                <input
+                                                    type="text"
+                                                    defaultValue={userName.split(' ')[0]}
+                                                    className="w-full h-9 px-3 rounded-lg bg-white/[0.03] border border-white/[0.06]
+                                                        text-white/90 text-[13px] focus:outline-none focus:border-violet-500/[0.30] focus:ring-2 focus:ring-violet-500/[0.10] transition-all duration-200"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="text-[12px] font-medium text-gray-300/70 mb-1.5 block">Last Name</label>
+                                                <input
+                                                    type="text"
+                                                    defaultValue={userName.split(' ').slice(1).join(' ') || ''}
+                                                    className="w-full h-9 px-3 rounded-lg bg-white/[0.03] border border-white/[0.06]
+                                                        text-white/90 text-[13px] focus:outline-none focus:border-violet-500/[0.30] focus:ring-2 focus:ring-violet-500/[0.10] transition-all duration-200"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* Email */}
+                                        <div>
+                                            <label className="text-[12px] font-medium text-gray-300/70 mb-1.5 block">Email Address</label>
+                                            <input
+                                                type="email"
+                                                defaultValue={userEmail}
+                                                className="w-full h-9 px-3 rounded-lg bg-white/[0.03] border border-white/[0.06]
+                                                    text-white/90 text-[13px] focus:outline-none focus:border-violet-500/[0.30] focus:ring-2 focus:ring-violet-500/[0.10] transition-all duration-200"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="flex justify-end">
+                                    <motion.button
+                                        whileHover={{ scale: 1.02 }}
+                                        whileTap={{ scale: 0.98 }}
+                                        onClick={handleSave}
+                                        disabled={saving}
+                                        className="h-9 px-4 rounded-lg bg-gradient-to-r from-violet-500 to-indigo-600 text-white font-semibold text-[13px] shadow-md shadow-violet-500/20 flex items-center gap-1.5 disabled:opacity-50"
+                                    >
+                                        {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                                        Save Changes
+                                    </motion.button>
+                                </div>
+                            </div>
                         )}
-                      </div>
-                    </button>
-                  )
-                })}
-              </div>
-            </Card>
-          </motion.div>
-        </div>
 
-        {/* Preferences Section */}
-        <div>
-          <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-            <Globe className="w-5 h-5 text-primary-400" />
-            Preferences
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-            >
-              <Card glass>
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
-                    <Globe className="w-5 h-5 text-blue-400" />
-                  </div>
-                  <h3 className="text-lg font-bold text-white">Language</h3>
-                </div>
-                <div className="space-y-2">
-                  {languages.map((lang) => (
-                    <button
-                      key={lang.code}
-                      onClick={() => handleLanguageChange(lang.code)}
-                      className={`w-full p-3 rounded-lg border transition-all flex items-center justify-between ${language === lang.code
-                        ? 'border-primary-500 bg-primary-500/10'
-                        : 'border-white/10 bg-white/5 hover:bg-white/10'
-                        }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className="text-2xl">{lang.flag}</span>
-                        <span className="text-white font-medium">{lang.name}</span>
-                      </div>
-                      {language === lang.code && (
-                        <Check className="w-5 h-5 text-primary-400" />
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </Card>
-            </motion.div>
+                        {activeTab === 'security' && (
+                            <div className="space-y-5">
+                                <h2 className="text-[16px] font-semibold text-white/90 mb-4">Security Settings</h2>
+                                <div className="space-y-3">
+                                    <div className="p-3.5 rounded-lg bg-emerald-500/[0.06] border border-emerald-500/[0.12]">
+                                        <div className="flex items-center gap-2.5">
+                                            <CheckCircle2 className="w-4.5 h-4.5 text-emerald-400" />
+                                            <div>
+                                                <p className="text-[13px] font-medium text-white/90">Two-Factor Authentication</p>
+                                                <p className="text-[11px] text-gray-400/70 mt-0.5">Your account is protected with 2FA</p>
+                                            </div>
+                                        </div>
+                                    </div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 }}
-            >
-              <Card glass>
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center">
-                    <Bell className="w-5 h-5 text-purple-400" />
-                  </div>
-                  <h3 className="text-lg font-bold text-white">Notifications</h3>
-                </div>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
-                    <div>
-                      <p className="text-white font-medium text-sm">Email Notifications</p>
-                      <p className="text-dark-400 text-xs">Receive updates via email</p>
-                    </div>
-                    <button
-                      onClick={() => setNotifications({ ...notifications, email: !notifications.email })}
-                      className={`w-12 h-6 rounded-full transition-colors ${notifications.email ? 'bg-primary-500' : 'bg-dark-700'
-                        }`}
-                    >
-                      <div className={`w-5 h-5 bg-white rounded-full transition-transform ${notifications.email ? 'translate-x-6' : 'translate-x-0.5'
-                        }`} />
-                    </button>
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
-                    <div>
-                      <p className="text-white font-medium text-sm">Push Notifications</p>
-                      <p className="text-dark-400 text-xs">Browser notifications</p>
-                    </div>
-                    <button
-                      onClick={() => setNotifications({ ...notifications, push: !notifications.push })}
-                      className={`w-12 h-6 rounded-full transition-colors ${notifications.push ? 'bg-primary-500' : 'bg-dark-700'
-                        }`}
-                    >
-                      <div className={`w-5 h-5 bg-white rounded-full transition-transform ${notifications.push ? 'translate-x-6' : 'translate-x-0.5'
-                        }`} />
-                    </button>
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
-                    <div>
-                      <p className="text-white font-medium text-sm">Product Updates</p>
-                      <p className="text-dark-400 text-xs">New features & updates</p>
-                    </div>
-                    <button
-                      onClick={() => setNotifications({ ...notifications, updates: !notifications.updates })}
-                      className={`w-12 h-6 rounded-full transition-colors ${notifications.updates ? 'bg-primary-500' : 'bg-dark-700'
-                        }`}
-                    >
-                      <div className={`w-5 h-5 bg-white rounded-full transition-transform ${notifications.updates ? 'translate-x-6' : 'translate-x-0.5'
-                        }`} />
-                    </button>
-                  </div>
-                </div>
-              </Card>
-            </motion.div>
-          </div>
-        </div>
+                                    <div>
+                                        <label className="text-[12px] font-medium text-gray-300/70 mb-1.5 block">Current Password</label>
+                                        <input
+                                            type="password"
+                                            placeholder="Enter current password"
+                                            className="w-full h-9 px-3 rounded-lg bg-white/[0.03] border border-white/[0.06]
+                                                text-white/90 placeholder-gray-500/50 text-[13px] focus:outline-none focus:border-violet-500/[0.30] focus:ring-2 focus:ring-violet-500/[0.10] transition-all duration-200"
+                                        />
+                                    </div>
 
-        {/* Usage Section - Dynamic */}
-        <div>
-          <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-            <Zap className="w-5 h-5 text-primary-400" />
-            Usage & Resources
-          </h2>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6 }}
-          >
-            <Card glass>
-              {loadingUsage ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader className="w-6 h-6 text-primary-400 animate-spin" />
-                  <span className="ml-3 text-slate-400">Loading usage data...</span>
-                </div>
-              ) : (
-                <div className="space-y-6">
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm text-slate-400">Storage Used</span>
-                      <span className="text-sm font-medium text-white">{storageUsedGB.toFixed(1)} GB / {storageLimitGB} GB</span>
-                    </div>
-                    <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
-                      <div className="h-full bg-gradient-to-r from-indigo-600 to-purple-600 rounded-full" style={{ width: `${Math.min((storageUsedGB / storageLimitGB) * 100, 100)}%` }} />
-                    </div>
-                  </div>
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm text-slate-400">API Queries</span>
-                      <span className="text-sm font-medium text-white">{queryCount} / 5,000</span>
-                    </div>
-                    <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
-                      <div className="h-full bg-gradient-to-r from-purple-500 to-pink-600 rounded-full" style={{ width: `${Math.min((queryCount / 5000) * 100, 100)}%` }} />
-                    </div>
-                  </div>
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm text-slate-400">Documents</span>
-                      <span className="text-sm font-medium text-white">{docCount} / 100</span>
-                    </div>
-                    <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
-                      <div className="h-full bg-gradient-to-r from-green-500 to-emerald-600 rounded-full" style={{ width: `${Math.min((docCount / 100) * 100, 100)}%` }} />
-                    </div>
-                  </div>
-                </div>
-              )}
-            </Card>
-          </motion.div>
-        </div>
+                                    <div>
+                                        <label className="text-[12px] font-medium text-gray-300/70 mb-1.5 block">New Password</label>
+                                        <input
+                                            type="password"
+                                            placeholder="Enter new password"
+                                            className="w-full h-9 px-3 rounded-lg bg-white/[0.03] border border-white/[0.06]
+                                                text-white/90 placeholder-gray-500/50 text-[13px] focus:outline-none focus:border-violet-500/[0.30] focus:ring-2 focus:ring-violet-500/[0.10] transition-all duration-200"
+                                        />
+                                    </div>
 
-        {/* Advanced Section */}
-        <div>
-          <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-            <Shield className="w-5 h-5 text-primary-400" />
-            Advanced
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.7 }}
-            >
-              <Card glass className="cursor-pointer hover:scale-105 transition-transform">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="w-10 h-10 rounded-lg bg-yellow-500/20 flex items-center justify-center">
-                        <Key className="w-5 h-5 text-yellow-400" />
-                      </div>
-                      <h3 className="text-lg font-bold text-white">API Keys</h3>
-                    </div>
-                    <p className="text-dark-400 text-sm">Manage your API keys</p>
-                    <p className="text-xs text-yellow-400 mt-2">API key configured in backend</p>
-                  </div>
-                  <Button variant="secondary" size="sm">Manage</Button>
-                </div>
-              </Card>
-            </motion.div>
+                                    <div>
+                                        <label className="text-[12px] font-medium text-gray-300/70 mb-1.5 block">Confirm New Password</label>
+                                        <input
+                                            type="password"
+                                            placeholder="Confirm new password"
+                                            className="w-full h-9 px-3 rounded-lg bg-white/[0.03] border border-white/[0.06]
+                                                text-white/90 placeholder-gray-500/50 text-[13px] focus:outline-none focus:border-violet-500/[0.30] focus:ring-2 focus:ring-violet-500/[0.10] transition-all duration-200"
+                                        />
+                                    </div>
+                                </div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.8 }}
-            >
-              <Card glass className="cursor-pointer hover:scale-105 transition-transform">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="w-10 h-10 rounded-lg bg-pink-500/20 flex items-center justify-center">
-                        <Users className="w-5 h-5 text-pink-400" />
-                      </div>
-                      <h3 className="text-lg font-bold text-white">Team</h3>
-                    </div>
-                    <p className="text-dark-400 text-sm">Manage team members</p>
-                    <p className="text-xs text-pink-400 mt-2">Personal account</p>
-                  </div>
-                  <Button variant="secondary" size="sm">Manage</Button>
-                </div>
-              </Card>
-            </motion.div>
-          </div>
-        </div>
+                                <div className="flex justify-end">
+                                    <motion.button
+                                        whileHover={{ scale: 1.02 }}
+                                        whileTap={{ scale: 0.98 }}
+                                        onClick={handleSave}
+                                        disabled={saving}
+                                        className="h-9 px-4 rounded-lg bg-gradient-to-r from-violet-500 to-indigo-600 text-white font-semibold text-[13px] shadow-md shadow-violet-500/20 flex items-center gap-1.5 disabled:opacity-50"
+                                    >
+                                        {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                                        Update Password
+                                    </motion.button>
+                                </div>
+                            </div>
+                        )}
 
-        {/* Billing Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.9 }}
-        >
-          <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-            <CreditCard className="w-5 h-5 text-primary-400" />
-            Billing & Subscription
-          </h2>
-          <Card glass className="bg-gradient-to-br from-primary-500/10 to-purple-500/10 border-primary-500/30">
-            <div className="flex items-start justify-between">
-              <div>
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-yellow-500 to-orange-500 flex items-center justify-center shadow-lg">
-                    <Crown className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-white">Current Plan</h3>
-                    <p className="text-dark-400 text-sm">Usage-based billing</p>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4 mt-4">
-                  <div className="p-3 bg-white/5 rounded-lg">
-                    <p className="text-xs text-dark-400 mb-1">Storage</p>
-                    <p className="text-white font-bold">{storageUsedGB.toFixed(1)} GB used</p>
-                  </div>
-                  <div className="p-3 bg-white/5 rounded-lg">
-                    <p className="text-xs text-dark-400 mb-1">API Calls</p>
-                    <p className="text-white font-bold">{queryCount} used</p>
-                  </div>
-                  <div className="p-3 bg-white/5 rounded-lg">
-                    <p className="text-xs text-dark-400 mb-1">Documents</p>
-                    <p className="text-white font-bold">{docCount} uploaded</p>
-                  </div>
-                  <div className="p-3 bg-white/5 rounded-lg">
-                    <p className="text-xs text-dark-400 mb-1">Support</p>
-                    <p className="text-white font-bold">Priority</p>
-                  </div>
-                </div>
-              </div>
-              <div className="flex flex-col gap-2">
-                <Button variant="primary" onClick={handleBilling}>
-                  Upgrade Plan
-                </Button>
-                <Button variant="secondary" size="sm">
-                  Manage Billing
-                </Button>
-              </div>
+                        {activeTab === 'notifications' && (
+                            <div className="space-y-5">
+                                <h2 className="text-[16px] font-semibold text-white/90 mb-4">Notification Preferences</h2>
+                                <div className="space-y-2.5">
+                                    {[
+                                        { label: 'Document processing completed', desc: 'Get notified when a document finishes processing', enabled: true },
+                                        { label: 'Document processing failed', desc: 'Get notified when a document fails to process', enabled: true },
+                                        { label: 'New conversation replies', desc: 'Get notified about AI responses in your conversations', enabled: false },
+                                        { label: 'Weekly activity summary', desc: 'Receive a weekly digest of your activity', enabled: false },
+                                        { label: 'System updates', desc: 'Get notified about platform updates and new features', enabled: true },
+                                    ].map((notification, i) => (
+                                        <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-white/[0.02] border border-white/[0.04]">
+                                            <div>
+                                                <p className="text-[13px] font-medium text-white/90">{notification.label}</p>
+                                                <p className="text-[11px] text-gray-400/70 mt-0.5">{notification.desc}</p>
+                                            </div>
+                                            <ToggleSwitch defaultEnabled={notification.enabled} />
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'appearance' && (
+                            <div className="space-y-5">
+                                <h2 className="text-[16px] font-semibold text-white/90 mb-4">Appearance</h2>
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="text-[12px] font-medium text-gray-300/70 mb-2.5 block uppercase tracking-[0.04em]">Theme</label>
+                                        <div className="grid grid-cols-3 gap-2.5">
+                                            {[
+                                                { label: 'Dark', desc: 'Default theme', active: true, gradient: 'from-[#06080d] to-[#080c14]' },
+                                                { label: 'Midnight', desc: 'Deep blue theme', active: false, gradient: 'from-[#0a1628] to-[#0d1f3c]' },
+                                                { label: 'Light', desc: 'Clean theme', active: false, gradient: 'from-gray-100 to-gray-50' },
+                                            ].map((theme, i) => (
+                                                <button
+                                                    key={i}
+                                                    className={`p-3 rounded-lg border transition-all duration-200 text-left
+                                                        ${theme.active
+                                                            ? 'bg-violet-500/[0.08] border-violet-500/[0.20]'
+                                                            : 'bg-white/[0.02] border-white/[0.06] hover:border-white/[0.10]'
+                                                        }`}
+                                                >
+                                                    <div className={`w-full h-6 rounded bg-gradient-to-r ${theme.gradient} mb-2`} />
+                                                    <p className="text-[13px] font-medium text-white/90">{theme.label}</p>
+                                                    <p className="text-[11px] text-gray-400/70">{theme.desc}</p>
+                                                    {theme.active && <CheckCircle2 className="w-3.5 h-3.5 text-violet-400 mt-1" />}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="text-[12px] font-medium text-gray-300/70 mb-2.5 block uppercase tracking-[0.04em]">Accent Color</label>
+                                        <div className="flex items-center gap-2">
+                                            {['violet', 'indigo', 'blue', 'emerald', 'amber', 'rose'].map((color, i) => (
+                                                <button
+                                                    key={i}
+                                                    className={`w-7 h-7 rounded-full bg-${color}-500 ring-2 ${i === 0 ? 'ring-violet-400 ring-offset-2 ring-offset-[#06080d]' : 'ring-transparent'} hover:ring-white/30 hover:ring-offset-2 hover:ring-offset-[#06080d] transition-all duration-200`}
+                                                />
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'api' && (
+                            <div className="space-y-5">
+                                <h2 className="text-[16px] font-semibold text-white/90 mb-4">API Keys</h2>
+                                <div className="p-3.5 rounded-lg bg-amber-500/[0.06] border border-amber-500/[0.12] mb-3">
+                                    <div className="flex items-center gap-2.5">
+                                        <Shield className="w-4.5 h-4.5 text-amber-400" />
+                                        <div>
+                                            <p className="text-[13px] font-medium text-white/90">API keys are sensitive</p>
+                                            <p className="text-[11px] text-gray-400/70 mt-0.5">Never share your API keys publicly</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-3">
+                                    <div>
+                                        <label className="text-[12px] font-medium text-gray-300/70 mb-1.5 block">Groq API Key</label>
+                                        <div className="flex items-center gap-2">
+                                            <input
+                                                type="password"
+                                                placeholder="gsk_..."
+                                                className="flex-1 h-9 px-3 rounded-lg bg-white/[0.03] border border-white/[0.06]
+                                                    text-white/90 placeholder-gray-500/50 text-[13px] focus:outline-none focus:border-violet-500/[0.30] focus:ring-2 focus:ring-violet-500/[0.10] transition-all duration-200"
+                                            />
+                                            <motion.button
+                                                whileHover={{ scale: 1.04 }}
+                                                whileTap={{ scale: 0.96 }}
+                                                className="w-9 h-9 rounded-lg bg-white/[0.03] border border-white/[0.06] text-gray-400/70 hover:text-white hover:border-white/[0.10] transition-all duration-200 flex items-center justify-center"
+                                            >
+                                                <Globe className="w-3.5 h-3.5" />
+                                            </motion.button>
+                                        </div>
+                                        <p className="text-[11px] text-gray-500/60 mt-1">Used for AI chat completions</p>
+                                    </div>
+
+                                    <div>
+                                        <label className="text-[12px] font-medium text-gray-300/70 mb-1.5 block">Gemini API Key</label>
+                                        <div className="flex items-center gap-2">
+                                            <input
+                                                type="password"
+                                                placeholder="AIza..."
+                                                className="flex-1 h-9 px-3 rounded-lg bg-white/[0.03] border border-white/[0.06]
+                                                    text-white/90 placeholder-gray-500/50 text-[13px] focus:outline-none focus:border-violet-500/[0.30] focus:ring-2 focus:ring-violet-500/[0.10] transition-all duration-200"
+                                            />
+                                            <motion.button
+                                                whileHover={{ scale: 1.04 }}
+                                                whileTap={{ scale: 0.96 }}
+                                                className="w-9 h-9 rounded-lg bg-white/[0.03] border border-white/[0.06] text-gray-400/70 hover:text-white hover:border-white/[0.10] transition-all duration-200 flex items-center justify-center"
+                                            >
+                                                <Globe className="w-3.5 h-3.5" />
+                                            </motion.button>
+                                        </div>
+                                        <p className="text-[11px] text-gray-500/60 mt-1">Used for text embeddings</p>
+                                    </div>
+                                </div>
+
+                                <div className="flex justify-end">
+                                    <motion.button
+                                        whileHover={{ scale: 1.02 }}
+                                        whileTap={{ scale: 0.98 }}
+                                        onClick={handleSave}
+                                        disabled={saving}
+                                        className="h-9 px-4 rounded-lg bg-gradient-to-r from-violet-500 to-indigo-600 text-white font-semibold text-[13px] shadow-md shadow-violet-500/20 flex items-center gap-1.5 disabled:opacity-50"
+                                    >
+                                        {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                                        Save Keys
+                                    </motion.button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </motion.div>
             </div>
-          </Card>
-        </motion.div>
-      </div>
-    </DashboardLayout>
-  )
+        </div>
+    );
 }
 
-export default SettingsPage
+function ToggleSwitch({ defaultEnabled = false }) {
+    const [enabled, setEnabled] = useState(defaultEnabled);
+
+    return (
+        <button
+            onClick={() => setEnabled(!enabled)}
+            className={`relative w-10 h-5.5 rounded-full transition-colors duration-200
+                ${enabled ? 'bg-violet-500' : 'bg-white/[0.06]'}`}
+        >
+            <motion.div
+                animate={{ x: enabled ? 18 : 2 }}
+                transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
+                className="absolute top-0.5 w-4.5 h-4.5 rounded-full bg-white shadow-sm"
+            />
+        </button>
+    );
+}

@@ -1,11 +1,10 @@
 import express from 'express';
-import { getDashboardStats } from '../controllers/dashboardController.js';
-import { protectWithClerk } from '../middleware/clerkAuth.js';
+import { getDashboardStats, getRecentActivity, getDocumentsOverview } from '../controllers/dashboardController.js';
 
 const router = express.Router();
 
-router.use(protectWithClerk);
-
 router.get('/stats', getDashboardStats);
+router.get('/recent-activity', getRecentActivity);
+router.get('/documents-overview', getDocumentsOverview);
 
 export default router;
