@@ -17,6 +17,7 @@ The system combines:
 
 # ⚙️ High-Level Architecture
 
+
 ```text
 User
   │
