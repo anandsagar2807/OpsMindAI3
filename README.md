@@ -7,7 +7,6 @@
 OpsMind AI is a context-aware corporate knowledge brain that helps employees find information from company documents instantly. Upload your SOPs, policies, and manuals - then ask questions in natural language.
 
 ### Key Features
-
 ✅ **RAG Pipeline** - Retrieval-Augmented Generation for accurate answers
 ✅ **Groq API** - Lightning-fast LLM inference with streaming
 ✅ **No Hallucinations** - Strict context-only responses
