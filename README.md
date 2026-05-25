@@ -1,35 +1,104 @@
-# OpsMind AI - Production RAG Chat System
+# OpsMind AI — Week 1 to Week 4
 
-> Enterprise-grade conversational AI agent with RAG, Groq API streaming, and strict no-hallucination policy
+> Enterprise-grade conversational AI agent with RAG, Groq API streaming, and strict no-hallucination policy.
 
-## 🎯 What is OpsMind AI?
+This README is organized as a **Week 1 → Week 4** development plan, followed by the full product documentation.
 
-OpsMind AI is a context-aware corporate knowledge brain that helps employees find information from company documents instantly. Upload your SOPs, policies, and manuals - then ask questions in natural language.
+---
+
+## 📅 Week 1 — Setup & Baseline Architecture
+
+### Goals
+- Initialize mono-repo structure (**frontend/** + **backend/**)
+- Configure local development environment
+- Create baseline RAG pipeline skeleton and API scaffolding
+
+### Deliverables
+- Project structure in place
+- Backend server running (Express)
+- Frontend running (React + Vite)
+- MongoDB connection configured
+- Environment variable templates ready (`.env.example`)
+
+---
+
+## 📅 Week 2 — Document Ingestion + Vector Store
+
+### Goals
+- Implement document upload (PDF)
+- Extract text and chunk documents
+- Store embeddings and chunks in MongoDB
+
+### Deliverables
+- Upload endpoint + UI
+- Chunking pipeline
+- Embedding generation + storage
+- Document listing + deletion
+
+---
+
+## 📅 Week 3 — Chat (RAG) + Streaming + Citations
+
+### Goals
+- Build RAG query pipeline
+- Add Groq LLM inference with streaming (SSE)
+- Enforce strict no-hallucination guardrails
+- Add source citations in responses
+
+### Deliverables
+- Non-streaming chat endpoint
+- Streaming chat endpoint (SSE)
+- Context builder (Top-K similarity search)
+- Response formatting with citations
+- Persistent chat history
+
+---
+
+## 📅 Week 4 — Auth, Security, Testing & Deployment
+
+### Goals
+- Add enterprise authentication (Clerk)
+- Harden security and rate limiting
+- Add tests and deployment steps
+
+### Deliverables
+- Clerk auth integrated (frontend + backend)
+- User isolation for documents + chats
+- Rate limiting + security headers (Helmet)
+- Testing instructions and scripts validated
+- Production build/deploy guidance
+
+---
+
+# 🎯 What is OpsMind AI?
+
+OpsMind AI is a context-aware corporate knowledge brain that helps employees find information from company documents instantly. Upload your SOPs, policies, and manuals — then ask questions in natural language.
 
 ### Key Features
-✅ **RAG Pipeline** - Retrieval-Augmented Generation for accurate answers
-✅ **Groq API** - Lightning-fast LLM inference with streaming
-✅ **No Hallucinations** - Strict context-only responses
-✅ **Source Citations** - Every answer includes document references
-✅ **Chat History** - Persistent conversations with full context
-✅ **Real-time Streaming** - ChatGPT-style typing effect
-✅ **Enterprise Auth** - Clerk authentication with user isolation
+- ✅ **RAG Pipeline** — Retrieval-Augmented Generation for accurate answers
+- ✅ **Groq API** — Lightning-fast LLM inference with streaming
+- ✅ **No Hallucinations** — Strict context-only responses
+- ✅ **Source Citations** — Every answer includes document references
+- ✅ **Chat History** — Persistent conversations with full context
+- ✅ **Real-time Streaming** — ChatGPT-style typing effect
+- ✅ **Enterprise Auth** — Clerk authentication with user isolation
 
-## 🚀 Quick Start
+---
 
-### Prerequisites
+# 🚀 Quick Start
 
+## Prerequisites
 - Node.js 18+
 - MongoDB Atlas account
 - Groq API key ([Get one free](https://console.groq.com))
 - Clerk account ([Get one free](https://clerk.com))
 
-### Installation
+## Installation
 
 ```bash
 # Clone repository
-git clone <your-repo-url>
-cd OpsMind-Ai
+git clone https://github.com/anandsagar2807/ZaalimaOpsMind-Ai.git
+cd ZaalimaOpsMind-Ai
 
 # Backend setup
 cd backend
@@ -39,16 +108,19 @@ npm install
 npm start
 
 # Frontend setup (new terminal)
-cd frontend
+cd ../frontend
 cp .env.example .env
 # Edit .env with your API keys
 npm install
 npm run dev
 ```
 
-### Environment Variables
+---
 
-**Backend (.env)**
+# 🔑 Environment Variables
+
+## Backend (`backend/.env`)
+
 ```env
 GROQ_API_KEY=gsk_your_key_here
 MONGODB_URI=mongodb+srv://...
@@ -58,30 +130,37 @@ JWT_SECRET=random_secret_string
 EMBEDDING_PROVIDER=simple
 ```
 
-**Frontend (.env)**
+## Frontend (`frontend/.env`)
+
 ```env
 VITE_API_URL=http://localhost:5000
 VITE_CLERK_PUBLISHABLE_KEY=pk_test_...
 ```
 
-### Usage
+---
 
-1. Open http://localhost:5173
+# ✅ Usage
+
+1. Open `http://localhost:5173`
 2. Sign up / Log in
 3. Upload PDF documents
-4. Navigate to Chat page
+4. Navigate to **Chat** page
 5. Ask questions about your documents
 
-## 📚 Documentation
+---
 
-- **[SETUP_GUIDE.md](SETUP_GUIDE.md)** - Complete setup instructions
-- **[TEST_INSTRUCTIONS.md](TEST_INSTRUCTIONS.md)** - Testing guide
-- **[GROQ_CHAT_IMPLEMENTATION.md](GROQ_CHAT_IMPLEMENTATION.md)** - Technical details
-- **[IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md)** - Feature overview
+# 📚 Documentation
 
-## 🏗️ Architecture
+- **[SETUP_GUIDE.md](SETUP_GUIDE.md)** — Complete setup instructions
+- **[TEST_INSTRUCTIONS.md](TEST_INSTRUCTIONS.md)** — Testing guide
+- **[GROQ_CHAT_IMPLEMENTATION.md](GROQ_CHAT_IMPLEMENTATION.md)** — Technical details
+- **[IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md)** — Feature overview
 
-```
+---
+
+# 🏗️ Architecture
+
+```text
 ┌─────────────┐
 │  PDF Upload │
 └──────┬──────┘
@@ -97,9 +176,9 @@ VITE_CLERK_PUBLISHABLE_KEY=pk_test_...
 └──────┬──────┘
        │
        ▼
-┌─────────────────────┐
-│ MongoDB Vector Store│
-└──────────┬──────────┘
+┌──────────────────────┐
+│ MongoDB Vector Store │
+└──────────┬───────────┘
            │
     ┌──────▼──────┐
     │ User Query  │
@@ -107,7 +186,7 @@ VITE_CLERK_PUBLISHABLE_KEY=pk_test_...
            │
            ▼
     ┌─────────────┐
-    │Vector Search│ (Top 5, similarity > 0.3)
+    │Vector Search│ (Top K, similarity threshold)
     └──────┬──────┘
            │
            ▼
@@ -117,39 +196,43 @@ VITE_CLERK_PUBLISHABLE_KEY=pk_test_...
            │
            ▼
     ┌──────────────┐
-    │  Groq API    │ (llama3-70b-8192)
+    │   Groq API   │ (LLM)
     └──────┬───────┘
            │
            ▼
     ┌──────────────┐
-    │   Streaming  │
-    │   Response   │
+    │  Streaming   │
+    │  Response    │
     │ + Citations  │
     └──────────────┘
 ```
 
-## 🔌 API Endpoints
+---
 
-### Chat
-- `POST /api/groq-chat/ask` - Non-streaming chat
-- `POST /api/groq-chat/ask/stream` - Streaming chat (SSE)
-- `GET /api/groq-chat/history` - Get chat history
-- `GET /api/groq-chat/:chatId` - Get specific chat
-- `DELETE /api/groq-chat/:chatId` - Delete chat
+# 🔌 API Endpoints
 
-### Documents
-- `POST /api/documents/upload` - Upload PDF
-- `GET /api/documents` - List documents
-- `DELETE /api/documents/:id` - Delete document
+## Chat
+- `POST /api/groq-chat/ask` — Non-streaming chat
+- `POST /api/groq-chat/ask/stream` — Streaming chat (SSE)
+- `GET /api/groq-chat/history` — Get chat history
+- `GET /api/groq-chat/:chatId` — Get specific chat
+- `DELETE /api/groq-chat/:chatId` — Delete chat
 
-### Search
-- `POST /api/chat/search` - Vector search (no LLM)
+## Documents
+- `POST /api/documents/upload` — Upload PDF
+- `GET /api/documents` — List documents
+- `DELETE /api/documents/:id` — Delete document
 
-## 🚫 Hallucination Control
+## Search
+- `POST /api/chat/search` — Vector search (no LLM)
+
+---
+
+# 🚫 Hallucination Control
 
 OpsMind AI uses a strict system prompt to prevent hallucinations:
 
-```
+```text
 You are OpsMind AI, a corporate knowledge assistant.
 
 CRITICAL RULES:
@@ -161,22 +244,24 @@ CRITICAL RULES:
 5. Be concise and professional
 ```
 
-**Parameters:**
+**Typical parameters:**
 - Temperature: 0.1 (low randomness)
-- Model: llama3-70b-8192
+- Model: `llama3-70b-8192`
 - Top-p: 0.9
 - Max tokens: 2048
 
-## 📊 Tech Stack
+---
 
-### Backend
+# 📊 Tech Stack
+
+## Backend
 - Node.js + Express
 - MongoDB + Mongoose
 - Groq SDK (LLM)
 - Clerk (Auth)
 - PDF-Parse (Document processing)
 
-### Frontend
+## Frontend
 - React 18
 - Vite
 - TailwindCSS
@@ -184,7 +269,9 @@ CRITICAL RULES:
 - React Router
 - Lucide Icons
 
-## 🧪 Testing
+---
+
+# 🧪 Testing
 
 ```bash
 # Run backend tests
@@ -192,21 +279,25 @@ cd backend
 npm test
 
 # Run frontend tests
-cd frontend
+cd ../frontend
 npm test
 ```
 
-See [TEST_INSTRUCTIONS.md](TEST_INSTRUCTIONS.md) for detailed testing guide.
+See **[TEST_INSTRUCTIONS.md](TEST_INSTRUCTIONS.md)** for detailed testing guidance.
 
-## 📈 Performance
+---
 
-- **Document Upload**: < 30s for 10-page PDF
-- **First Response**: < 3s
-- **Streaming**: Real-time (no lag)
-- **Vector Search**: < 500ms
-- **Chat History Load**: < 1s
+# 📈 Performance
 
-## 🔒 Security
+- **Document Upload**: < 30s for 10-page PDF (varies by environment)
+- **First Response**: < 3s (typical)
+- **Streaming**: Real-time
+- **Vector Search**: < 500ms (typical)
+- **Chat History Load**: < 1s (typical)
+
+---
+
+# 🔒 Security
 
 - ✅ Clerk authentication
 - ✅ User data isolation
@@ -216,7 +307,9 @@ See [TEST_INSTRUCTIONS.md](TEST_INSTRUCTIONS.md) for detailed testing guide.
 - ✅ CORS protection
 - ✅ JWT tokens
 
-## 🛠️ Development
+---
+
+# 🛠️ Development
 
 ```bash
 # Backend dev mode (auto-reload)
@@ -224,53 +317,61 @@ cd backend
 npm run dev
 
 # Frontend dev mode (hot reload)
-cd frontend
+cd ../frontend
 npm run dev
 ```
 
-## 📦 Production Deployment
+---
 
-### Backend
+# 📦 Production Deployment
+
+## Backend
+
 ```bash
 cd backend
 npm run build
 NODE_ENV=production npm start
 ```
 
-### Frontend
+## Frontend
+
 ```bash
 cd frontend
 npm run build
 # Deploy dist/ folder to hosting service
 ```
 
-### Environment
+## Environment notes
 - Set `NODE_ENV=production`
 - Use production MongoDB cluster
 - Enable HTTPS
 - Configure production CORS
-- Use strong JWT_SECRET
+- Use strong `JWT_SECRET`
 
-## 🤝 Contributing
+---
+
+# 🤝 Contributing
 
 Contributions welcome! Please:
 1. Fork the repository
-2. Create feature branch
+2. Create a feature branch
 3. Commit changes
 4. Push to branch
-5. Open pull request
+5. Open a pull request
 
-## 📝 License
+---
 
-MIT License - see LICENSE file for details
+# 📝 License
 
-## 🎉 Acknowledgments
+MIT License — see `LICENSE` file for details.
+
+---
+
+# 🎉 Acknowledgments
 
 - Groq for lightning-fast LLM inference
 - Clerk for seamless authentication
 - MongoDB Atlas for vector storage
-- Anthropic Claude for development assistance
-
 
 ---
 
@@ -279,5 +380,3 @@ MIT License - see LICENSE file for details
 Detailed weekly development updates and implementation progress:
 
 - [Week 1 to Week 4 Progress Report](./WEEK1_TO_WEEK4_PROGRESS.md)
-
-
