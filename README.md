@@ -2,10 +2,6 @@
 
 > Enterprise-grade conversational AI agent with RAG, Groq API streaming, and strict no-hallucination policy.
 
-This README is organized as a **Week 1 → Week 4** development plan, followed by the full product documentation.
-
----
-
 ## 📅 Week 1 — Setup & Baseline Architecture
 
 ### Goals
@@ -85,14 +81,6 @@ OpsMind AI is a context-aware corporate knowledge brain that helps employees fin
 
 ---
 
-# 🚀 Quick Start
-
-## Prerequisites
-- Node.js 18+
-- MongoDB Atlas account
-- Groq API key ([Get one free](https://console.groq.com))
-- Clerk account ([Get one free](https://clerk.com))
-
 ## Installation
 
 ```bash
@@ -149,12 +137,6 @@ VITE_CLERK_PUBLISHABLE_KEY=pk_test_...
 
 ---
 
-# 📚 Documentation
-
-- **[SETUP_GUIDE.md](SETUP_GUIDE.md)** — Complete setup instructions
-- **[TEST_INSTRUCTIONS.md](TEST_INSTRUCTIONS.md)** — Testing guide
-- **[GROQ_CHAT_IMPLEMENTATION.md](GROQ_CHAT_IMPLEMENTATION.md)** — Technical details
-- **[IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md)** — Feature overview
 
 ---
 
@@ -281,9 +263,7 @@ npm test
 # Run frontend tests
 cd ../frontend
 npm test
-```
-
-See **[TEST_INSTRUCTIONS.md](TEST_INSTRUCTIONS.md)** for detailed testing guidance.
+```ee **[TEST_INSTRUCTIONS.md](TEST_INSTRUCTIONS.md)** for detailed testing guidance.
 
 ---
 
@@ -358,25 +338,5 @@ Contributions welcome! Please:
 3. Commit changes
 4. Push to branch
 5. Open a pull request
-
----
-
-# 📝 License
-
-MIT License — see `LICENSE` file for details.
-
----
-
-# 🎉 Acknowledgments
-
-- Groq for lightning-fast LLM inference
-- Clerk for seamless authentication
-- MongoDB Atlas for vector storage
-
----
-
-# 📌 Development Progress Reports
-
-Detailed weekly development updates and implementation progress:
 
 - [Week 1 to Week 4 Progress Report](./WEEK1_TO_WEEK4_PROGRESS.md)
