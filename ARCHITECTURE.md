@@ -1,5 +1,4 @@
-# 🏗️ OpsMind AI — System Architecture
-
+#  OpsMind AI — System Architecture
 ---
 
 # 📌 Overview
@@ -12,38 +11,6 @@ The system combines:
 - Real-time streaming responses
 - Secure authentication
 - Frontend-backend modular architecture
-
----
-
-# ⚙️ High-Level Architecture
-
-
-```text
-User
-  │
-  ▼
-Frontend (React + Clerk Auth)
-  │
-  ▼
-Backend API Layer (Node.js + Express)
-  │
-  ├── Document Upload Pipeline
-  ├── Vector Search Engine
-  ├── Chat Processing Layer
-  └── Authentication Middleware
-  │
-  ▼
-MongoDB Vector Store
-  │
-  ▼
-Groq LLM API (llama3-70b-8192)
-  │
-  ▼
-Streaming AI Response
-  │
-  ▼
-Frontend Chat Interface
-```
 
 ---
 
