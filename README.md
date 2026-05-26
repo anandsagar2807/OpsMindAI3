@@ -2,7 +2,7 @@
 
 > Enterprise-grade conversational AI agent with RAG, Groq API streaming, and strict no-hallucination policy.
 
-## 📅 Week 1 — Setup & Baseline Architecture
+## Week 1 — Setup & Baseline Architecture
 
 ### Goals
 - Initialize mono-repo structure (**frontend/** + **backend/**)
@@ -18,7 +18,7 @@
 
 ---
 
-## 📅 Week 2 — Document Ingestion + Vector Store
+## Week 2 — Document Ingestion + Vector Store
 
 ### Goals
 - Implement document upload (PDF)
@@ -33,7 +33,7 @@
 
 ---
 
-## 📅 Week 3 — Chat (RAG) + Streaming + Citations
+## Week 3 — Chat (RAG) + Streaming + Citations
 
 ### Goals
 - Build RAG query pipeline
@@ -50,7 +50,7 @@
 
 ---
 
-## 📅 Week 4 — Auth, Security, Testing & Deployment
+## Week 4 — Auth, Security, Testing & Deployment
 
 ### Goals
 - Add enterprise authentication (Clerk)
