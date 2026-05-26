@@ -1,10 +1,10 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import EnterpriseLandingPage from './pages/EnterpriseLandingPage';
-import AgentPage from './pages/AgentPage';
 import DashboardPage from './pages/DashboardPage';
 import DocumentsPage from './pages/DocumentsPage';
 import UploadPage from './pages/UploadPage';
+import SkillsAnalysisPage from './pages/SkillsAnalysisPage';
 import SettingsPage from './pages/SettingsPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -52,18 +52,9 @@ function App() {
             <Route index element={<DashboardPage />} />
             <Route path="documents" element={<DocumentsPage />} />
             <Route path="upload" element={<UploadPage />} />
+            <Route path="skills-analysis" element={<SkillsAnalysisPage />} />
             <Route path="settings" element={<SettingsPage />} />
           </Route>
-
-          {/* Agent page - standalone layout */}
-          <Route
-            path="/agent"
-            element={
-              <PrivateRoute>
-                <AgentPage />
-              </PrivateRoute>
-            }
-          />
 
           {/* Catch all */}
           <Route path="*" element={<Navigate to="/" replace />} />

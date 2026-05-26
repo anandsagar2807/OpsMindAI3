@@ -68,8 +68,18 @@ function transformError(error) {
   return error;
 }
 
+// ─── Unwrap backend response envelope ───
+// The backend consistently wraps responses in { success: true, data: ... }.
+// This interceptor unwraps the envelope so hooks can access properties directly
+// on response.data instead of needing response.data.data.
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // If the backend returned { success, data }, unwrap so response.data = inner data
+    if (response.data && typeof response.data === 'object' && 'success' in response.data && 'data' in response.data) {
+      response.data = response.data.data;
+    }
+    return response;
+  },
   async (error) => {
     const config = error.config;
 

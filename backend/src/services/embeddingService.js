@@ -1,42 +1,75 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
-
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+const OPENROUTER_EMBEDDING_MODEL = process.env.OPENROUTER_EMBEDDING_MODEL || 'openai/text-embedding-3-small';
 
 class EmbeddingService {
   constructor() {
-    this.model = 'embedding-001';
-    if (GEMINI_API_KEY && GEMINI_API_KEY !== 'your-gemini-api-key-here') {
-      this.genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+    this.model = OPENROUTER_EMBEDDING_MODEL;
+    if (!OPENROUTER_API_KEY) {
+      this.apiKey = null;
+      console.warn('⚠️  [embeddingService] OPENROUTER_API_KEY is not configured — embedding features will be unavailable.');
     } else {
-      this.genAI = null;
-      console.warn('⚠️  [embeddingService] GEMINI_API_KEY is a placeholder — embedding features will be unavailable until a valid key is provided.');
-      console.warn('⚠️  [embeddingService] Get your key from https://aistudio.google.com');
+      this.apiKey = OPENROUTER_API_KEY;
+      console.log(`✅ [embeddingService] Using OpenRouter embedding model: ${this.model}`);
     }
   }
 
   async generateEmbedding(text) {
-    if (!this.genAI) {
-      throw new Error('Gemini API key is not configured. Set GEMINI_API_KEY in .env to enable embeddings.');
+    if (!this.apiKey) {
+      throw new Error('OpenRouter API key is not configured. Set OPENROUTER_API_KEY in .env to enable embeddings.');
     }
+
+    const trimmedText = text.trim();
+    if (!trimmedText) {
+      throw new Error('Cannot generate embedding for empty text.');
+    }
+
     try {
-      const model = this.genAI.getGenerativeModel({ model: this.model });
-      const result = await model.embedContent(text);
-      return result.embedding.values;
+      const resp = await fetch('https://openrouter.ai/api/v1/embeddings', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': 'http://localhost:5002',
+          'X-Title': 'OpsMind AI'
+        },
+        body: JSON.stringify({
+          model: this.model,
+          input: trimmedText
+        })
+      });
+
+      if (!resp.ok) {
+        const errBody = await resp.text();
+        throw new Error(`OpenRouter embeddings API error (${resp.status}): ${errBody}`);
+      }
+
+      const data = await resp.json();
+      const embedding = data?.data?.[0]?.embedding;
+
+      if (!embedding || !Array.isArray(embedding)) {
+        throw new Error('Invalid embedding response from OpenRouter — missing embedding array.');
+      }
+
+      return embedding;
     } catch (error) {
-      console.error('Embedding generation error:', error);
+      console.error('[embeddingService] Embedding generation error:', error.message);
       throw new Error('Failed to generate embedding: ' + error.message);
     }
   }
 
   async generateBatchEmbeddings(texts) {
+    if (!Array.isArray(texts) || texts.length === 0) {
+      return [];
+    }
+
     const embeddings = [];
     for (let i = 0; i < texts.length; i++) {
       const embedding = await this.generateEmbedding(texts[i]);
       embeddings.push(embedding);
 
-      // Rate limiting: pause between requests
+      // Rate limiting: pause between requests to avoid hitting rate limits
       if (i < texts.length - 1) {
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise(resolve => setTimeout(resolve, 150));
       }
     }
     return embeddings;

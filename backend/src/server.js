@@ -13,6 +13,7 @@ import chatRoutes from './routes/chatRoutes.js';
 import ragRoutes from './routes/ragRoutes.js';
 import publicRoutes from './routes/publicRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
+import skillsAnalysisRoutes from './routes/skillsAnalysisRoutes.js';
 
 dotenv.config();
 
@@ -55,9 +56,9 @@ const limiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   skip: (req) => {
-    // Skip rate limiting for upload endpoints — they're long-running and expensive
+    // Skip rate limiting for upload endpoints and skills analysis — they're long-running and expensive
     // Also skip health checks and OPTIONS (preflight) requests
-    return req.path?.includes('/upload') || req.path?.includes('/health') || req.method === 'OPTIONS';
+    return req.path?.includes('/upload') || req.path?.includes('/skills') || req.path?.includes('/health') || req.method === 'OPTIONS';
   },
 });
 // Rate-limit general API routes (uploads are skipped via skip function)
@@ -74,6 +75,7 @@ app.use('/api/documents', clerkAuthMiddleware, syncUser, documentRoutes);
 app.use('/api/chat', clerkAuthMiddleware, syncUser, chatRoutes);
 app.use('/api/rag', clerkAuthMiddleware, syncUser, ragRoutes);
 app.use('/api/dashboard', clerkAuthMiddleware, syncUser, dashboardRoutes);
+app.use('/api/skills', clerkAuthMiddleware, syncUser, skillsAnalysisRoutes);
 
 function getDbStatus() {
   const states = { 0: 'disconnected', 1: 'connected', 2: 'connecting', 3: 'disconnecting' };

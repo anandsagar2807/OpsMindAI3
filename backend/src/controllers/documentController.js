@@ -145,6 +145,8 @@ async function processDocument(documentId, filePath, userId, orgId, uploadLogId)
         embedding = await embeddingService.generateEmbedding(chunk.text);
       } catch (embedError) {
         console.error(`Embedding failed for chunk ${i}:`, embedError.message);
+        // Continue processing even if some embeddings fail - document will still be usable
+        // but with reduced search capabilities for failed chunks
       }
 
       await SOPChunk.create({

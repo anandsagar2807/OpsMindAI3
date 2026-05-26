@@ -12,7 +12,12 @@ export const useConversations = (params = {}) => {
         queryFn: async () => {
             const token = await getToken();
             const response = await chatAPI.getAll(params, token);
-            setConversations(response.data.conversations || response.data);
+            const list = Array.isArray(response.data.conversations)
+                ? response.data.conversations
+                : Array.isArray(response.data)
+                    ? response.data
+                    : [];
+            setConversations(list);
             setIsLoadingHistory(false);
             return response.data;
         },
@@ -51,7 +56,11 @@ export const useCreateConversation = () => {
             return response.data;
         },
         onSuccess: (data) => {
-            setCurrentConversationId(data.conversation._id || data.conversation.id);
+            const conversation = data?.data || data?.conversation || data;
+            const convId = conversation?._id || conversation?.id;
+            if (convId) {
+                setCurrentConversationId(convId);
+            }
             queryClient.invalidateQueries({ queryKey: ['conversations'] });
         },
     });

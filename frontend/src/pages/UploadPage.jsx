@@ -110,17 +110,6 @@ export default function UploadPage() {
           </h1>
           <p className="text-[13px] text-gray-400/70 mt-1 ml-[42px]">Add PDFs to your knowledge base for AI-powered retrieval</p>
         </div>
-        {completedCount > 0 && (
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => navigate('/agent')}
-            className="h-9 px-3.5 rounded-[8px] bg-gradient-to-r from-violet-500 to-indigo-600 text-white font-semibold text-[13px] shadow-md shadow-violet-500/20 flex items-center gap-1.5"
-          >
-            <ArrowUpRight className="w-[14px] h-[14px]" />
-            Start Chatting
-          </motion.button>
-        )}
       </motion.div>
 
       {/* ─── Upload Zone ─── */}

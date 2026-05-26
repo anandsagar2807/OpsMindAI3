@@ -238,15 +238,6 @@ export default function DashboardPage() {
                         <span className="text-[11px] text-gray-500">K</span>
                         <span className="text-[11px] text-gray-400">Quick search</span>
                     </div>
-                    <motion.button
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => navigate('/agent')}
-                        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-violet-500 to-indigo-600 text-white font-medium text-[13px] shadow-lg shadow-violet-500/20"
-                    >
-                        <Plus className="w-4 h-4" />
-                        New Chat
-                    </motion.button>
                 </div>
             </motion.div>
 
@@ -303,13 +294,6 @@ export default function DashboardPage() {
                         Quick Actions
                     </h2>
                     <div className="space-y-2.5">
-                        <QuickAction
-                            icon={MessageSquare}
-                            label="AI Chat"
-                            description="Start a conversation"
-                            color="violet"
-                            onClick={() => navigate('/agent')}
-                        />
                         <QuickAction
                             icon={Upload}
                             label="Upload Document"
@@ -388,12 +372,6 @@ export default function DashboardPage() {
                                     <MessageSquare className="w-3.5 h-3.5 text-violet-400/70" />
                                     Recent Conversations
                                 </h3>
-                                <button
-                                    onClick={() => navigate('/agent')}
-                                    className="text-[11px] text-violet-400/70 hover:text-violet-400 flex items-center gap-1 transition-colors duration-200"
-                                >
-                                    View all <ArrowUpRight className="w-3 h-3" />
-                                </button>
                             </div>
                             <div className="divide-y divide-white/[0.04]">
                                 {recentConversations.slice(0, 5).map((conv, i) => (
@@ -402,7 +380,7 @@ export default function DashboardPage() {
                                         initial={{ opacity: 0 }}
                                         animate={{ opacity: 1 }}
                                         transition={{ delay: i * 0.04 }}
-                                        onClick={() => navigate('/agent')}
+                                        onClick={() => navigate('/dashboard')}
                                         className="flex items-center gap-2.5 px-4 py-2.5 hover:bg-white/[0.03] transition-colors duration-200 w-full text-left"
                                     >
                                         <MessageSquare className="w-3.5 h-3.5 text-violet-400/50 shrink-0" />

@@ -69,8 +69,9 @@ const useChatStore = create((set, get) => ({
 
     getFilteredConversations: () => {
         const { conversations, searchQuery } = get();
-        if (!searchQuery) return conversations;
-        return conversations.filter(c =>
+        const list = Array.isArray(conversations) ? conversations : [];
+        if (!searchQuery) return list;
+        return list.filter(c =>
             c.title.toLowerCase().includes(searchQuery.toLowerCase())
         );
     },

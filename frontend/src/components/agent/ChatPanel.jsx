@@ -56,10 +56,15 @@ const ChatPanel = () => {
         if (!convId) {
             try {
                 const result = await createConversation.mutateAsync(query.slice(0, 50));
-                convId = result.conversation?._id || result.conversation?.id || result._id || result.id;
+                const conversation = result.data || result;
+                convId = conversation?._id || conversation?.id || result.conversation?._id || result.conversation?.id;
+                if (!convId) {
+                    toast.error('Failed to create conversation — invalid server response');
+                    return;
+                }
                 setCurrentConversationId(convId);
             } catch (err) {
-                toast.error('Failed to create conversation');
+                toast.error('Failed to create conversation: ' + (err?.message || 'Unknown error'));
                 return;
             }
         }
@@ -68,6 +73,7 @@ const ChatPanel = () => {
         setAbortRef(new AbortController());
         await streamQuestion(query, convId);
     };
+
 
     const handleStop = () => {
         if (abortRef) {
@@ -194,7 +200,10 @@ const ChatPanel = () => {
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.1 + i * 0.1 }}
-                                onClick={() => setInput(prompt.text)}
+                                onClick={() => {
+                                    setInput(prompt.text);
+                                    setTimeout(() => handleSend(), 0);
+                                }}
                                 className="flex items-center gap-2 px-4 py-3 rounded-xl bg-white/5 border border-white/10 hover:border-cyan-500/30 hover:bg-cyan-500/10 text-gray-300 hover:text-white transition-all text-sm"
                             >
                                 <prompt.icon size={16} className={`text-${prompt.color}-400`} />

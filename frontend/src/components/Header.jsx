@@ -215,9 +215,9 @@ const Header = () => {
                 <>
                   {!isSignedIn ? (
                     <>
-                      {/* Dev mode: Sign In button (just navigates to agent) */}
+                      {/* Dev mode: Sign In button */}
                       <button
-                        onClick={() => navigate('/agent')}
+                        onClick={() => navigate('/dashboard')}
                         className="
                           relative group px-5 py-2.5 text-sm font-medium
                           text-neutral-300 hover:text-white
@@ -234,7 +234,7 @@ const Header = () => {
 
                       {/* Dev mode: Get Started button */}
                       <button
-                        onClick={() => navigate('/agent')}
+                        onClick={() => navigate('/dashboard')}
                         className="
                           relative group px-6 py-2.5 text-sm font-semibold
                           text-white overflow-hidden
@@ -261,7 +261,7 @@ const Header = () => {
                     <>
                       {/* Dashboard link */}
                       <Link
-                        to="/agent"
+                        to="/dashboard"
                         className="
                           relative group px-5 py-2.5 text-sm font-medium
                           text-neutral-300 hover:text-white
@@ -356,7 +356,7 @@ const Header = () => {
                   <ClerkShow when="signed-in">
                     {/* Dashboard link */}
                     <Link
-                      to="/agent"
+                      to="/dashboard"
                       className="
                         relative group px-5 py-2.5 text-sm font-medium
                         text-neutral-300 hover:text-white

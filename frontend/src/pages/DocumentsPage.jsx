@@ -23,6 +23,9 @@ import {
 } from 'lucide-react';
 import { useDocuments, useDeleteDocument } from '../hooks/useDocuments';
 import { useDocumentsOverview } from '../hooks/useDashboard';
+import toast from 'react-hot-toast';
+import { getTimeAgo, formatFileSizeCompact } from '../utils/formatters';
+import { COLORS } from '../config/constants';
 
 const fadeInUp = {
     initial: { opacity: 0, y: 16 },
@@ -258,17 +261,6 @@ export default function DocumentsPage() {
 
                                         {/* Actions */}
                                         <div className="col-span-2 flex items-center gap-1.5">
-                                            {doc.status === 'completed' && (
-                                                <motion.button
-                                                    whileHover={{ scale: 1.08 }}
-                                                    whileTap={{ scale: 0.92 }}
-                                                    onClick={() => navigate('/agent')}
-                                                    className="w-7 h-7 rounded-[6px] bg-violet-500/[0.08] border border-violet-500/[0.15] flex items-center justify-center text-violet-400/80 hover:text-violet-400 transition-colors duration-200"
-                                                    title="Ask questions about this document"
-                                                >
-                                                    <Eye className="w-[14px] h-[14px]" />
-                                                </motion.button>
-                                            )}
                                             <motion.button
                                                 whileHover={{ scale: 1.08 }}
                                                 whileTap={{ scale: 0.92 }}

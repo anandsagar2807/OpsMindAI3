@@ -20,43 +20,45 @@ import {
     Bell,
     Command,
     Zap,
-    Plus
+    Plus,
+    Brain
 } from 'lucide-react';
 import { useAuth, useUser } from '../hooks/useAuthContext';
 
 const navItems = [
-    { 
-        path: '/dashboard', 
-        icon: LayoutDashboard, 
-        label: 'Dashboard', 
+    {
+        path: '/dashboard',
+        icon: LayoutDashboard,
+        label: 'Dashboard',
         end: true,
         description: 'Overview & analytics'
     },
-    { 
-        path: '/agent', 
-        icon: MessageSquare, 
-        label: 'AI Agent', 
-        badge: 'New',
-        description: 'Conversational AI'
-    },
-    { 
-        path: '/dashboard/documents', 
-        icon: FileText, 
-        label: 'Documents', 
+    {
+        path: '/dashboard/documents',
+        icon: FileText,
+        label: 'Documents',
         end: false,
         description: 'Knowledge base'
     },
-    { 
-        path: '/dashboard/upload', 
-        icon: Upload, 
-        label: 'Upload', 
+    {
+        path: '/dashboard/upload',
+        icon: Upload,
+        label: 'Upload',
         end: false,
         description: 'Add documents'
     },
-    { 
-        path: '/dashboard/settings', 
-        icon: Settings, 
-        label: 'Settings', 
+    {
+        path: '/dashboard/skills-analysis',
+        icon: Brain,
+        label: 'Ops Knowledge',
+        end: false,
+        description: 'SOP & compliance analysis',
+        badge: 'New'
+    },
+    {
+        path: '/dashboard/settings',
+        icon: Settings,
+        label: 'Settings',
         end: false,
         description: 'Configuration'
     },
@@ -64,9 +66,9 @@ const navItems = [
 
 const pageTitles = {
     '/dashboard': 'Dashboard',
-    '/agent': 'AI Agent',
     '/dashboard/documents': 'Documents',
     '/dashboard/upload': 'Upload',
+    '/dashboard/skills-analysis': 'Operational Knowledge Analysis',
     '/dashboard/settings': 'Settings',
 };
 
@@ -132,7 +134,7 @@ export default function EnterpriseLayout() {
             >
                 {/* ─── Logo Section ─── */}
                 <div className="flex items-center gap-3 px-4 h-[64px] border-b border-white/[0.04] shrink-0">
-                    <motion.div 
+                    <motion.div
                         className="w-9 h-9 rounded-[10px] bg-gradient-to-br from-violet-500 via-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-violet-500/25 shrink-0"
                         whileHover={{ scale: 1.05 }}
                     >
@@ -186,8 +188,8 @@ export default function EnterpriseLayout() {
                                             />
                                         )}
                                         <item.icon className={`w-[18px] h-[18px] flex-shrink-0 transition-all duration-200
-                                            ${isActive 
-                                                ? 'text-violet-400' 
+                                            ${isActive
+                                                ? 'text-violet-400'
                                                 : 'text-gray-500 group-hover:text-violet-400/80'
                                             }`}
                                         />
