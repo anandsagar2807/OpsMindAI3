@@ -2,17 +2,19 @@
 
 To make the chat work, you need to add these API keys to `backend/.env`:
 
-## 1. Gemini API Key (Required for Embeddings)
+## 1. OpenRouter API Key (Required for Embeddings / LLM access)
 
-**Get it here:** https://makersuite.google.com/app/apikey
+**Get it here:** https://openrouter.ai/keys
 
-1. Go to https://makersuite.google.com/app/apikey
-2. Click "Create API Key"
+1. Go to https://openrouter.ai/keys
+2. Create an API key
 3. Copy the key
 4. Add to `backend/.env`:
    ```env
-   GEMINI_API_KEY=your_actual_gemini_key_here
+   OPENROUTER_API_KEY=your_actual_openrouter_key_here
    ```
+
+> If your backend expects a different env var name (e.g., `OPENROUTER_KEY`), use the one referenced in your code.
 
 ## 2. Clerk Secret Key (Required for Authentication)
 
@@ -35,13 +37,13 @@ To make the chat work, you need to add these API keys to `backend/.env`:
 ✅ **CORS** - Fixed for localhost
 ✅ **Temporary Auth Bypass** - Active (for testing)
 
-❌ **Gemini API** - Missing (needed for document embeddings)
+❌ **OpenRouter API** - Missing (needed for embeddings / model access)
 ❌ **Clerk Secret** - Missing (needed for production auth)
 
 ## What Each Key Does
 
 - **Groq API**: Generates AI chat responses using Llama 3.1 70B
-- **Gemini API**: Creates embeddings from your documents for semantic search
+- **OpenRouter API**: Provides access to models for embeddings and/or completions (depending on your implementation)
 - **Clerk Secret**: Verifies user authentication tokens
 
 ## After Adding Keys
@@ -50,7 +52,6 @@ To make the chat work, you need to add these API keys to `backend/.env`:
 2. Backend will auto-restart (nodemon)
 3. Try the chat again
 4. Upload documents first, then ask questions about them
-
 
 ## Note
 
