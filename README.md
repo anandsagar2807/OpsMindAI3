@@ -1,229 +1,342 @@
-# OpsMind AI — Enterprise SOP RAG Platform
+# OpsMind AI — Week 1 to Week 4
 
-AI-powered enterprise SOP (Standard Operating Procedure) assistant with Retrieval-Augmented Generation, hallucination prevention, source citations, and real-time streaming.
+> Enterprise-grade conversational AI agent with RAG, Groq API streaming, and strict no-hallucination policy.
 
-## Architecture
+## Week 1 — Setup & Baseline Architecture
 
+### Goals
+- Initialize mono-repo structure (**frontend/** + **backend/**)
+- Configure local development environment
+- Create baseline RAG pipeline skeleton and API scaffolding
+
+### Deliverables
+- Project structure in place
+- Backend server running (Express)
+- Frontend running (React + Vite)
+- MongoDB connection configured
+- Environment variable templates ready (`.env.example`)
+
+---
+
+## Week 2 — Document Ingestion + Vector Store
+
+### Goals
+- Implement document upload (PDF)
+- Extract text and chunk documents
+- Store embeddings and chunks in MongoDB
+
+### Deliverables
+- Upload endpoint + UI
+- Chunking pipeline
+- Embedding generation + storage
+- Document listing + deletion
+
+---
+
+## Week 3 — Chat (RAG) + Streaming + Citations
+
+### Goals
+- Build RAG query pipeline
+- Add Groq LLM inference with streaming (SSE)
+- Enforce strict no-hallucination guardrails
+- Add source citations in responses
+
+### Deliverables
+- Non-streaming chat endpoint
+- Streaming chat endpoint (SSE)
+- Context builder (Top-K similarity search)
+- Response formatting with citations
+- Persistent chat history
+
+---
+
+## Week 4 — Auth, Security, Testing & Deployment
+
+### Goals
+- Add enterprise authentication (Clerk)
+- Harden security and rate limiting
+- Add tests and deployment steps
+
+### Deliverables
+- Clerk auth integrated (frontend + backend)
+- User isolation for documents + chats
+- Rate limiting + security headers (Helmet)
+- Testing instructions and scripts validated
+- Production build/deploy guidance
+
+---
+
+# 🎯 What is OpsMind AI?
+
+OpsMind AI is a context-aware corporate knowledge brain that helps employees find information from company documents instantly. Upload your SOPs, policies, and manuals — then ask questions in natural language.
+
+### Key Features
+- ✅ **RAG Pipeline** — Retrieval-Augmented Generation for accurate answers
+- ✅ **Groq API** — Lightning-fast LLM inference with streaming
+- ✅ **No Hallucinations** — Strict context-only responses
+- ✅ **Source Citations** — Every answer includes document references
+- ✅ **Chat History** — Persistent conversations with full context
+- ✅ **Real-time Streaming** — ChatGPT-style typing effect
+- ✅ **Enterprise Auth** — Clerk authentication with user isolation
+
+---
+
+## Installation
+
+```bash
+# Clone repository
+git clone https://github.com/anandsagar2807/ZaalimaOpsMind-Ai.git
+cd ZaalimaOpsMind-Ai
+
+# Backend setup
+cd backend
+cp .env.example .env
+# Edit .env with your API keys
+npm install
+npm start
+
+# Frontend setup (new terminal)
+cd ../frontend
+cp .env.example .env
+# Edit .env with your API keys
+npm install
+npm run dev
 ```
-┌─────────────────────────────────────────────────────────┐
-│  Frontend (Vite + React 18)                             │
-│  ├── /              → Enterprise Landing Page            │
-│  ├── /agent         → AI Agent (Clerk Auth Required)     │
-│  │   ├── Sidebar    → Chat history, search, rename       │
-│  │   ├── Upload     → Drag-and-drop PDF upload           │
-│  │   ├── Chat       → Streaming RAG chat with citations  │
-│  │   ├── Sources    → Source inspector (Sheet panel)      │
-│  │   └── Activity   → RAG pipeline visualization         │
-│  └── Clerk Auth     → Sign-in, Sign-up, User Profile     │
-├─────────────────────────────────────────────────────────┤
-│  Backend (Express + MongoDB)                            │
-│  ├── /api/public     → Health check, public stats        │
-│  ├── /api/documents  → Upload, CRUD, status tracking     │
-│  ├── /api/chat       → Conversation CRUD                 │
-│  └── /api/rag        → Ask, Stream (SSE), Search         │
-│       ├── PDF Parse   → pdf-parse + chunking              │
-│       ├── Embeddings  → Gemini embedding-001              │
-│       ├── Vector Search → MongoDB cosine similarity       │
-│       ├── LLM         → Groq llama-3.3-70b-versatile     │
-│       └── Citations   → Source snippets + similarity      │
-└─────────────────────────────────────────────────────────┘
-```
 
-## Tech Stack
+---
 
-| Layer | Technology |
-|-------|-----------|
-| **Frontend** | Vite 5, React 18, React Router v6, TailwindCSS, Framer Motion |
-| **Auth** | Clerk (`@clerk/react` + `@clerk/express`) with dev-mode JWT bypass |
-| **State** | Zustand (client), @tanstack/react-query (server) |
-| **Backend** | Express.js, MongoDB + Mongoose, Multer (PDF upload) |
-| **LLM** | Groq SDK (llama-3.3-70b-versatile) |
-| **Embeddings** | Google Generative AI (embedding-001) |
-| **Vector Search** | MongoDB aggregation pipeline (cosine similarity) |
-| **Streaming** | SSE (Server-Sent Events) with async generators |
-| **PDF Processing** | pdf-parse + custom chunking (1000 chars, 100 overlap) |
+# 🔑 Environment Variables
 
-## Quick Start
-
-### 1. Configure API Keys
-
-Edit `backend/.env`:
+## Backend (`backend/.env`)
 
 ```env
-PORT=5002
-MONGODB_URI=mongodb+srv://your-connection-string
-CLERK_SECRET_KEY=your-clerk-secret-key
-GROQ_API_KEY=your-groq-api-key
-GROQ_MODEL=llama-3.3-70b-versatile
-GEMINI_API_KEY=your-gemini-api-key
-FRONTEND_URL=http://localhost:5173
+GROQ_API_KEY=gsk_your_key_here
+MONGODB_URI=mongodb+srv://...
+CLERK_PUBLISHABLE_KEY=pk_test_...
+CLERK_SECRET_KEY=sk_test_...
+JWT_SECRET=random_secret_string
+EMBEDDING_PROVIDER=simple
 ```
 
-Edit `frontend/.env.frontend`:
+## Frontend (`frontend/.env`)
 
 ```env
-VITE_API_URL=http://localhost:5173
-VITE_CLERK_PUBLISHABLE_KEY=your-clerk-publishable-key
+VITE_API_URL=http://localhost:5000
+VITE_CLERK_PUBLISHABLE_KEY=pk_test_...
 ```
 
-### 2. Install Dependencies
+---
+
+# ✅ Usage
+
+1. Open `http://localhost:5173`
+2. Sign up / Log in
+3. Upload PDF documents
+4. Navigate to **Chat** page
+5. Ask questions about your documents
+
+---
+
+
+---
+
+# 🏗️ Architecture
+
+```text
+┌─────────────┐
+│  PDF Upload │
+└──────┬──────┘
+       │
+       ▼
+┌─────────────┐
+│  Chunking   │
+└──────┬──────┘
+       │
+       ▼
+┌─────────────┐
+│ Embeddings  │
+└──────┬──────┘
+       │
+       ▼
+┌──────────────────────┐
+│ MongoDB Vector Store │
+└──────────┬───────────┘
+           │
+    ┌──────▼──────┐
+    │ User Query  │
+    └──────┬──────┘
+           │
+           ▼
+    ┌─────────────┐
+    │Vector Search│ (Top K, similarity threshold)
+    └──────┬──────┘
+           │
+           ▼
+    ┌──────────────┐
+    │Context Builder│
+    └──────┬───────┘
+           │
+           ▼
+    ┌──────────────┐
+    │   Groq API   │ (LLM)
+    └──────┬───────┘
+           │
+           ▼
+    ┌──────────────┐
+    │  Streaming   │
+    │  Response    │
+    │ + Citations  │
+    └──────────────┘
+```
+
+---
+
+# 🔌 API Endpoints
+
+## Chat
+- `POST /api/groq-chat/ask` — Non-streaming chat
+- `POST /api/groq-chat/ask/stream` — Streaming chat (SSE)
+- `GET /api/groq-chat/history` — Get chat history
+- `GET /api/groq-chat/:chatId` — Get specific chat
+- `DELETE /api/groq-chat/:chatId` — Delete chat
+
+## Documents
+- `POST /api/documents/upload` — Upload PDF
+- `GET /api/documents` — List documents
+- `DELETE /api/documents/:id` — Delete document
+
+## Search
+- `POST /api/chat/search` — Vector search (no LLM)
+
+---
+
+# 🚫 Hallucination Control
+
+OpsMind AI uses a strict system prompt to prevent hallucinations:
+
+```text
+You are OpsMind AI, a corporate knowledge assistant.
+
+CRITICAL RULES:
+1. You must ONLY answer using the provided SOP context
+2. If the answer is NOT in the context, respond EXACTLY with:
+   "I don't know based on available company SOPs."
+3. Do NOT make up information or hallucinate facts
+4. ALWAYS include source citations: (Source: Document Name, Page Number)
+5. Be concise and professional
+```
+
+**Typical parameters:**
+- Temperature: 0.1 (low randomness)
+- Model: `llama3-70b-8192`
+- Top-p: 0.9
+- Max tokens: 2048
+
+---
+
+# 📊 Tech Stack
+
+## Backend
+- Node.js + Express
+- MongoDB + Mongoose
+- Groq SDK (LLM)
+- Clerk (Auth)
+- PDF-Parse (Document processing)
+
+## Frontend
+- React 18
+- Vite
+- TailwindCSS
+- Axios
+- React Router
+- Lucide Icons
+
+---
+
+# 🧪 Testing
 
 ```bash
-cd backend && npm install
-cd frontend && npm install
-```
+# Run backend tests
+cd backend
+npm test
 
-### 3. Start Development
+# Run frontend tests
+cd ../frontend
+npm test
+```ee **[TEST_INSTRUCTIONS.md](TEST_INSTRUCTIONS.md)** for detailed testing guidance.
 
-**Backend:**
+---
+
+# 📈 Performance
+
+- **Document Upload**: < 30s for 10-page PDF (varies by environment)
+- **First Response**: < 3s (typical)
+- **Streaming**: Real-time
+- **Vector Search**: < 500ms (typical)
+- **Chat History Load**: < 1s (typical)
+
+---
+
+# 🔒 Security
+
+- ✅ Clerk authentication
+- ✅ User data isolation
+- ✅ Rate limiting
+- ✅ Input validation
+- ✅ Helmet.js security headers
+- ✅ CORS protection
+- ✅ JWT tokens
+
+---
+
+# 🛠️ Development
+
 ```bash
-cd backend && npm run dev
+# Backend dev mode (auto-reload)
+cd backend
+npm run dev
+
+# Frontend dev mode (hot reload)
+cd ../frontend
+npm run dev
 ```
 
-**Frontend:**
+---
+
+# 📦 Production Deployment
+
+## Backend
+
 ```bash
-cd frontend && npm run dev
+cd backend
+npm run build
+NODE_ENV=production npm start
 ```
 
-Or use the convenience scripts:
+## Frontend
+
 ```bash
-# Windows
-start.bat
-
-# Linux/Mac
-chmod +x start.sh && ./start.sh
+cd frontend
+npm run build
+# Deploy dist/ folder to hosting service
 ```
 
-### 4. Dev Mode (No Clerk Keys)
+## Environment notes
+- Set `NODE_ENV=production`
+- Use production MongoDB cluster
+- Enable HTTPS
+- Configure production CORS
+- Use strong `JWT_SECRET`
 
-If `CLERK_SECRET_KEY` is a placeholder, the backend automatically switches to **development mode** with JWT decode bypass. Any Clerk token will be accepted without signature verification.
+---
 
-## API Endpoints
+# 🤝 Contributing
 
-### Public
-- `GET /api/public/health` — Server health + DB status
-- `GET /api/public/stats` — Platform statistics
+Contributions welcome! Please:
+1. Fork the repository
+2. Create a feature branch
+3. Commit changes
+4. Push to branch
+5. Open a pull request
 
-### Documents (Auth Required)
-- `POST /api/documents/upload` — Upload PDF (background processing)
-- `GET /api/documents` — List user's documents
-- `GET /api/documents/:id` — Get document details
-- `GET /api/documents/:id/status` — Processing progress
-- `DELETE /api/documents/:id` — Delete document + chunks
-
-### Chat (Auth Required)
-- `POST /api/chat` — Create conversation
-- `GET /api/chat` — List conversations
-- `GET /api/chat/:id` — Get conversation + messages
-- `PATCH /api/chat/:id` — Update title/archive
-- `DELETE /api/chat/:id` — Delete conversation
-
-### RAG (Auth Required)
-- `POST /api/rag/ask` — Ask question (non-streaming)
-- `POST /api/rag/stream` — Ask question (SSE streaming)
-- `GET /api/rag/search` — Search documents
-
-## RAG Pipeline
-
-1. **Query** → User submits question
-2. **Embed** → Gemini embedding-001 converts query to vector
-3. **Search** → MongoDB aggregation computes cosine similarity against SOPChunk embeddings
-4. **Rank** → Top-K results filtered by similarity threshold (≥0.3)
-5. **Generate** → Groq LLM generates answer with strict context-only rule
-6. **Cite** → Citation service extracts snippets with source metadata
-7. **Stream** → SSE delivers metadata → content chunks → completion → done
-
-## Hallucination Prevention
-
-- LLM is instructed to **ONLY** answer from provided context chunks
-- If context doesn't contain relevant info → "I don't know based on the uploaded SOP documents"
-- Every answer includes source citations with document name, page, section
-- Similarity scores displayed for each citation (High ≥0.8, Good ≥0.6, Moderate ≥0.4, Low ≥0.3)
-
-## Project Structure
-
-```
-backend/
-  src/
-    server.js              # Express app + routes + middleware
-    config/
-      database.js          # MongoDB connection
-      multer.js            # PDF upload config
-    middleware/
-      clerkAuth.js         # Clerk auth (dev-mode bypass)
-      errorHandler.js      # Global error handler
-      rbac.js              # Role-based access + user sync
-    models/
-      User.js              # Clerk user sync
-      Organization.js      # Multi-tenant orgs
-      Document.js          # Uploaded documents
-      SOPChunk.js          # Text chunks + embeddings
-      Conversation.js      # Chat conversations
-      Message.js           # Chat messages + citations
-      UploadLog.js         # Upload processing logs
-    services/
-      pdfProcessor.js      # PDF extraction + chunking
-      embeddingService.js  # Gemini embeddings
-      vectorSearchService.js # MongoDB cosine similarity
-      ragService.js        # RAG orchestration + Groq LLM
-      citationService.js   # Citation generation
-      chatService.js       # Conversation CRUD
-    controllers/
-      documentController.js
-      chatController.js
-      ragController.js
-    routes/
-      documentRoutes.js
-      chatRoutes.js
-      ragRoutes.js
-      publicRoutes.js
-
-frontend/
-  src/
-    App.jsx                # Routes: / → Home, /agent → Agent
-    main.jsx               # ClerkProvider + QueryClientProvider
-    index.css              # Enterprise design system
-    services/
-      api.js               # Axios + SSE streaming client
-    store/
-      chatStore.js         # Chat state (Zustand)
-      uploadStore.js       # Upload state (Zustand)
-      uiStore.js           # UI state (Zustand)
-    hooks/
-      useChat.js           # React Query: conversations
-      useDocuments.js      # React Query: documents + upload
-      useRAG.js            # React Query: ask/stream/search
-    components/
-      Header.jsx           # Sticky navbar with Clerk auth
-      PrivateRoute.jsx     # Auth guard wrapper
-      ui/
-        Button.jsx         # Enterprise button
-        Card.jsx           # Enterprise card
-        Sheet.jsx          # Slide-in panel (Framer Motion)
-        ScrollArea.jsx     # Auto-scroll container
-        Dialog.jsx         # Modal dialog
-      agent/
-        AgentSidebar.jsx   # Chat history sidebar
-        UploadPanel.jsx    # Drag-and-drop PDF upload
-        ChatPanel.jsx      # Streaming chat interface
-        CitationDisplay.jsx # Citations with similarity scores
-        SourceInspector.jsx # Source detail viewer (Sheet)
-        RetrievalActivityPanel.jsx # RAG pipeline visualization
-    pages/
-      EnterpriseLandingPage.jsx # Home page (public)
-      AgentPage.jsx        # AI Agent page (authenticated)
-```
-
-## Required API Keys
-
-| Key | Source | Purpose |
-|-----|--------|---------|
-| `GROQ_API_KEY` | [console.groq.com](https://console.groq.com) | Chat completions (llama-3.3-70b) |
-| `GEMINI_API_KEY` | [aistudio.google.com](https://aistudio.google.com) | Embeddings (embedding-001) |
-| `CLERK_SECRET_KEY` | [clerk.com](https://dashboard.clerk.com) | Backend auth verification |
-| `VITE_CLERK_PUBLISHABLE_KEY` | [clerk.com](https://dashboard.clerk.com) | Frontend auth components |
-| `MONGODB_URI` | [mongodb.com](https://www.mongodb.com) | Database connection |
-
-## License
-
-Private — Enterprise Use Only
+- [Week 1 to Week 4 Progress Report](./WEEK1_TO_WEEK4_PROGRESS.md)
