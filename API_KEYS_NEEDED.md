@@ -31,7 +31,7 @@ To make the chat work, you need to add these API keys to `backend/.env`:
 
 ## Current Status
 
-✅ **Groq API** - Configured (for AI responses)
+✅ **Open Router and Groq API** - Configured (for AI responses)
 ✅ **MongoDB** - Connected
 ✅ **Backend** - Running on port 5000
 ✅ **CORS** - Fixed for localhost
