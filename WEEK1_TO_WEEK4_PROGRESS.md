@@ -1,5 +1,4 @@
 # 📌 OpsMind AI — Development Progress Timeline
-
 ---
 
 # 🚀 Week 1 — Project Initialization & Architecture Planning
@@ -101,7 +100,7 @@ OpsMind AI reached deployment-ready status with stable AI workflow integration a
 - Validation of frontend-backend-AI integration flow
 
 ## Sudharshan
-- Assisted in testing and project support
+- No Contribution towards any project
 
 ---
 
