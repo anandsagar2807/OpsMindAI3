@@ -1,7 +1,5 @@
 # OpsMind AI
 
-> Enterprise-grade conversational AI agent for corporate knowledge search with **RAG**, **Groq streaming**, and **context-only / no-hallucination** responses.
-
 OpsMind AI turns internal PDFs (SOPs, policies, runbooks, manuals) into a searchable knowledge base. Users upload documents, the backend extracts + chunks text, generates embeddings, stores them in MongoDB, and answers questions by retrieving the most relevant chunks and sending them to an LLM.
 
 ---
