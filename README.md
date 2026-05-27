@@ -1,145 +1,74 @@
-# OpsMind AI — Week 1 to Week 4
+# OpsMind AI
 
-> Enterprise-grade conversational AI agent with RAG, Groq API streaming, and strict no-hallucination policy.
+> Enterprise-grade conversational AI agent for corporate knowledge search with **RAG**, **Groq streaming**, and **context-only / no-hallucination** responses.
 
-## Week 1 — Setup & Baseline Architecture
-
-### Goals
-- Initialize mono-repo structure (**frontend/** + **backend/**)
-- Configure local development environment
-- Create baseline RAG pipeline skeleton and API scaffolding
-
-### Deliverables
-- Project structure in place
-- Backend server running (Express)
-- Frontend running (React + Vite)
-- MongoDB connection configured
-- Environment variable templates ready (`.env.example`)
+OpsMind AI turns internal PDFs (SOPs, policies, runbooks, manuals) into a searchable knowledge base. Users upload documents, the backend extracts + chunks text, generates embeddings, stores them in MongoDB, and answers questions by retrieving the most relevant chunks and sending them to an LLM.
 
 ---
 
-## Week 2 — Document Ingestion + Vector Store
+## Table of Contents
 
-### Goals
-- Implement document upload (PDF)
-- Extract text and chunk documents
-- Store embeddings and chunks in MongoDB
-
-### Deliverables
-- Upload endpoint + UI
-- Chunking pipeline
-- Embedding generation + storage
-- Document listing + deletion
-
----
-
-## Week 3 — Chat (RAG) + Streaming + Citations
-
-### Goals
-- Build RAG query pipeline
-- Add Groq LLM inference with streaming (SSE)
-- Enforce strict no-hallucination guardrails
-- Add source citations in responses
-
-### Deliverables
-- Non-streaming chat endpoint
-- Streaming chat endpoint (SSE)
-- Context builder (Top-K similarity search)
-- Response formatting with citations
-- Persistent chat history
+- [Key Features](#key-features)
+- [Project Structure](#project-structure)
+- [Architecture (RAG Flow)](#architecture-rag-flow)
+- [Tech Stack](#tech-stack)
+- [API Endpoints (Quick Reference)](#api-endpoints-quick-reference)
+- [Environment Variables](#environment-variables)
+- [Local Setup](#local-setup)
+- [Usage](#usage)
+- [Hallucination Control (Context-only Policy)](#hallucination-control-context-only-policy)
+- [Security Notes](#security-notes)
+- [Testing](#testing)
+- [Production Deployment](#production-deployment)
+- [Troubleshooting](#troubleshooting)
+- [Contributing](#contributing)
+- [License](#license)
 
 ---
 
-## Week 4 — Auth, Security, Testing & Deployment
+## Key Features
 
-### Goals
-- Add enterprise authentication (Clerk)
-- Harden security and rate limiting
-- Add tests and deployment steps
+- **RAG Pipeline**: retrieval-augmented generation for grounded answers
+- **Document Ingestion**: upload PDFs, extract text, chunk, and embed
+- **MongoDB Vector Store**: store embeddings + chunk metadata for similarity search
+- **Groq LLM Integration**: fast inference + **streaming** responses (SSE)
+- **Source Citations**: responses can include document references (doc/page/chunk)
+- **Chat History**: persist conversations for later review
+- **Admin-friendly UI**: modern React dashboard for document & chat workflows
 
-### Deliverables
-- Clerk auth integrated (frontend + backend)
-- User isolation for documents + chats
-- Rate limiting + security headers (Helmet)
-- Testing instructions and scripts validated
-- Production build/deploy guidance
+> Note: The repository also contains backend support for **JWT-based auth** (see `backend/README.md`). If you enable/extend auth, ensure document access is isolated per user/tenant.
 
 ---
 
-# 🎯 What is OpsMind AI?
+## Project Structure
 
-OpsMind AI is a context-aware corporate knowledge brain that helps employees find information from company documents instantly. Upload your SOPs, policies, and manuals — then ask questions in natural language.
-
-### Key Features
-- ✅ **RAG Pipeline** — Retrieval-Augmented Generation for accurate answers
-- ✅ **Groq API** — Lightning-fast LLM inference with streaming
-- ✅ **No Hallucinations** — Strict context-only responses
-- ✅ **Source Citations** — Every answer includes document references
-- ✅ **Chat History** — Persistent conversations with full context
-- ✅ **Real-time Streaming** — ChatGPT-style typing effect
-- ✅ **Enterprise Auth** — Clerk authentication with user isolation
-
----
-
-## Installation
-
-```bash
-# Clone repository
-git clone https://github.com/anandsagar2807/ZaalimaOpsMind-Ai.git
-cd ZaalimaOpsMind-Ai
-
-# Backend setup
-cd backend
-cp .env.example .env
-# Edit .env with your API keys
-npm install
-npm start
-
-# Frontend setup (new terminal)
-cd ../frontend
-cp .env.example .env
-# Edit .env with your API keys
-npm install
-npm run dev
+```text
+ZaalimaOpsMind-Ai/
+├── backend/                 # Express backend (RAG, ingestion, APIs)
+│   ├── src/
+│   │   ├── config/
+│   │   ├── controllers/
+│   │   ├── middleware/
+│   │   ├── models/
+│   │   ├── routes/
+│   │   ├── services/
+│   │   └── server.js
+│   └── README.md
+├── frontend/                # React + Vite frontend
+│   ├── src/
+│   │   ├── components/
+│   │   ├── pages/
+│   │   ├── store/
+│   │   ├── utils/
+│   │   ├── App.jsx
+│   │   └── main.jsx
+│   └── README.md
+└── README.md                # (You are here)
 ```
 
 ---
 
-# 🔑 Environment Variables
-
-## Backend (`backend/.env`)
-
-```env
-GROQ_API_KEY=gsk_your_key_here
-MONGODB_URI=mongodb+srv://...
-CLERK_PUBLISHABLE_KEY=pk_test_...
-CLERK_SECRET_KEY=sk_test_...
-JWT_SECRET=random_secret_string
-EMBEDDING_PROVIDER=simple
-```
-
-## Frontend (`frontend/.env`)
-
-```env
-VITE_API_URL=http://localhost:5000
-VITE_CLERK_PUBLISHABLE_KEY=pk_test_...
-```
----
-
-# ✅ Usage
-
-1. Open `http://localhost:5173`
-2. Sign up / Log in
-3. Upload PDF documents
-4. Navigate to **Chat** page
-5. Ask questions about your documents
-
----
-
-
----
-
-# 🏗️ Architecture
+## Architecture (RAG Flow)
 
 ```text
 ┌─────────────┐
@@ -148,12 +77,13 @@ VITE_CLERK_PUBLISHABLE_KEY=pk_test_...
        │
        ▼
 ┌─────────────┐
-│  Chunking   │
+│  Extract +  │
+│  Chunk Text │
 └──────┬──────┘
        │
        ▼
 ┌─────────────┐
-│ Embeddings  │
+│ Embeddings  │  (embedding provider)
 └──────┬──────┘
        │
        ▼
@@ -161,57 +91,153 @@ VITE_CLERK_PUBLISHABLE_KEY=pk_test_...
 │ MongoDB Vector Store │
 └──────────┬───────────┘
            │
-    ┌──────▼──────┐
-    │ User Query  │
-    └──────┬──────┘
+           ▼
+┌──────────────────────┐
+│ Similarity Search     │ (Top-K + threshold)
+└──────────┬───────────┘
            │
            ▼
-    ┌─────────────┐
-    │Vector Search│ (Top K, similarity threshold)
-    └──────┬──────┘
+┌──────────────────────┐
+│ Context Builder       │ (prompt + citations)
+└──────────┬───────────┘
            │
            ▼
-    ┌──────────────┐
-    │Context Builder│
-    └──────┬───────┘
+┌──────────────────────┐
+│ Groq LLM (Streaming)  │ (SSE)
+└──────────┬───────────┘
            │
            ▼
-    ┌──────────────┐
-    │   Groq API   │ (LLM)
-    └──────┬───────┘
-           │
-           ▼
-    ┌──────────────┐
-    │  Streaming   │
-    │  Response    │
-    │ + Citations  │
-    └──────────────┘
+┌──────────────────────┐
+│ Answer + Citations    │
+└──────────────────────┘
 ```
 
 ---
 
-# 🔌 API Endpoints
+## Tech Stack
 
-## Chat
-- `POST /api/groq-chat/ask` — Non-streaming chat
-- `POST /api/groq-chat/ask/stream` — Streaming chat (SSE)
-- `GET /api/groq-chat/history` — Get chat history
-- `GET /api/groq-chat/:chatId` — Get specific chat
-- `DELETE /api/groq-chat/:chatId` — Delete chat
+### Backend
+- Node.js + Express
+- MongoDB + Mongoose
+- PDF parsing (`pdf-parse`)
+- Embeddings + vector storage
+- Groq SDK / Groq API for LLM responses
+- Auth & security (JWT, middleware, rate limiting, headers) *(see backend docs)*
 
-## Documents
-- `POST /api/documents/upload` — Upload PDF
-- `GET /api/documents` — List documents
-- `DELETE /api/documents/:id` — Delete document
-
-## Search
-- `POST /api/chat/search` — Vector search (no LLM)
+### Frontend
+- React 18 + Vite
+- TailwindCSS
+- React Router
+- Zustand
+- Axios
 
 ---
 
-# 🚫 Hallucination Control
+## API Endpoints (Quick Reference)
 
-OpsMind AI uses a strict system prompt to prevent hallucinations:
+> Endpoints may vary by backend version. For full details, check backend routes and any API documentation in the repo.
+
+### Chat (RAG)
+- `POST /api/groq-chat/ask` — non-streaming answer
+- `POST /api/groq-chat/ask/stream` — streaming (SSE)
+- `GET /api/groq-chat/history` — chat history
+- `GET /api/groq-chat/:chatId` — get chat by id
+- `DELETE /api/groq-chat/:chatId` — delete chat
+
+### Documents
+- `POST /api/documents/upload` — upload PDF
+- `GET /api/documents` — list documents
+- `DELETE /api/documents/:id` — delete document
+
+### Search
+- `POST /api/chat/search` — vector search only (no LLM)
+
+---
+
+## Environment Variables
+
+### Backend (`backend/.env`)
+
+Create from the template:
+
+```bash
+cd backend
+cp .env.example .env
+```
+
+Typical variables (examples):
+
+```env
+GROQ_API_KEY=gsk_your_key_here
+MONGODB_URI=mongodb+srv://...
+JWT_SECRET=change_me
+
+# Optional / depending on your configuration
+EMBEDDING_PROVIDER=simple
+CLERK_PUBLISHABLE_KEY=pk_test_...
+CLERK_SECRET_KEY=sk_test_...
+```
+
+### Frontend (`frontend/.env`)
+
+```bash
+cd frontend
+cp .env.example .env
+```
+
+Typical variables:
+
+```env
+VITE_API_URL=http://localhost:5000
+# If auth is enabled
+VITE_CLERK_PUBLISHABLE_KEY=pk_test_...
+```
+
+---
+
+## Local Setup
+
+### 1) Clone
+
+```bash
+git clone https://github.com/anandsagar2807/ZaalimaOpsMind-Ai.git
+cd ZaalimaOpsMind-Ai
+```
+
+### 2) Start backend
+
+```bash
+cd backend
+cp .env.example .env
+npm install
+npm start
+```
+
+### 3) Start frontend
+
+```bash
+cd ../frontend
+cp .env.example .env
+npm install
+npm run dev
+```
+
+---
+
+## Usage
+
+1. Open the frontend (default Vite URL shown in your terminal, often `http://localhost:5173`)
+2. Upload one or more PDF documents
+3. Go to the Chat page
+4. Ask questions grounded in the uploaded documents
+
+---
+
+## Hallucination Control (Context-only Policy)
+
+OpsMind AI is designed to answer **only from retrieved document context**.
+
+A typical system-policy used in the project is:
 
 ```text
 You are OpsMind AI, a corporate knowledge assistant.
@@ -225,86 +251,43 @@ CRITICAL RULES:
 5. Be concise and professional
 ```
 
-**Typical parameters:**
-- Temperature: 0.1 (low randomness)
+Recommended inference parameters (typical):
+- Temperature: `0.1`
 - Model: `llama3-70b-8192`
-- Top-p: 0.9
-- Max tokens: 2048
 
 ---
 
-# 📊 Tech Stack
+## Security Notes
 
-## Backend
-- Node.js + Express
-- MongoDB + Mongoose
-- Groq SDK (LLM)
-- Clerk (Auth)
-- PDF-Parse (Document processing)
+If you run OpsMind AI in a real organization:
 
-## Frontend
-- React 18
-- Vite
-- TailwindCSS
-- Axios
-- React Router
-- Lucide Icons
+- **Authentication**: enforce login before document upload/chat
+- **Authorization**: isolate documents/chats per user or tenant
+- **Rate limiting**: protect inference endpoints
+- **Input validation**: especially around uploads
+- **Secrets**: never commit `.env` files; use a secrets manager in production
 
 ---
 
-# 🧪 Testing
+## Testing
 
 ```bash
-# Run backend tests
+# Backend tests
 cd backend
 npm test
 
-# Run frontend tests
+# Frontend tests
 cd ../frontend
 npm test
-```ee **[TEST_INSTRUCTIONS.md](TEST_INSTRUCTIONS.md)** for detailed testing guidance.
-
----
-
-# 📈 Performance
-
-- **Document Upload**: < 30s for 10-page PDF (varies by environment)
-- **First Response**: < 3s (typical)
-- **Streaming**: Real-time
-- **Vector Search**: < 500ms (typical)
-- **Chat History Load**: < 1s (typical)
-
----
-
-# 🔒 Security
-
-- ✅ Clerk authentication
-- ✅ User data isolation
-- ✅ Rate limiting
-- ✅ Input validation
-- ✅ Helmet.js security headers
-- ✅ CORS protection
-- ✅ JWT tokens
-
----
-
-# 🛠️ Development
-
-```bash
-# Backend dev mode (auto-reload)
-cd backend
-npm run dev
-
-# Frontend dev mode (hot reload)
-cd ../frontend
-npm run dev
 ```
 
+If `TEST_INSTRUCTIONS.md` exists in the repo root, follow it for additional testing guidance.
+
 ---
 
-# 📦 Production Deployment
+## Production Deployment
 
-## Backend
+### Backend
 
 ```bash
 cd backend
@@ -312,30 +295,49 @@ npm run build
 NODE_ENV=production npm start
 ```
 
-## Frontend
+### Frontend
 
 ```bash
 cd frontend
 npm run build
-# Deploy dist/ folder to hosting service
+# Deploy dist/ to your hosting provider
 ```
 
-## Environment notes
-- Set `NODE_ENV=production`
-- Use production MongoDB cluster
+Production checklist:
+- Use a production MongoDB cluster
 - Enable HTTPS
-- Configure production CORS
-- Use strong `JWT_SECRET`
+- Lock down CORS
+- Use a strong `JWT_SECRET`
 
 ---
 
-# 🤝 Contributing
+## Troubleshooting
 
-Contributions welcome! Please:
+**Frontend can’t reach backend**
+- Check `VITE_API_URL` in `frontend/.env`
+- Confirm backend port and base path (`/api` vs no prefix)
+
+**Uploads failing**
+- Check backend upload limits and storage config
+- Confirm PDF parsing dependencies installed
+
+**No relevant answers / “I don’t know…” too often**
+- Increase Top-K
+- Improve chunking strategy
+- Verify embeddings are generated and stored correctly
+
+---
+
+## Contributing
+
 1. Fork the repository
 2. Create a feature branch
 3. Commit changes
-4. Push to branch
+4. Push to your branch
 5. Open a pull request
 
-- [Week 1 to Week 4 Progress Report](./WEEK1_TO_WEEK4_PROGRESS.md)
+---
+
+## License
+
+MIT
