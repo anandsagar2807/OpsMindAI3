@@ -2,7 +2,6 @@
 ---
 
 # 🚀 Week 1 — Project Initialization & Architecture Planning
-
 ## Objectives
 - Establish foundational project architecture
 - Define development workflow and collaboration structure
