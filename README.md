@@ -124,7 +124,6 @@ EMBEDDING_PROVIDER=simple
 VITE_API_URL=http://localhost:5000
 VITE_CLERK_PUBLISHABLE_KEY=pk_test_...
 ```
-
 ---
 
 # ✅ Usage
