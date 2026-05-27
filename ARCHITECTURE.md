@@ -1,7 +1,7 @@
 #  OpsMind AI — System Architecture
 ---
 
-# 📌 Overview
+# Overview
 
 OpsMind AI is an enterprise-grade Retrieval-Augmented Generation (RAG) platform designed to provide accurate, context-aware responses from uploaded company documents.
 
