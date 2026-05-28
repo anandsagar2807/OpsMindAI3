@@ -1,6 +1,5 @@
 # 📌 OpsMind AI — Development Progress Timeline
 ---
-
 # 🚀 Week 1 — Project Initialization & Architecture Planning
 ## Objectives
 - Establish foundational project architecture
