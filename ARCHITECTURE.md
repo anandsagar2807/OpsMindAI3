@@ -13,7 +13,7 @@ The system combines:
 
 ---
 
-# 🧠 Core Workflow
+# Core Workflow
 
 ## 1. Authentication Layer
 - Users authenticate using Clerk Authentication
@@ -48,7 +48,7 @@ This architecture significantly reduces hallucinations and improves factual accu
 
 ---
 
-# 🔍 Vector Search System
+# Vector Search System
 
 The platform uses semantic similarity search to retrieve relevant document chunks.
 
@@ -60,7 +60,7 @@ The platform uses semantic similarity search to retrieve relevant document chunk
 
 ---
 
-# 🚫 Hallucination Prevention Strategy
+# Hallucination Prevention Strategy
 
 OpsMind AI follows a strict context-only generation approach.
 
@@ -72,7 +72,7 @@ OpsMind AI follows a strict context-only generation approach.
 
 ---
 
-# ⚡ Streaming Response System
+#  Streaming Response System
 
 The platform supports real-time streaming AI responses.
 
@@ -83,7 +83,7 @@ The platform supports real-time streaming AI responses.
 
 ---
 
-# 🔐 Security Architecture
+# Security Architecture
 
 ## Authentication
 - Clerk Authentication
@@ -98,7 +98,7 @@ The platform supports real-time streaming AI responses.
 
 ---
 
-# 🗄️ Database Architecture
+# Database Architecture
 
 ## MongoDB Usage
 - Document metadata storage
@@ -108,7 +108,7 @@ The platform supports real-time streaming AI responses.
 
 ---
 
-# 🧩 Frontend Architecture
+# Frontend Architecture
 
 ## Technologies
 - React.js
@@ -125,7 +125,7 @@ The platform supports real-time streaming AI responses.
 
 ---
 
-# 🔧 Backend Architecture
+#  Backend Architecture
 
 ## Technologies
 - Node.js
@@ -142,7 +142,7 @@ The platform supports real-time streaming AI responses.
 
 ---
 
-# 📈 Scalability Considerations
+# Scalability Considerations
 
 The modular architecture enables:
 - independent frontend/backend scaling
