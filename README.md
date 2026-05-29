@@ -1,13 +1,16 @@
 # OpsMind AI
 
-OpsMind AI turns internal PDFs (SOPs, policies, runbooks, manuals) into a searchable knowledge base. Users upload documents, the backend extracts + chunks text, generates embeddings, stores them in MongoDB, and answers questions by retrieving the most relevant chunks and sending them to an LLM.
+OpsMind AI turns internal PDFs (SOPs, policies, runbooks, manuals) into a **searchable knowledge base** and a **chat assistant** that answers questions using **only the uploaded documents** (RAG: Retrieval-Augmented Generation).
+
+**High-level flow:** Upload PDFs → extract text → chunk → generate embeddings → store in MongoDB (vector search) → retrieve relevant chunks → send context to the LLM → return an answer with citations.
+
 ---
 
 ## Table of Contents
 
 - [Key Features](#key-features)
 - [Project Structure](#project-structure)
-- [Architecture (RAG Flow)](#architecture-rag-flow)
+- [How It Works (RAG Flow)](#how-it-works-rag-flow)
 - [Tech Stack](#tech-stack)
 - [API Endpoints (Quick Reference)](#api-endpoints-quick-reference)
 - [Environment Variables](#environment-variables)
@@ -25,15 +28,16 @@ OpsMind AI turns internal PDFs (SOPs, policies, runbooks, manuals) into a search
 
 ## Key Features
 
-- **RAG Pipeline**: retrieval-augmented generation for grounded answers
-- **Document Ingestion**: upload PDFs, extract text, chunk, and embed
-- **MongoDB Vector Store**: store embeddings + chunk metadata for similarity search
-- **Groq LLM Integration**: fast inference + **streaming** responses (SSE)
-- **Source Citations**: responses can include document references (doc/page/chunk)
-- **Chat History**: persist conversations for later review
-- **Admin-friendly UI**: modern React dashboard for document & chat workflows
+- **RAG pipeline** for grounded, document-based answers
+- **PDF ingestion**: upload PDFs, extract text, and chunk content
+- **Embeddings + vector search** using **MongoDB** as the vector store
+- **Groq LLM integration** with **streaming responses (SSE)**
+- **Source citations** (document/page/chunk metadata when available)
+- **Chat history** stored for later review
+- **Admin-friendly UI**: React dashboard for documents + chat
 
-> Note: The repository also contains backend support for **JWT-based auth** (see `backend/README.md`). If you enable/extend auth, ensure document access is isolated per user/tenant.
+> Note: The repository also includes backend support for **JWT-based auth** (see `backend/README.md`).
+> If you enable auth, ensure documents and chats are isolated per user or tenant.
 
 ---
 
@@ -60,53 +64,29 @@ ZaalimaOpsMind-Ai/
 │   │   ├── App.jsx
 │   │   └── main.jsx
 │   └── README.md
-└── README.md                # (You are here)
+└── README.md                # (this file)
 ```
 
 ---
 
-## Architecture (RAG Flow)
+## How It Works (RAG Flow)
 
 ```text
-┌─────────────┐
-│  PDF Upload │
-└──────┬──────┘
-       │
-       ▼
-┌─────────────┐
-│  Extract +  │
-│  Chunk Text │
-└──────┬──────┘
-       │
-       ▼
-┌─────────────┐
-│ Embeddings  │  (embedding provider)
-└──────┬──────┘
-       │
-       ▼
-┌──────────────────────┐
-│ MongoDB Vector Store │
-└──────────┬───────────┘
-           │
-           ▼
-┌──────────────────────┐
-│ Similarity Search     │ (Top-K + threshold)
-└──────────┬───────────┘
-           │
-           ▼
-┌──────────────────────┐
-│ Context Builder       │ (prompt + citations)
-└──────────┬───────────┘
-           │
-           ▼
-┌──────────────────────┐
-│ Groq LLM (Streaming)  │ (SSE)
-└──────────┬───────────┘
-           │
-           ▼
-┌──────────────────────┐
-│ Answer + Citations    │
-└──────────────────────┘
+PDF Upload
+   ↓
+Extract text (PDF parsing)
+   ↓
+Chunk text (smaller pieces)
+   ↓
+Generate embeddings (vector representation)
+   ↓
+Store in MongoDB (vector store + metadata)
+   ↓
+User question → similarity search (Top-K + threshold)
+   ↓
+Build prompt using retrieved chunks (+ citations)
+   ↓
+Groq LLM generates answer (optionally streamed via SSE)
 ```
 
 ---
@@ -116,10 +96,10 @@ ZaalimaOpsMind-Ai/
 ### Backend
 - Node.js + Express
 - MongoDB + Mongoose
-- PDF parsing (`pdf-parse`)
+- PDF parsing: `pdf-parse`
 - Embeddings + vector storage
-- Groq SDK / Groq API for LLM responses
-- Auth & security (JWT, middleware, rate limiting, headers) *(see backend docs)*
+- Groq API / Groq SDK (LLM responses, streaming)
+- Optional security/auth: JWT, middleware, rate limiting, headers
 
 ### Frontend
 - React 18 + Vite
@@ -132,21 +112,21 @@ ZaalimaOpsMind-Ai/
 
 ## API Endpoints (Quick Reference)
 
-> Endpoints may vary by backend version. For full details, check backend routes and any API documentation in the repo.
+> Endpoints may vary depending on backend version. For exact details, check `backend/src/routes`.
 
 ### Chat (RAG)
-- `POST /api/groq-chat/ask` — non-streaming answer
-- `POST /api/groq-chat/ask/stream` — streaming (SSE)
-- `GET /api/groq-chat/history` — chat history
-- `GET /api/groq-chat/:chatId` — get chat by id
-- `DELETE /api/groq-chat/:chatId` — delete chat
+- `POST /api/groq-chat/ask` — generate answer (non-streaming)
+- `POST /api/groq-chat/ask/stream` — generate answer (streaming via SSE)
+- `GET /api/groq-chat/history` — list chat history
+- `GET /api/groq-chat/:chatId` — get a chat by id
+- `DELETE /api/groq-chat/:chatId` — delete a chat
 
 ### Documents
-- `POST /api/documents/upload` — upload PDF
-- `GET /api/documents` — list documents
-- `DELETE /api/documents/:id` — delete document
+- `POST /api/documents/upload` — upload a PDF
+- `GET /api/documents` — list uploaded documents
+- `DELETE /api/documents/:id` — delete a document
 
-### Search
+### Search (Vector only)
 - `POST /api/chat/search` — vector search only (no LLM)
 
 ---
@@ -162,11 +142,13 @@ cd backend
 cp .env.example .env
 ```
 
-Typical variables (examples):
+Common variables:
 
 ```env
 GROQ_API_KEY=gsk_your_key_here
 MONGODB_URI=mongodb+srv://...
+
+# If auth is enabled
 JWT_SECRET=change_me
 
 # Optional / depending on your configuration
@@ -182,10 +164,11 @@ cd frontend
 cp .env.example .env
 ```
 
-Typical variables:
+Common variables:
 
 ```env
 VITE_API_URL=http://localhost:5000
+
 # If auth is enabled
 VITE_CLERK_PUBLISHABLE_KEY=pk_test_...
 ```
@@ -201,7 +184,7 @@ git clone https://github.com/anandsagar2807/ZaalimaOpsMind-Ai.git
 cd ZaalimaOpsMind-Ai
 ```
 
-### 2) Start backend
+### 2) Start the backend
 
 ```bash
 cd backend
@@ -210,7 +193,7 @@ npm install
 npm start
 ```
 
-### 3) Start frontend
+### 3) Start the frontend
 
 ```bash
 cd ../frontend
@@ -223,10 +206,10 @@ npm run dev
 
 ## Usage
 
-1. Open the frontend (default Vite URL shown in your terminal, often `http://localhost:5173`)
+1. Open the frontend (Vite prints the URL in your terminal, often `http://localhost:5173`)
 2. Upload one or more PDF documents
-3. Go to the Chat page
-4. Ask questions grounded in the uploaded documents
+3. Go to the **Chat** page
+4. Ask questions based on the uploaded documents
 
 ---
 
@@ -234,21 +217,21 @@ npm run dev
 
 OpsMind AI is designed to answer **only from retrieved document context**.
 
-A typical system-policy used in the project is:
+Example system policy:
 
 ```text
 You are OpsMind AI, a corporate knowledge assistant.
 
 CRITICAL RULES:
-1. You must ONLY answer using the provided SOP context
+1. You must ONLY answer using the provided SOP context.
 2. If the answer is NOT in the context, respond EXACTLY with:
    "I don't know based on available company SOPs."
-3. Do NOT make up information or hallucinate facts
-4. ALWAYS include source citations: (Source: Document Name, Page Number)
-5. Be concise and professional
+3. Do NOT make up information.
+4. Include source citations in the answer when possible.
+5. Be concise and professional.
 ```
 
-Recommended inference parameters (typical):
+Recommended inference settings:
 - Temperature: `0.1`
 - Model: `llama3-70b-8192`
 
@@ -256,13 +239,13 @@ Recommended inference parameters (typical):
 
 ## Security Notes
 
-If you run OpsMind AI in a real organization:
+If you deploy this in a real organization:
 
-- **Authentication**: enforce login before document upload/chat
-- **Authorization**: isolate documents/chats per user or tenant
-- **Rate limiting**: protect inference endpoints
-- **Input validation**: especially around uploads
-- **Secrets**: never commit `.env` files; use a secrets manager in production
+- Require authentication before upload/chat
+- Enforce authorization (documents/chats per user/tenant)
+- Add rate limiting on inference endpoints
+- Validate inputs (especially file uploads)
+- Never commit `.env` files; use a secrets manager in production
 
 ---
 
@@ -310,18 +293,18 @@ Production checklist:
 
 ## Troubleshooting
 
-**Frontend can’t reach backend**
+### Frontend can’t reach backend
 - Check `VITE_API_URL` in `frontend/.env`
-- Confirm backend port and base path (`/api` vs no prefix)
+- Confirm backend port and API base path (e.g., `/api`)
 
-**Uploads failing**
-- Check backend upload limits and storage config
-- Confirm PDF parsing dependencies installed
+### Uploads failing
+- Check upload size limits and storage config
+- Confirm PDF parsing dependencies are installed
 
-**No relevant answers / “I don’t know…” too often**
+### Answers are often “I don’t know…”
 - Increase Top-K
-- Improve chunking strategy
-- Verify embeddings are generated and stored correctly
+- Improve chunk size/overlap strategy
+- Confirm embeddings are being generated and stored correctly
 
 ---
 
