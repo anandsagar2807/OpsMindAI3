@@ -316,8 +316,3 @@ Production checklist:
 4. Push to your branch
 5. Open a pull request
 
----
-
-## License
-
-MIT
