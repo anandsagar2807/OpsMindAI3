@@ -132,6 +132,7 @@ The platform supports real-time streaming AI responses.
 - Express.js
 - MongoDB
 - Groq SDK
+- openrouter
 
 ## Responsibilities
 - API routing
@@ -139,7 +140,6 @@ The platform supports real-time streaming AI responses.
 - RAG orchestration
 - AI communication
 - Vector search operations
-
 ---
 
 # Scalability Considerations
