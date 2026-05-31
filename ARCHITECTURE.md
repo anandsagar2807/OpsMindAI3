@@ -10,7 +10,6 @@ The system combines:
 - Real-time streaming responses
 - Secure authentication
 - Frontend-backend modular architecture
-
 ---
 
 # Core Workflow
@@ -19,7 +18,6 @@ The system combines:
 - Users authenticate using Clerk Authentication
 - JWT-based session validation is used
 - User-level isolation ensures secure access to uploaded documents
-
 ---
 
 ## 2. Document Upload & Processing
@@ -31,7 +29,6 @@ The system combines:
 4. Document is divided into smaller chunks
 5. Embeddings are generated
 6. Embeddings are stored in MongoDB vector database
-
 ---
 
 ## 3. Retrieval-Augmented Generation (RAG)
@@ -43,9 +40,6 @@ The system combines:
 4. Context builder prepares retrieved information
 5. Context is sent to Groq LLM
 6. AI generates response using ONLY retrieved context
-
-This architecture significantly reduces hallucinations and improves factual accuracy.
-
 ---
 
 # Vector Search System
@@ -57,7 +51,6 @@ The platform uses semantic similarity search to retrieve relevant document chunk
 - Similarity comparison
 - Top-K retrieval strategy
 - Threshold filtering for relevance
-
 ---
 
 # Hallucination Prevention Strategy
@@ -69,7 +62,6 @@ OpsMind AI follows a strict context-only generation approach.
 - Unknown answers are rejected
 - Source citations are included in responses
 - Low-temperature generation improves consistency
-
 ---
 
 #  Streaming Response System
@@ -80,7 +72,6 @@ The platform supports real-time streaming AI responses.
 - Faster perceived response time
 - ChatGPT-style typing experience
 - Improved user interaction flow
-
 ---
 
 # Security Architecture
@@ -95,7 +86,6 @@ The platform supports real-time streaming AI responses.
 - Rate limiting
 - Helmet.js security middleware
 - CORS protection
-
 ---
 
 # Database Architecture
@@ -105,7 +95,6 @@ The platform supports real-time streaming AI responses.
 - Vector embeddings storage
 - Chat history persistence
 - User-specific document isolation
-
 ---
 
 # Frontend Architecture
