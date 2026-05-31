@@ -3,7 +3,6 @@
 OpsMind AI turns internal PDFs (SOPs, policies, runbooks, manuals) into a **searchable knowledge base** and a **chat assistant** that answers questions using **only the uploaded documents** (RAG: Retrieval-Augmented Generation).
 
 **High-level flow:** Upload PDFs → extract text → chunk → generate embeddings → store in MongoDB (vector search) → retrieve relevant chunks → send context to the LLM → return an answer with citations.
-
 ---
 
 ## Table of Contents
@@ -25,7 +24,6 @@ OpsMind AI turns internal PDFs (SOPs, policies, runbooks, manuals) into a **sear
 - [License](#license)
 
 ---
-
 ## Key Features
 
 - **RAG pipeline** for grounded, document-based answers
@@ -42,7 +40,6 @@ OpsMind AI turns internal PDFs (SOPs, policies, runbooks, manuals) into a **sear
 ---
 
 ## Project Structure
-
 ```text
 ZaalimaOpsMind-Ai/
 ├── backend/                 # Express backend (RAG, ingestion, APIs)
@@ -70,7 +67,6 @@ ZaalimaOpsMind-Ai/
 ---
 
 ## How It Works (RAG Flow)
-
 ```text
 PDF Upload
    ↓
@@ -92,7 +88,6 @@ Groq LLM generates answer (optionally streamed via SSE)
 ---
 
 ## Tech Stack
-
 ### Backend
 - Node.js + Express
 - MongoDB + Mongoose
