@@ -4,7 +4,6 @@ OpsMind AI turns internal PDFs (SOPs, policies, runbooks, manuals) into a **sear
 
 **High-level flow:** Upload PDFs → extract text → chunk → generate embeddings → store in MongoDB (vector search) → retrieve relevant chunks → send context to the LLM → return an answer with citations.
 ---
-
 ## Table of Contents
 
 - [Key Features](#key-features)
