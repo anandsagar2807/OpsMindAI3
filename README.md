@@ -1,9 +1,13 @@
 # OpsMind AI
 
-OpsMind AI turns internal PDFs (SOPs, policies, runbooks, manuals) into a **searchable knowledge base** and a **chat assistant** that answers questions using **only the uploaded documents** (RAG: Retrieval-Augmented Generation).
+OpsMind AI turns internal PDFs (SOPs, policies, runbooks, manuals) into a **searchable knowledge base** and an **enterprise chat assistant** that answers questions **grounded in your uploaded documents** (Retrieval-Augmented Generation / RAG).
 
-**High-level flow:** Upload PDFs → extract text → chunk → generate embeddings → store in MongoDB (vector search) → retrieve relevant chunks → send context to the LLM → return an answer with citations.
+**High-level flow:** Upload PDFs → extract text → chunk → generate embeddings → store in MongoDB → similarity search (Top‑K + threshold) → build a grounded prompt → LLM generates an answer (+ citations) → optionally stream via SSE.
+
+> This README is updated to match what’s implemented in the repository (OpenRouter-based chat + embeddings, MongoDB aggregation similarity search, Clerk auth with dev-mode bypass, SSE streaming).
+
 ---
+
 ## Table of Contents
 
 - [Key Features](#key-features)
@@ -23,24 +27,24 @@ OpsMind AI turns internal PDFs (SOPs, policies, runbooks, manuals) into a **sear
 - [License](#license)
 
 ---
+
 ## Key Features
 
 - **RAG pipeline** for grounded, document-based answers
 - **PDF ingestion**: upload PDFs, extract text, and chunk content
 - **Embeddings + vector search** using **MongoDB** as the vector store
-- **Groq LLM integration** with **streaming responses (SSE)**
-- **Source citations** (document/page/chunk metadata when available)
-- **Chat history** stored for later review
+- **LLM via OpenRouter** (chat completions) with **streaming responses (SSE)**
+- **Source citations** (document/page/section/chunk metadata when available)
+- **Chat history** stored for later review (messages include retrieval metadata)
 - **Admin-friendly UI**: React dashboard for documents + chat
-
-> Note: The repository also includes backend support for **JWT-based auth** (see `backend/README.md`).
-> If you enable auth, ensure documents and chats are isolated per user or tenant.
+- **Auth-ready**: Clerk integration (production) + **dev-mode auth bypass** for local development
 
 ---
 
 ## Project Structure
+
 ```text
-ZaalimaOpsMind-Ai/
+OpsMindAI3/
 ├── backend/                 # Express backend (RAG, ingestion, APIs)
 │   ├── src/
 │   │   ├── config/
@@ -56,72 +60,105 @@ ZaalimaOpsMind-Ai/
 │   │   ├── components/
 │   │   ├── pages/
 │   │   ├── store/
-│   │   ├── utils/
+│   │   ├── services/
+│   │   ├── lib/
 │   │   ├── App.jsx
 │   │   └── main.jsx
 │   └── README.md
+├── ARCHITECTURE.md          # System architecture (kept in sync with code)
 └── README.md                # (this file)
 ```
 
 ---
 
 ## How It Works (RAG Flow)
+
 ```text
 PDF Upload
    ↓
-Extract text (PDF parsing)
+Extract text (pdf-parse)
    ↓
-Chunk text (smaller pieces)
+Chunk text (chunk size + overlap)
    ↓
-Generate embeddings (vector representation)
+Generate embeddings (OpenRouter /embeddings)
    ↓
-Store in MongoDB (vector store + metadata)
+Store chunks + embeddings in MongoDB
    ↓
-User question → similarity search (Top-K + threshold)
+User question → embedding → similarity search (Top-K + threshold)
    ↓
-Build prompt using retrieved chunks (+ citations)
+Build grounded prompt using retrieved chunks (+ citations)
    ↓
-Groq LLM generates answer (optionally streamed via SSE)
+OpenRouter chat completions generates answer
+   ↓
+Return answer (optionally streamed via SSE)
 ```
 
 ---
 
 ## Tech Stack
+
 ### Backend
+
 - Node.js + Express
 - MongoDB + Mongoose
+- File uploads: Multer
 - PDF parsing: `pdf-parse`
-- Embeddings + vector storage
-- Groq API / Groq SDK (LLM responses, streaming)
-- Optional security/auth: JWT, middleware, rate limiting, headers
+- LLM + embeddings: **OpenRouter**
+  - `POST https://openrouter.ai/api/v1/chat/completions`
+  - `POST https://openrouter.ai/api/v1/embeddings`
+- Streaming: **SSE** (`text/event-stream`)
+- Security: Helmet, CORS allowlist, rate limiting
+- Auth: Clerk (`@clerk/express`) + dev-mode JWT decode bypass when keys are placeholders
 
 ### Frontend
+
 - React 18 + Vite
 - TailwindCSS
-- React Router
+- React Router v6
+- TanStack React Query
 - Zustand
-- Axios
+- Axios (request interceptor attaches Bearer token)
+- react-dropzone
+- react-hot-toast
+- Clerk (`@clerk/react`) + dev-mode auth bypass when publishable key is placeholder
 
 ---
 
 ## API Endpoints (Quick Reference)
 
-> Endpoints may vary depending on backend version. For exact details, check `backend/src/routes`.
+> For exact details, check `backend/src/routes`.
 
-### Chat (RAG)
-- `POST /api/groq-chat/ask` — generate answer (non-streaming)
-- `POST /api/groq-chat/ask/stream` — generate answer (streaming via SSE)
-- `GET /api/groq-chat/history` — list chat history
-- `GET /api/groq-chat/:chatId` — get a chat by id
-- `DELETE /api/groq-chat/:chatId` — delete a chat
+### Public
+
+- `GET /api/public/*` — public endpoints (see `backend/src/server.js` routing)
 
 ### Documents
+
 - `POST /api/documents/upload` — upload a PDF
 - `GET /api/documents` — list uploaded documents
+- `GET /api/documents/:id` — get document metadata
+- `GET /api/documents/:id/status` — get upload/processing status
 - `DELETE /api/documents/:id` — delete a document
 
-### Search (Vector only)
-- `POST /api/chat/search` — vector search only (no LLM)
+### RAG (Chat)
+
+- `POST /api/rag/ask` — generate answer (non-streaming)
+- `POST /api/rag/stream` — generate answer (streaming via SSE)
+- `GET /api/rag/search` — vector search only (no LLM; query via `?query=...`)
+
+### Conversations / Messages
+
+- `POST /api/chat` — create conversation
+- `GET /api/chat` — list conversations
+- `GET /api/chat/:id` — get a conversation
+- `PATCH /api/chat/:id` — update conversation title
+- `DELETE /api/chat/:id` — delete a conversation
+
+### Dashboard / Analytics
+
+- `GET /api/dashboard/stats`
+- `GET /api/dashboard/recent-activity`
+- `GET /api/dashboard/documents-overview`
 
 ---
 
@@ -136,36 +173,46 @@ cd backend
 cp .env.example .env
 ```
 
-Common variables:
+Common variables (based on current code):
 
 ```env
-GROQ_API_KEY=gsk_your_key_here
+# Server
+PORT=5002
+FRONTEND_URL=http://localhost:5173
+
+# Database
 MONGODB_URI=mongodb+srv://...
 
-# If auth is enabled
-JWT_SECRET=change_me
+# OpenRouter (LLM + embeddings)
+OPENROUTER_API_KEY=your_openrouter_key
+OPENROUTER_MODEL=google/gemini-2.0-flash-001
+OPENROUTER_EMBEDDING_MODEL=openai/text-embedding-3-small
 
-# Optional / depending on your configuration
-EMBEDDING_PROVIDER=simple
-CLERK_PUBLISHABLE_KEY=pk_test_...
-CLERK_SECRET_KEY=sk_test_...
+# Clerk (prod). If these are placeholders/missing, backend runs dev auth bypass.
+CLERK_SECRET_KEY=sk_live_...
+
+# Rate limiting (optional)
+RATE_LIMIT_WINDOW_MS=900000
+RATE_LIMIT_MAX_REQUESTS=500
 ```
 
 ### Frontend (`frontend/.env`)
 
 ```bash
 cd frontend
-cp .env.example .env
+# if you have .env.example in repo, copy it; otherwise create .env manually
 ```
 
 Common variables:
 
 ```env
-VITE_API_URL=http://localhost:5000
-
-# If auth is enabled
-VITE_CLERK_PUBLISHABLE_KEY=pk_test_...
+VITE_API_URL=http://localhost:5002
+VITE_CLERK_PUBLISHABLE_KEY=pk_live_...
 ```
+
+Notes:
+- In **development**, the frontend Axios client may use Vite proxy (empty `baseURL`) depending on setup.
+- If `VITE_CLERK_PUBLISHABLE_KEY` is a placeholder/missing, the frontend uses the **dev auth provider**.
 
 ---
 
@@ -174,8 +221,8 @@ VITE_CLERK_PUBLISHABLE_KEY=pk_test_...
 ### 1) Clone
 
 ```bash
-git clone https://github.com/anandsagar2807/ZaalimaOpsMind-Ai.git
-cd ZaalimaOpsMind-Ai
+git clone https://github.com/anandsagar2807/OpsMindAI3.git
+cd OpsMindAI3
 ```
 
 ### 2) Start the backend
@@ -184,50 +231,47 @@ cd ZaalimaOpsMind-Ai
 cd backend
 cp .env.example .env
 npm install
-npm start
+npm run dev
+# or: npm start
 ```
+
+Backend runs on `http://localhost:5002` by default.
 
 ### 3) Start the frontend
 
 ```bash
 cd ../frontend
-cp .env.example .env
 npm install
 npm run dev
 ```
+
+Vite prints the URL in your terminal (often `http://localhost:5173`).
 
 ---
 
 ## Usage
 
-1. Open the frontend (Vite prints the URL in your terminal, often `http://localhost:5173`)
-2. Upload one or more PDF documents
-3. Go to the **Chat** page
-4. Ask questions based on the uploaded documents
+1. Open the frontend (Vite URL)
+2. Log in (Clerk) — or use dev-mode auth if running with placeholder keys
+3. Upload one or more PDF documents
+4. Go to the Chat / RAG area
+5. Ask questions based on the uploaded documents
 
 ---
 
 ## Hallucination Control (Context-only Policy)
 
-OpsMind AI is designed to answer **only from retrieved document context**.
+When relevant chunks are retrieved, the backend uses a strict **context-only** system prompt:
+- Answer only using provided context chunks
+- If the answer is not in context, respond with:
+  - `"I don't know based on the uploaded SOP documents."`
+- Provide citations when possible
 
-Example system policy:
+### Fallback mode
 
-```text
-You are OpsMind AI, a corporate knowledge assistant.
-
-CRITICAL RULES:
-1. You must ONLY answer using the provided SOP context.
-2. If the answer is NOT in the context, respond EXACTLY with:
-   "I don't know based on available company SOPs."
-3. Do NOT make up information.
-4. Include source citations in the answer when possible.
-5. Be concise and professional.
-```
-
-Recommended inference settings:
-- Temperature: `0.1`
-- Model: `llama3-70b-8192`
+If embeddings/vector search fail (for example, missing OpenRouter credits or `OPENROUTER_API_KEY` not configured), the backend can fall back to a **non-RAG** answer mode:
+- It will still call the LLM, but **without document context**
+- Metadata includes `fallbackMode: true`
 
 ---
 
@@ -237,6 +281,7 @@ If you deploy this in a real organization:
 
 - Require authentication before upload/chat
 - Enforce authorization (documents/chats per user/tenant)
+- Lock down CORS (`FRONTEND_URL` allowlist)
 - Add rate limiting on inference endpoints
 - Validate inputs (especially file uploads)
 - Never commit `.env` files; use a secrets manager in production
@@ -245,17 +290,17 @@ If you deploy this in a real organization:
 
 ## Testing
 
+Testing commands may vary by project configuration.
+
 ```bash
-# Backend tests
+# Backend
 cd backend
 npm test
 
-# Frontend tests
+# Frontend
 cd ../frontend
 npm test
 ```
-
-If `TEST_INSTRUCTIONS.md` exists in the repo root, follow it for additional testing guidance.
 
 ---
 
@@ -265,9 +310,15 @@ If `TEST_INSTRUCTIONS.md` exists in the repo root, follow it for additional test
 
 ```bash
 cd backend
-npm run build
 NODE_ENV=production npm start
 ```
+
+Checklist:
+- Use a production MongoDB cluster
+- Set real Clerk keys
+- Set OpenRouter API key + model(s)
+- Enable HTTPS
+- Tighten CORS origins
 
 ### Frontend
 
@@ -277,29 +328,28 @@ npm run build
 # Deploy dist/ to your hosting provider
 ```
 
-Production checklist:
-- Use a production MongoDB cluster
-- Enable HTTPS
-- Lock down CORS
-- Use a strong `JWT_SECRET`
-  
-
 ---
 
 ## Troubleshooting
 
 ### Frontend can’t reach backend
+
 - Check `VITE_API_URL` in `frontend/.env`
-- Confirm backend port and API base path (e.g., `/api`)
+- Confirm backend is running on port `5002`
+- Confirm CORS includes your frontend origin (`FRONTEND_URL`)
 
 ### Uploads failing
-- Check upload size limits and storage config
-- Confirm PDF parsing dependencies are installed
+
+- Check upload size limits (Multer)
+- Confirm PDFs are supported (current implementation is PDF-focused)
+- Confirm `pdf-parse` dependencies are installed
 
 ### Answers are often “I don’t know…”
-- Increase Top-K
-- Improve chunk size/overlap strategy
-- Confirm embeddings are being generated and stored correctly
+
+- Upload more relevant documents
+- Adjust chunking parameters (chunk size / overlap)
+- Increase Top‑K retrieval
+- Confirm embeddings are being generated and stored
 
 ---
 
@@ -311,5 +361,8 @@ Production checklist:
 4. Push to your branch
 5. Open a pull request
 
-✅ complete 
+---
 
+## License
+
+MIT (see `LICENSE` if present)
