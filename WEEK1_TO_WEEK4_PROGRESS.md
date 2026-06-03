@@ -17,7 +17,6 @@
 A scalable project foundation was successfully established for future AI workflow implementation.
 
 ---
-
 # ⚙️ Week 2 — Backend Development & AI Workflow Setup
 
 ## Objectives
