@@ -13,7 +13,7 @@ The system combines:
 
 ---
 
-## Repository Layout (current)
+## Repository Layout 
 
 - `frontend/` — React + Vite enterprise dashboard UI
 - `backend/` — Node.js + Express API server
