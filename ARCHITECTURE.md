@@ -2,7 +2,6 @@
 ---
 ## Overview
 OpsMind AI is an enterprise-grade Retrieval-Augmented Generation (RAG) platform for corporate knowledge management. Users upload SOP documents (currently PDF), the backend extracts and chunks text, generates embeddings, stores them in MongoDB, and serves grounded answers via an LLM.
-
 The system combines:
 - AI-powered conversational workflows + conversation persistence
 - MongoDB-based vector retrieval (embeddings stored per chunk)
