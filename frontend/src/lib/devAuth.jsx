@@ -10,14 +10,26 @@ const CLERK_PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || '';
 const PLACEHOLDER_PATTERNS = [
     'pk_test_placeholder',
     'your-clerk-publishable-key-here',
-    'pk_test_bGlrZWQtZHJhZ29uLTYuY2xlcmsuYWNjb3VudHMuZGV2JA', // the actual placeholder in .env.local
 ];
 
 /**
- * Detects if the Clerk publishable key is a placeholder or missing.
- * In production, you'd set a real Clerk key and this would return false.
+ * Detects if the app should run in dev mode (custom signup/signin forms)
+ * or production mode (Clerk hosted auth).
+ *
+ * Controlled by VITE_DEV_MODE in frontend/.env:
+ *   - "true"  → use custom forms (DevAuthProvider)
+ *   - "false" → use Clerk auth (ClerkProvider)
+ *
+ * Also falls back to dev mode if the Clerk publishable key is missing or
+ * a known placeholder value.
  */
 export const isDevMode = () => {
+    // ── Check .env flag first ──
+    const envDevMode = import.meta.env.VITE_DEV_MODE;
+    if (envDevMode === 'true') return true;
+    if (envDevMode === 'false') return false;
+
+    // ── Auto-detect: missing or placeholder key → dev mode ──
     if (!CLERK_PUBLISHABLE_KEY) return true;
     if (PLACEHOLDER_PATTERNS.includes(CLERK_PUBLISHABLE_KEY)) return true;
     // Also detect patterns like "your-" prefix or "placeholder" in the key
@@ -83,25 +95,22 @@ const DEV_USER = {
 const DevAuthContext = createContext(null);
 
 export const DevAuthProvider = ({ children }) => {
-    const [signedIn, setSignedIn] = useState(true); // Always signed in in dev mode
+    const [signedIn, setSignedIn] = useState(false); // Start as not signed in so auth forms are visible
 
     const getToken = useCallback(async () => {
         return createDevJWT();
     }, []);
 
     const signOut = useCallback(() => {
-        // In dev mode, signing out just toggles state (no real Clerk sign out)
         setSignedIn(false);
-        // Auto-sign back in after 1 second for convenience
-        setTimeout(() => setSignedIn(true), 1000);
     }, []);
 
-    // Dev-mode signIn — just sets signedIn to true (no real auth)
+    // Dev-mode signIn — sets signedIn to true (no real auth, any credentials work)
     const signIn = useCallback(async () => {
         setSignedIn(true);
     }, []);
 
-    // Dev-mode signUp — just sets signedIn to true (no real auth)
+    // Dev-mode signUp — sets signedIn to true (no real auth, any credentials work)
     const signUp = useCallback(async () => {
         setSignedIn(true);
     }, []);

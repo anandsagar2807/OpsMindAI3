@@ -62,8 +62,20 @@ const documentSchema = new mongoose.Schema({
     maxlength: 500
   },
   insights: {
-    type: String,
+    // Structured insights object produced by services/insightsService.js.
+    // Schema:
+    //   { summary, keyTopics, keyPoints, actionItems, importantTerms,
+    //     sections, statistics, generatedBy, generatedAt }
+    type: mongoose.Schema.Types.Mixed,
     default: null
+  },
+  insightsGeneratedAt: {
+    type: Date,
+    default: null
+  },
+  insightsVersion: {
+    type: Number,
+    default: 1
   },
   createdAt: {
     type: Date,

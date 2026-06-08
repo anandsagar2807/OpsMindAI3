@@ -13,16 +13,25 @@ export default defineConfig({
         timeout: 120000,
         // Configure proxy for multipart form-data uploads
         configure: (proxy) => {
-          proxy.on('error', (err) => {
+          proxy.on('error', (err, req, res) => {
             console.warn('[vite-proxy] Proxy error:', err.message);
-          });
-          proxy.on('proxyReq', (proxyReq) => {
-            // For multipart uploads, let the Content-Type be set by the browser
-            // (includes the boundary parameter) — don't override it
-            if (proxyReq.getHeader('Content-Type')?.includes('multipart/form-data')) {
-              proxyReq.removeHeader('Content-Length');
+            // Send a JSON error response to the client so axios receives
+            // a proper error instead of a silent network failure
+            if (!res.headersSent) {
+              res.writeHead(502, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({
+                success: false,
+                message: 'Proxy error — backend server is not reachable. Please ensure the backend is running on port 5002.',
+                proxyError: err.message,
+              }));
             }
           });
+          // NOTE: We intentionally do NOT remove Content-Length for multipart
+          // uploads.  The browser sets the correct Content-Length for FormData,
+          // and removing it forces chunked transfer-encoding which can cause
+          // http-proxy to fail to stream the body correctly, resulting in the
+          // backend never receiving the full request → "network error" on the
+          // client side.  The original Content-Length must be forwarded intact.
         },
       },
     },

@@ -1,15 +1,127 @@
 import { motion } from 'framer-motion';
+import { useState, useEffect } from 'react';
 import { SignIn } from '@clerk/react';
-import { Sparkles, Brain, Shield, Zap, ArrowLeft } from 'lucide-react';
-import { Link, Navigate } from 'react-router-dom';
+import { Sparkles, Brain, Shield, Zap, ArrowLeft, AlertTriangle, RefreshCw, Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuthContext';
+import { DEV_MODE } from '../lib/devAuth';
 
 export default function SignInPage() {
-    const { isSignedIn } = useAuth();
+    const { isSignedIn, isLoaded, signIn } = useAuth();
+    const navigate = useNavigate();
+    const [clerkError, setClerkError] = useState(false);
+
+    // Dev mode form state
+    const [formData, setFormData] = useState({ email: '', password: '' });
+    const [showPassword, setShowPassword] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+
+    // If Clerk doesn't load within 10 seconds, show an error (production mode only)
+    useEffect(() => {
+        if (!DEV_MODE && !isLoaded) {
+            const timer = setTimeout(() => setClerkError(true), 10000);
+            return () => clearTimeout(timer);
+        } else {
+            setClerkError(false);
+        }
+    }, [isLoaded]);
+
+    // Dev mode form submission
+    const handleDevSubmit = async (e) => {
+        e.preventDefault();
+        setError('');
+        setLoading(true);
+        try {
+            if (signIn) await signIn();
+            navigate('/dashboard');
+        } catch (err) {
+            setError(err.message || 'Sign in failed. Please try again.');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     // If already signed in, redirect to dashboard
     if (isSignedIn) {
         return <Navigate to="/dashboard" replace />;
+    }
+
+    // In production mode, wait for Clerk to load
+    if (!DEV_MODE && !isLoaded) {
+        if (clerkError) {
+            return (
+                <div className="min-h-screen bg-[#070B1A] flex items-center justify-center">
+                    <div className="flex flex-col items-center gap-6 max-w-md text-center px-6">
+                        <div className="w-14 h-14 rounded-2xl flex items-center justify-center"
+                            style={{
+                                background: 'rgba(239,68,68,0.1)',
+                                border: '1px solid rgba(239,68,68,0.2)',
+                            }}
+                        >
+                            <AlertTriangle className="w-7 h-7 text-red-400" />
+                        </div>
+                        <h2 className="text-xl font-bold text-[#F8FAFC]">Authentication Service Unavailable</h2>
+                        <p className="text-sm text-[rgba(255,255,255,0.7)] leading-relaxed">
+                            Unable to connect to the Clerk authentication service. This may be due to an invalid or expired publishable key in your configuration.
+                        </p>
+                        <div className="w-full p-4 text-xs text-[rgba(255,255,255,0.7)] rounded-xl"
+                            style={{
+                                background: 'rgba(255,255,255,0.04)',
+                                border: '1px solid rgba(255,255,255,0.08)',
+                            }}
+                        >
+                            <p className="font-semibold text-[#F8FAFC] mb-2">How to fix:</p>
+                            <ol className="list-decimal list-inside space-y-1">
+                                <li>Check your <code className="text-[#7C6BFF]">frontend/.env</code> file</li>
+                                <li>Verify <code className="text-[#7C6BFF]">VITE_CLERK_PUBLISHABLE_KEY</code> is valid</li>
+                                <li>Get a new key from <a href="https://dashboard.clerk.com" target="_blank" rel="noopener noreferrer" className="text-[#7C6BFF] hover:text-[#2BCBFF] underline">Clerk Dashboard</a></li>
+                                <li>Restart the dev server after updating the key</li>
+                            </ol>
+                        </div>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => { setClerkError(false); window.location.reload(); }}
+                                className="flex items-center gap-2 px-4 py-2 rounded-xl text-white text-sm font-medium transition-all duration-300"
+                                style={{
+                                    background: 'linear-gradient(135deg, #7C6BFF 0%, #2BCBFF 100%)',
+                                    boxShadow: '0 8px 24px rgba(124,107,255,0.3)',
+                                }}
+                            >
+                                <RefreshCw className="w-4 h-4" />
+                                Retry
+                            </button>
+                            <Link
+                                to="/"
+                                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300"
+                                style={{
+                                    color: 'rgba(255,255,255,0.7)',
+                                    border: '1px solid rgba(255,255,255,0.08)',
+                                }}
+                            >
+                                <ArrowLeft className="w-4 h-4" />
+                                Back to Home
+                            </Link>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+        return (
+            <div className="min-h-screen bg-[#070B1A] flex items-center justify-center">
+                <div className="flex flex-col items-center gap-4">
+                    <div className="w-11 h-11 rounded-xl flex items-center justify-center shadow-lg animate-pulse"
+                        style={{
+                            background: 'linear-gradient(135deg, #7C6BFF 0%, #2BCBFF 100%)',
+                            boxShadow: '0 8px 24px rgba(124,107,255,0.3)',
+                        }}
+                    >
+                        <Sparkles className="w-5 h-5 text-white" />
+                    </div>
+                    <p className="text-[rgba(255,255,255,0.7)] text-sm">Loading authentication...</p>
+                </div>
+            </div>
+        );
     }
 
     const featureCards = [
@@ -80,6 +192,131 @@ export default function SignInPage() {
             formFieldsWrapper: 'gap-5',
         },
     };
+
+    // ─── Auth Card Content: Dev Mode or Clerk ───
+    const authCardContent = DEV_MODE ? (
+        /* Dev Mode: Custom Signin Form */
+        <>
+            {/* Dev mode banner */}
+            <div className="mb-6">
+                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>Dev Mode — Any credentials will work. Replace <code className="text-amber-200">VITE_CLERK_PUBLISHABLE_KEY</code> with a real key for production auth.</span>
+                </div>
+            </div>
+
+            {error && (
+                <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mb-4 p-3 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-200 text-sm"
+                >
+                    {error}
+                </motion.div>
+            )}
+
+            <form onSubmit={handleDevSubmit} className="space-y-5">
+                {/* Email */}
+                <div>
+                    <label className="text-[rgba(255,255,255,0.5)] text-[11px] font-semibold uppercase tracking-[0.1em] mb-2 block">Email Address</label>
+                    <div className="relative">
+                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[rgba(255,255,255,0.25)]" />
+                        <input
+                            type="email"
+                            value={formData.email}
+                            onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                            placeholder="you@company.com"
+                            required
+                            className="w-full pl-12 pr-5 h-[56px] rounded-2xl bg-[rgba(255,255,255,0.04)] border border-white/[0.08] text-[#F8FAFC] placeholder-[rgba(255,255,255,0.25)] focus:border-[#7C6BFF] focus:ring-[4px] focus:ring-[rgba(124,107,255,0.15)] transition-all duration-300 text-sm"
+                        />
+                    </div>
+                </div>
+
+                {/* Password */}
+                <div>
+                    <label className="text-[rgba(255,255,255,0.5)] text-[11px] font-semibold uppercase tracking-[0.1em] mb-2 block">Password</label>
+                    <div className="relative">
+                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[rgba(255,255,255,0.25)]" />
+                        <input
+                            type={showPassword ? 'text' : 'password'}
+                            value={formData.password}
+                            onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                            placeholder="Enter your password"
+                            required
+                            className="w-full pl-12 pr-12 h-[56px] rounded-2xl bg-[rgba(255,255,255,0.04)] border border-white/[0.08] text-[#F8FAFC] placeholder-[rgba(255,255,255,0.25)] focus:border-[#7C6BFF] focus:ring-[4px] focus:ring-[rgba(124,107,255,0.15)] transition-all duration-300 text-sm"
+                        />
+                        <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-4 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#F8FAFC] transition-colors"
+                        >
+                            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                    </div>
+                </div>
+
+                {/* Submit */}
+                <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    type="submit"
+                    disabled={loading}
+                    className="w-full h-[56px] rounded-[18px] bg-gradient-to-r from-[#6C63FF] to-[#A855F7] hover:from-[#7C6BFF] hover:to-[#B86FFF] text-white font-bold text-sm shadow-[0_10px_30px_rgba(124,107,255,0.35)] hover:shadow-[0_14px_40px_rgba(124,107,255,0.5)] transition-all duration-300 tracking-wide border-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    {loading ? 'Signing in...' : 'Sign In'}
+                </motion.button>
+            </form>
+
+            {/* Bottom Section */}
+            <div className="mt-6 text-center">
+                <p className="text-sm" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                    Don't have an account?{' '}
+                    <Link
+                        to="/sign-up"
+                        className="font-medium transition-all duration-300 hover:underline"
+                        style={{
+                            backgroundImage: 'linear-gradient(135deg, #7C6BFF 0%, #2BCBFF 100%)',
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent',
+                            backgroundClip: 'text',
+                        }}
+                    >
+                        Sign Up
+                    </Link>
+                </p>
+            </div>
+        </>
+    ) : (
+        /* Production Mode: Clerk SignIn Component */
+        <>
+            <SignIn
+                routing="path"
+                path="/sign-in"
+                signUpUrl="/sign-up"
+                afterSignInUrl="/dashboard"
+                appearance={clerkAppearance}
+            />
+
+            {/* Bottom Section */}
+            <div className="mt-6 text-center">
+                <p className="text-sm" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                    Don't have an account?{' '}
+                    <Link
+                        to="/sign-up"
+                        className="font-medium transition-all duration-300 hover:underline"
+                        style={{
+                            backgroundImage: 'linear-gradient(135deg, #7C6BFF 0%, #2BCBFF 100%)',
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent',
+                            backgroundClip: 'text',
+                        }}
+                    >
+                        Sign Up
+                    </Link>
+                </p>
+            </div>
+        </>
+    );
 
     return (
         <div className="min-h-screen flex relative w-full overflow-hidden text-[#F8FAFC] animate-signin-page-fadein">
@@ -364,34 +601,8 @@ export default function SignInPage() {
                         </p>
                     </div>
 
-                    {/* ─── Clerk SignIn Component ─── */}
-                    <SignIn
-                        routing="path"
-                        path="/sign-in"
-                        signUpUrl="/sign-up"
-                        afterSignInUrl="/dashboard"
-                        appearance={clerkAppearance}
-                    />
-
-                    {/* ─── Bottom Section ─── */}
-                    <div className="mt-6 text-center">
-                        <p className="text-sm" style={{ color: 'rgba(255,255,255,0.4)' }}>
-                            Don't have an account?{' '}
-                            <Link
-                                to="/sign-up"
-                                className="font-medium transition-all duration-300 hover:underline"
-                                style={{
-                                    backgroundImage:
-                                        'linear-gradient(135deg, #7C6BFF 0%, #2BCBFF 100%)',
-                                    WebkitBackgroundClip: 'text',
-                                    WebkitTextFillColor: 'transparent',
-                                    backgroundClip: 'text',
-                                }}
-                            >
-                                Sign Up
-                            </Link>
-                        </p>
-                    </div>
+                    {/* ─── Auth Content (Dev Mode or Clerk) ─── */}
+                    {authCardContent}
                 </motion.div>
 
                 {/* ─── Mobile: Back to homepage ─── */}

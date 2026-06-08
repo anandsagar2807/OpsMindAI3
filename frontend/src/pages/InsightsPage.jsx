@@ -2,17 +2,8 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-    Brain,
-    Sparkles,
-    BookOpen,
-    Layers,
-    Hash,
-    ArrowLeft,
-    ExternalLink,
-    RefreshCw,
-    FileText,
-    AlertCircle,
-    Clock,
+    Brain, Sparkles, BookOpen, Layers, ArrowLeft, RefreshCw, FileText,
+    AlertCircle, Clock, Tag, Clock3, Type, ListChecks, ListOrdered, Hash,
     ChevronRight
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuthContext';
@@ -24,6 +15,92 @@ const fadeInUp = {
     animate: { opacity: 1, y: 0 },
     transition: { duration: 0.4, ease: [0.4, 0, 0.2, 1] }
 };
+
+const normalizeInsights = (raw) => {
+    if (!raw) return null;
+    if (typeof raw === 'string') {
+        return {
+            summary: raw, keyTopics: [], keyPoints: [], actionItems: [],
+            importantTerms: [], sections: [], statistics: null,
+            generatedBy: 'legacy', generatedAt: null, isLegacy: true,
+        };
+    }
+    return {
+        summary: raw.summary || '',
+        keyTopics: Array.isArray(raw.keyTopics) ? raw.keyTopics : [],
+        keyPoints: Array.isArray(raw.keyPoints) ? raw.keyPoints : [],
+        actionItems: Array.isArray(raw.actionItems) ? raw.actionItems : [],
+        importantTerms: Array.isArray(raw.importantTerms) ? raw.importantTerms : (Array.isArray(raw.importantsTerms) ? raw.importantsTerms : []),
+        sections: Array.isArray(raw.sections) ? raw.sections : [],
+        statistics: raw.statistics || null,
+        generatedBy: raw.generatedBy || 'unknown',
+        generatedAt: raw.generatedAt || null,
+        isLegacy: false,
+    };
+};
+
+const StatPill = ({ icon: Icon, label, value, color = 'violet' }) => {
+    const colorMap = {
+        violet: 'bg-violet-500/[0.06] border-violet-500/[0.12] text-violet-300',
+        blue: 'bg-blue-500/[0.06] border-blue-500/[0.12] text-blue-300',
+        amber: 'bg-amber-500/[0.06] border-amber-500/[0.12] text-amber-300',
+        emerald: 'bg-emerald-500/[0.06] border-emerald-500/[0.12] text-emerald-300',
+        indigo: 'bg-indigo-500/[0.06] border-indigo-500/[0.12] text-indigo-300',
+    };
+    return (
+        <div className={`flex items-center gap-2.5 px-3 py-2 rounded-[10px] border ${colorMap[color]}`}>
+            <Icon className="w-4 h-4 shrink-0" />
+            <div className="min-w-0">
+                <p className="text-[10px] uppercase tracking-[0.06em] opacity-70 leading-none mb-0.5">{label}</p>
+                <p className="text-[13px] font-semibold truncate">{value}</p>
+            </div>
+        </div>
+    );
+};
+
+const accentMap = {
+    violet: 'from-violet-500/[0.10] to-indigo-500/[0.04] border-violet-500/[0.18]',
+    blue: 'from-blue-500/[0.10] to-cyan-500/[0.04] border-blue-500/[0.18]',
+    amber: 'from-amber-500/[0.10] to-yellow-500/[0.04] border-amber-500/[0.18]',
+    emerald: 'from-emerald-500/[0.10] to-teal-500/[0.04] border-emerald-500/[0.18]',
+    rose: 'from-rose-500/[0.10] to-pink-500/[0.04] border-rose-500/[0.18]',
+};
+
+const Section = ({ title, icon: Icon, accent = 'violet', children, count }) => (
+    <motion.div {...fadeInUp} className={`rounded-[12px] bg-gradient-to-br ${accentMap[accent]} overflow-hidden`}>
+        <div className="flex items-center justify-between gap-2.5 px-4 py-3 border-b border-white/[0.06] bg-white/[0.02]">
+            <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-[8px] bg-white/[0.05] border border-white/[0.08] flex items-center justify-center">
+                    <Icon className="w-[14px] h-[14px] opacity-90" />
+                </div>
+                <h3 className="text-[14px] font-semibold text-white/90">{title}</h3>
+            </div>
+            {count != null && <span className="text-[10px] uppercase tracking-[0.06em] text-gray-500">{count}</span>}
+        </div>
+        <div className="p-4">{children}</div>
+    </motion.div>
+);
+
+const BulletList = ({ items, emptyText = 'None detected.' }) => {
+    if (!items || items.length === 0) return <p className="text-[12px] text-gray-500 italic">{emptyText}</p>;
+    return (
+        <ul className="space-y-2">
+            {items.map((it, i) => (
+                <li key={i} className="flex items-start gap-2.5 text-[13px] text-gray-300/90 leading-relaxed">
+                    <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-violet-400 shrink-0" />
+                    <span className="flex-1">{it}</span>
+                </li>
+            ))}
+        </ul>
+    );
+};
+
+const TermChip = ({ term, count }) => (
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[12px] font-medium bg-rose-500/[0.08] border border-rose-500/[0.20] text-rose-200">
+        {term}
+        <span className="text-[10px] font-mono text-rose-300/70">×{count}</span>
+    </span>
+);
 
 export default function InsightsPage() {
     const { id } = useParams();
@@ -42,12 +119,10 @@ export default function InsightsPage() {
             const token = await getToken();
             const response = await documentAPI.getInsights(id, token);
             const data = response.data;
-
             if (data.insights) {
                 setInsightsData(data);
                 setPolling(false);
             } else if (data.message && data.status !== 'completed') {
-                // Document still processing — poll
                 setInsightsData(data);
                 setPolling(true);
                 setTimeout(() => fetchInsights(), 3000);
@@ -66,19 +141,20 @@ export default function InsightsPage() {
 
     useEffect(() => {
         if (id) fetchInsights();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id]);
 
     const isProcessing = polling || (insightsData?.status && insightsData.status !== 'completed');
+    const insights = normalizeInsights(insightsData?.insights);
+    const stats = insights?.statistics;
+    const generatedBy = insights?.generatedBy;
+    const isLegacy = insights?.isLegacy;
 
     return (
-        <div className="max-w-[900px] mx-auto space-y-4">
-            {/* ─── Header with back navigation ─── */}
-            <motion.div {...fadeInUp} className="flex items-center justify-between">
+        <div className="max-w-[980px] mx-auto space-y-4">
+            <motion.div {...fadeInUp} className="flex items-center justify-between flex-wrap gap-2">
                 <div className="flex items-center gap-3">
-                    <button
-                        onClick={() => navigate(-1)}
-                        className="w-8 h-8 rounded-[8px] bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/[0.08] transition-all duration-200"
-                    >
+                    <button onClick={() => navigate(-1)} className="w-8 h-8 rounded-[8px] bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/[0.08] transition-all duration-200">
                         <ArrowLeft className="w-[16px] h-[16px]" />
                     </button>
                     <div>
@@ -93,28 +169,24 @@ export default function InsightsPage() {
                         </p>
                     </div>
                 </div>
+                {generatedBy && (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-[0.06em] bg-violet-500/[0.08] border border-violet-500/[0.20] text-violet-300">
+                        <Sparkles className="w-3 h-3" />
+                        {isLegacy ? 'Legacy insights' : `Generated by ${generatedBy}`}
+                    </span>
+                )}
             </motion.div>
 
-            {/* ─── Loading State ─── */}
             {loading && !insightsData && (
-                <motion.div
-                    initial={{ opacity: 0, y: 16 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="rounded-[12px] bg-white/[0.03] border border-white/[0.06] p-10 text-center"
-                >
+                <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="rounded-[12px] bg-white/[0.03] border border-white/[0.06] p-10 text-center">
                     <RefreshCw className="w-8 h-8 text-violet-400 animate-spin mx-auto mb-4" />
                     <h3 className="text-[16px] font-semibold text-white/90 mb-1.5">Loading Insights</h3>
                     <p className="text-[13px] text-gray-400/70">Fetching AI-generated analysis for this document...</p>
                 </motion.div>
             )}
 
-            {/* ─── Processing State ─── */}
             {isProcessing && insightsData && (
-                <motion.div
-                    initial={{ opacity: 0, y: 16 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="rounded-[12px] bg-amber-500/[0.04] border border-amber-500/[0.15] p-6"
-                >
+                <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="rounded-[12px] bg-amber-500/[0.04] border border-amber-500/[0.15] p-6">
                     <div className="flex items-center gap-3 mb-3">
                         <div className="w-10 h-10 rounded-[10px] bg-amber-500/[0.10] border border-amber-500/[0.15] flex items-center justify-center">
                             <Clock className="w-[20px] h-[20px] text-amber-400" />
@@ -126,28 +198,15 @@ export default function InsightsPage() {
                             </p>
                         </div>
                     </div>
-                    {/* Progress bar */}
                     <div className="w-full h-[6px] rounded-full bg-white/[0.04] overflow-hidden">
-                        <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: `${insightsData.processingProgress || 30}%` }}
-                            transition={{ duration: 0.5 }}
-                            className="h-full rounded-full bg-gradient-to-r from-amber-500 to-yellow-500"
-                        />
+                        <motion.div initial={{ width: 0 }} animate={{ width: `${insightsData.processingProgress || 30}%` }} transition={{ duration: 0.5 }} className="h-full rounded-full bg-gradient-to-r from-amber-500 to-yellow-500" />
                     </div>
-                    <p className="text-[11px] text-amber-400/50 mt-2 text-right">
-                        {insightsData.processingProgress || 0}% complete
-                    </p>
+                    <p className="text-[11px] text-amber-400/50 mt-2 text-right">{insightsData.processingProgress || 0}% complete</p>
                 </motion.div>
             )}
 
-            {/* ─── Error State ─── */}
             {error && !loading && (
-                <motion.div
-                    initial={{ opacity: 0, y: 16 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="rounded-[12px] bg-red-500/[0.04] border border-red-500/[0.15] p-6"
-                >
+                <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="rounded-[12px] bg-red-500/[0.04] border border-red-500/[0.15] p-6">
                     <div className="flex items-center gap-3 mb-3">
                         <div className="w-10 h-10 rounded-[10px] bg-red-500/[0.10] border border-red-500/[0.15] flex items-center justify-center">
                             <AlertCircle className="w-[20px] h-[20px] text-red-400" />
@@ -157,119 +216,80 @@ export default function InsightsPage() {
                             <p className="text-[12px] text-red-400/60">{error}</p>
                         </div>
                     </div>
-                    <button
-                        onClick={fetchInsights}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-[7px] bg-red-500/[0.10] border border-red-500/[0.18] text-red-400 hover:bg-red-500/[0.18] hover:text-red-300 text-[12px] font-medium transition-all duration-200"
-                    >
-                        <RefreshCw className="w-[12px] h-[12px]" />
-                        Retry
+                    <button onClick={fetchInsights} className="flex items-center gap-1.5 px-3 py-1.5 rounded-[7px] bg-red-500/[0.10] border border-red-500/[0.18] text-red-400 hover:bg-red-500/[0.18] hover:text-red-300 text-[12px] font-medium transition-all duration-200">
+                        <RefreshCw className="w-[12px] h-[12px]" /> Retry
                     </button>
                 </motion.div>
             )}
 
-            {/* ─── Insights Content ─── */}
-            {insightsData && !isProcessing && !error && (
-                <motion.div
-                    initial={{ opacity: 0, y: 16 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.08, duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-                    className="space-y-4"
-                >
-                    {/* Document Stats Card */}
-                    <div className="rounded-[12px] bg-white/[0.03] border border-white/[0.06] p-4">
+            {insights && !isProcessing && !error && (
+                <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08, duration: 0.4, ease: [0.4, 0, 0.2, 1] }} className="space-y-4">
+                    <motion.div {...fadeInUp} className="rounded-[12px] bg-white/[0.03] border border-white/[0.06] p-4">
                         <div className="flex items-center gap-2.5 mb-3">
                             <FileText className="w-[18px] h-[18px] text-violet-400" />
                             <h3 className="text-[14px] font-semibold text-white/90">Document Summary</h3>
+                            <span className="ml-auto text-[10px] uppercase tracking-[0.06em] text-gray-500 truncate max-w-[50%]">
+                                {insightsData?.originalName || insightsData?.name || ''}
+                            </span>
                         </div>
-                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                            <StatBadge
-                                icon={FileText}
-                                label="Document"
-                                value={insightsData.originalName || insightsData.name || '—'}
-                                color="violet"
-                            />
-                            <StatBadge
-                                icon={BookOpen}
-                                label="Pages"
-                                value={insightsData.totalPages != null ? String(insightsData.totalPages) : '—'}
-                                color="blue"
-                            />
-                            <StatBadge
-                                icon={Layers}
-                                label="Chunks"
-                                value={insightsData.totalChunks != null ? String(insightsData.totalChunks) : '—'}
-                                color="amber"
-                            />
-                            <StatBadge
-                                icon={Hash}
-                                label="Document ID"
-                                value={insightsData.documentId ? insightsData.documentId.substring(0, 8) + '...' : '—'}
-                                color="emerald"
-                            />
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
+                            <StatPill icon={BookOpen} label="Pages" value={insightsData?.totalPages ?? '—'} color="blue" />
+                            <StatPill icon={Layers} label="Chunks" value={insightsData?.totalChunks ?? '—'} color="amber" />
+                            <StatPill icon={Type} label="Words" value={stats?.wordCount != null ? stats.wordCount.toLocaleString() : '—'} color="emerald" />
+                            <StatPill icon={Clock3} label="Read time" value={stats?.readingTimeMinutes != null ? `${stats.readingTimeMinutes} min` : '—'} color="indigo" />
                         </div>
-                    </div>
+                    </motion.div>
 
-                    {/* Insights Card */}
-                    <div className="rounded-[12px] bg-gradient-to-br from-violet-500/[0.04] to-indigo-500/[0.04] border border-violet-500/[0.15] overflow-hidden">
-                        {/* Header */}
-                        <div className="flex items-center gap-2.5 px-4 py-3 border-b border-violet-500/[0.10] bg-violet-500/[0.04]">
-                            <div className="w-8 h-8 rounded-[8px] bg-violet-500/[0.12] border border-violet-500/[0.18] flex items-center justify-center">
-                                <Sparkles className="w-[15px] h-[15px] text-violet-400" />
-                            </div>
-                            <div>
-                                <h3 className="text-[14px] font-semibold text-white/90">AI-Generated Insights</h3>
-                                <p className="text-[11px] text-gray-400/70">Powered by OpenRouter AI</p>
-                            </div>
-                        </div>
+                    <Section title="Summary" icon={Sparkles} accent="violet">
+                        {insights.summary ? (
+                            <p className="text-[14px] text-gray-200/90 leading-relaxed whitespace-pre-wrap">{insights.summary}</p>
+                        ) : (
+                            <p className="text-[13px] text-gray-500 italic">No summary available.</p>
+                        )}
+                    </Section>
 
-                        {/* Content */}
-                        <div className="p-5">
-                            <div className="rounded-[10px] bg-violet-500/[0.04] border border-violet-500/[0.10] p-4">
-                                <div className="flex items-start gap-3">
-                                    <Brain className="w-[18px] h-[18px] text-violet-400 shrink-0 mt-0.5" />
-                                    <p className="text-[14px] text-gray-300/90 leading-relaxed whitespace-pre-wrap">
-                                        {insightsData.insights || 'No insights generated for this document.'}
-                                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <Section title="Key Topics" icon={Tag} accent="blue" count={insights.keyTopics.length}>
+                            {insights.keyTopics.length > 0 ? (
+                                <div className="flex flex-wrap gap-1.5">
+                                    {insights.keyTopics.map((t, i) => (
+                                        <span key={i} className="inline-flex items-center px-2.5 py-1 rounded-full text-[12px] font-medium bg-blue-500/[0.08] border border-blue-500/[0.20] text-blue-200">{t}</span>
+                                    ))}
                                 </div>
-                            </div>
-                        </div>
+                            ) : (
+                                <p className="text-[12px] text-gray-500 italic">No key topics detected.</p>
+                            )}
+                        </Section>
+
+                        <Section title="Action Items" icon={ListChecks} accent="amber" count={insights.actionItems.length}>
+                            <BulletList items={insights.actionItems} emptyText="No explicit action items detected." />
+                        </Section>
                     </div>
 
-                    {/* Actions */}
-                    <div className="flex items-center gap-2">
-                        <button
-                            onClick={() => navigate('/dashboard/documents')}
-                            className="flex items-center gap-1.5 px-4 py-2 rounded-[8px] bg-violet-500/[0.10] border border-violet-500/[0.18] text-violet-400 hover:bg-violet-500/[0.18] hover:text-violet-300 text-[13px] font-medium transition-all duration-200"
-                        >
-                            <ExternalLink className="w-[14px] h-[14px]" />
+                    <Section title="Key Points" icon={ListOrdered} accent="emerald" count={insights.keyPoints.length}>
+                        <BulletList items={insights.keyPoints} emptyText="No key points detected." />
+                    </Section>
+
+                    <Section title="Important Terms" icon={Hash} accent="rose" count={insights.importantTerms.length}>
+                        {insights.importantTerms.length > 0 ? (
+                            <div className="flex flex-wrap gap-1.5">
+                                {insights.importantTerms.map((t, i) => (
+                                    <TermChip key={i} term={t.term} count={t.count} />
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-[12px] text-gray-500 italic">No important terms detected.</p>
+                        )}
+                    </Section>
+
+                    <div className="flex items-center gap-2 pt-1">
+                        <button onClick={() => navigate("/dashboard/documents")} className="flex items-center gap-1.5 px-4 py-2 rounded-[8px] bg-violet-500/[0.10] border border-violet-500/[0.18] text-violet-400 hover:bg-violet-500/[0.18] hover:text-violet-300 text-[13px] font-medium transition-all duration-200">
                             View in Documents
                             <ChevronRight className="w-[14px] h-[14px]" />
                         </button>
                     </div>
                 </motion.div>
             )}
-        </div>
-    );
-}
-
-function StatBadge({ icon: Icon, label, value, color }) {
-    const colorMap = {
-        violet: { bg: 'bg-violet-500/[0.06]', border: 'border-violet-500/[0.12]', text: 'text-violet-400', iconBg: 'bg-violet-500/[0.10]' },
-        blue: { bg: 'bg-blue-500/[0.06]', border: 'border-blue-500/[0.12]', text: 'text-blue-400', iconBg: 'bg-blue-500/[0.10]' },
-        amber: { bg: 'bg-amber-500/[0.06]', border: 'border-amber-500/[0.12]', text: 'text-amber-400', iconBg: 'bg-amber-500/[0.10]' },
-        emerald: { bg: 'bg-emerald-500/[0.06]', border: 'border-emerald-500/[0.12]', text: 'text-emerald-400', iconBg: 'bg-emerald-500/[0.10]' },
-    };
-    const c = colorMap[color] || colorMap.violet;
-
-    return (
-        <div className={`p-3 rounded-[10px] ${c.bg} border ${c.border}`}>
-            <div className="flex items-center gap-1.5 mb-1">
-                <div className={`w-6 h-6 rounded-[6px] ${c.iconBg} flex items-center justify-center`}>
-                    <Icon className={`w-[12px] h-[12px] ${c.text}`} />
-                </div>
-                <span className="text-[10px] text-gray-500 uppercase tracking-[0.04em]">{label}</span>
-            </div>
-            <p className="text-[13px] font-semibold text-white/90 truncate">{value}</p>
         </div>
     );
 }

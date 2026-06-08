@@ -21,12 +21,13 @@ import { useNavigate } from 'react-router-dom';
 import { useUser } from '../hooks/useAuthContext';
 import Card from '../components/ui/Card.jsx';
 import Button from '../components/ui/Button.jsx';
+import PremiumNotificationBar from '../components/PremiumNotificationBar.jsx';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5002';
 
 export default function EnterpriseLandingPage() {
   const navigate = useNavigate();
-  const { isSignedIn } = useUser();
+  const { isSignedIn, user } = useUser();
 
   const [health, setHealth] = useState(null);
   const [healthError, setHealthError] = useState(null);
@@ -213,6 +214,16 @@ export default function EnterpriseLandingPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-dark-900 via-dark-900 to-dark-800">
+      {/* Premium Notification Bar — dynamic, sits ABOVE the header */}
+      <PremiumNotificationBar
+        isSignedIn={isSignedIn}
+        user={user}
+        health={health}
+        healthError={healthError}
+        publicStats={publicStats}
+        onSignUp={() => navigate('/sign-up')}
+      />
+
       {/* Navigation */}
       <nav className="bg-dark-900/70 backdrop-blur-md border-b border-white/10 sticky top-0 z-50 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 py-4">
@@ -362,6 +373,58 @@ export default function EnterpriseLandingPage() {
             <p className="text-sm text-gray-300 mt-4">
               No credit card required • 14-day free trial • Cancel anytime
             </p>
+
+            {/* Chat Agent Embed - Locked behind sign-up overlay for unauthenticated users */}
+            <div className="mt-8 w-full max-w-2xl mx-auto rounded-2xl overflow-hidden shadow-lg relative">
+              <iframe
+                src="https://app.relevanceai.com/agents/f1db6c/0b7a4882-502d-43b3-a4c7-a188ae52e4ca/9671bbca-9c52-422d-8dd5-e2a7618eff4a/embed-chat?hide_tool_steps=false&hide_file_uploads=false&hide_conversation_list=false&bubble_style=agent&primary_color=%23685FFF&bubble_icon=pd%2Fchat&input_placeholder_text=Type+your+message...&hide_logo=false&hide_description=false"
+                title="OpsMind AI Chat Agent"
+                style={{ width: '100%', height: '600px', border: 'none', background: '#ffffff' }}
+                allow="clipboard-write"
+              />
+
+              {/* Lock overlay for unauthenticated users */}
+              {!isSignedIn && (
+                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center px-8 text-center rounded-2xl"
+                  style={{
+                    background: 'linear-gradient(180deg, rgba(15, 23, 42, 0.60) 0%, rgba(15, 23, 42, 0.90) 100%)',
+                    backdropFilter: 'blur(14px) saturate(160%)',
+                    WebkitBackdropFilter: 'blur(14px) saturate(160%)',
+                  }}
+                >
+                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500 via-indigo-500 to-purple-600 flex items-center justify-center shadow-xl shadow-violet-500/30 mb-5">
+                    <Lock className="w-8 h-8 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold text-white mb-2 tracking-tight">
+                    Big Bro Sales Copilot is locked
+                  </h3>
+                  <p className="text-sm text-white/70 leading-relaxed mb-6 max-w-[320px]">
+                    Sign up for a free OpsMind AI account to unlock the sales copilot and start
+                    getting instant, citation-backed answers from your documents.
+                  </p>
+                  <div className="flex flex-col gap-2.5 w-full max-w-[280px]">
+                    <button
+                      onClick={() => navigate('/sign-up')}
+                      className="group flex items-center justify-center gap-2 w-full h-11 rounded-xl bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 hover:from-indigo-500 hover:via-violet-500 hover:to-purple-500 text-white font-semibold text-sm shadow-lg shadow-violet-500/30 hover:shadow-violet-500/50 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
+                    >
+                      <Star className="w-4 h-4" />
+                      <span>Sign up — it's free</span>
+                      <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
+                    </button>
+                    <button
+                      onClick={() => navigate('/sign-in')}
+                      className="flex items-center justify-center gap-2 w-full h-11 rounded-xl bg-white/[0.06] hover:bg-white/[0.10] border border-white/[0.10] hover:border-white/[0.20] text-white/90 hover:text-white font-medium text-sm transition-all duration-200"
+                    >
+                      <span>Already have an account? Sign in</span>
+                    </button>
+                  </div>
+                  <p className="mt-5 text-[11px] text-white/40 uppercase tracking-[0.15em] font-semibold">
+                    14-day free trial · No credit card
+                  </p>
+                </div>
+              )}
+            </div>
+
           </motion.div>
 
         </div>
@@ -643,6 +706,7 @@ export default function EnterpriseLandingPage() {
           </div>
         </div>
       </footer>
+
     </div>
   );
 }

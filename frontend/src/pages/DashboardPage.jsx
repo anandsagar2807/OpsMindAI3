@@ -18,11 +18,13 @@ import {
     Layers,
     Hash,
     Command,
-    User
+    User,
+    Calendar
 } from 'lucide-react';
 import { useDashboardStats, useRecentActivity } from '../hooks/useDashboard';
 import { useConversations } from '../hooks/useChat';
 import { useDocuments } from '../hooks/useDocuments';
+import { BarChartComponent, PieChartComponent, LineChartComponent } from '../components/ui/Chart';
 
 const fadeInUp = {
     initial: { opacity: 0, y: 16 },
@@ -176,6 +178,31 @@ function getTimeAgo(timestamp) {
     return then.toLocaleDateString();
 }
 
+function generateMockData() {
+    // Generate mock data for charts
+    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const activityData = days.map(day => ({
+        name: day,
+        conversations: Math.floor(Math.random() * 10) + 1,
+        documents: Math.floor(Math.random() * 5) + 1
+    }));
+    
+    const documentStatusData = [
+        { name: 'Completed', value: 65 },
+        { name: 'Processing', value: 20 },
+        { name: 'Failed', value: 15 }
+    ];
+    
+    const messageTrendData = [
+        { name: 'Week 1', messages: 40 },
+        { name: 'Week 2', messages: 75 },
+        { name: 'Week 3', messages: 120 },
+        { name: 'Week 4', messages: 95 }
+    ];
+    
+    return { activityData, documentStatusData, messageTrendData };
+}
+
 function QuickAction({ icon: Icon, label, description, color, onClick }) {
     const c = COLORS[color] || COLORS.violet;
 
@@ -213,6 +240,9 @@ export default function DashboardPage() {
     const timeline = activity?.timeline || [];
     const recentConversations = conversationsData?.conversations || activity?.conversations || [];
     const recentDocuments = documentsData?.documents || activity?.documents || [];
+    
+    // Mock chart data
+    const { activityData, documentStatusData, messageTrendData } = generateMockData();
 
     return (
         <div className="max-w-[1280px] mx-auto space-y-6">
@@ -278,6 +308,79 @@ export default function DashboardPage() {
                     trend={messages.recent > 0 ? `+${messages.recent}` : null}
                     delay={0.18}
                 />
+            </motion.div>
+
+            {/* Charts Section */}
+            <motion.div 
+                variants={staggerContainer} 
+                initial="initial" 
+                animate="animate" 
+                className="grid grid-cols-1 lg:grid-cols-3 gap-5"
+            >
+                <div className="lg:col-span-2 space-y-5">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-4">
+                            <BarChartComponent 
+                                data={activityData} 
+                                dataKey="conversations" 
+                                nameKey="name" 
+                                title="Weekly Conversations" 
+                                color="#8b5cf6"
+                            />
+                        </div>
+                        <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-4">
+                            <BarChartComponent 
+                                data={activityData} 
+                                dataKey="documents" 
+                                nameKey="name" 
+                                title="Weekly Documents" 
+                                color="#10b981"
+                            />
+                        </div>
+                    </div>
+                    
+                    <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-4">
+                        <LineChartComponent 
+                            data={messageTrendData} 
+                            dataKey="messages" 
+                            nameKey="name" 
+                            title="Message Trends (Last 4 Weeks)" 
+                            color="#3b82f6"
+                        />
+                    </div>
+                </div>
+                
+                <div className="space-y-5">
+                    <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-4">
+                        <PieChartComponent 
+                            data={documentStatusData} 
+                            dataKey="value" 
+                            nameKey="name" 
+                            title="Document Status Distribution"
+                        />
+                    </div>
+                    
+                    <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-4">
+                        <h3 className="text-[15px] font-semibold text-white/90 mb-4 flex items-center gap-2">
+                            <Calendar className="w-4 h-4 text-violet-400" />
+                            Quick Stats
+                        </h3>
+                        <div className="space-y-3">
+                            <div className="flex items-center justify-between py-2 border-b border-white/[0.05]">
+                                <span className="text-[13px] text-gray-300/80">Avg. Response Time</span>
+                                <span className="text-[13px] font-semibold text-white/90">1.2s</span>
+                            </div>
+                            <div className="flex items-center justify-between py-2 border-b border-white/[0.05]">
+                                <span className="text-[13px] text-gray-300/80">Knowledge Coverage</span>
+                                <span className="text-[13px] font-semibold text-white/90">87%</span>
+                            </div>
+                            <div className="flex items-center justify-between py-2">
+                                <span className="text-[13px] text-gray-300/80">Active Users</span>
+                                <span className="text-[13px] font-semibold text-white/90">24</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </motion.div>
 
             {/* Main content grid */}

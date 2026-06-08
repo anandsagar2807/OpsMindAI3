@@ -1,5 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import { BrowserRouter as Router, useNavigate } from 'react-router-dom';
 import { ClerkProvider } from '@clerk/react';
 import { QueryClient, QueryClientProvider, QueryCache } from '@tanstack/react-query';
 import App from './App';
@@ -47,7 +48,35 @@ const queryClient = new QueryClient({
   },
 });
 
-const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || 'pk_test_placeholder';
+// Read Clerk publishable key from Vite env. The Clerk React SDK automatically reads
+// `VITE_CLERK_PUBLISHABLE_KEY` from Vite's import.meta.env, so we do NOT pass it
+// as a prop to <ClerkProvider>. This is the current recommended pattern for Vite.
+const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+
+/**
+ * ClerkProvider wrapper that integrates with React Router's navigate function.
+ * This is required for path-based routing and OAuth redirect flows (e.g., Google Sign-In).
+ * Must be rendered inside a Router context so useNavigate() works.
+ *
+ * Note: We intentionally do NOT pass `publishableKey` as a prop. The Clerk React SDK
+ * automatically reads `VITE_CLERK_PUBLISHABLE_KEY` from Vite's env.
+ */
+function ClerkProviderWithRouter({ children }) {
+  const navigate = useNavigate();
+  return (
+    <ClerkProvider
+      navigate={(to) => navigate(to)}
+      afterSignInUrl="/dashboard"
+      afterSignUpUrl="/dashboard"
+      signInUrl="/sign-in"
+      signUpUrl="/sign-up"
+      signInFallbackRedirectUrl="/dashboard"
+      signUpFallbackRedirectUrl="/dashboard"
+    >
+      {children}
+    </ClerkProvider>
+  );
+}
 
 // Conditionally wrap with ClerkProvider (production) or DevAuthProvider (dev mode)
 // In dev mode, ClerkProvider would fail with a placeholder key, so we bypass it entirely
@@ -59,18 +88,16 @@ const AuthProvider = DEV_MODE
       </DevUserProvider>
     </DevAuthProvider>
   )
-  : ({ children }) => (
-    <ClerkProvider publishableKey={PUBLISHABLE_KEY} afterSignInUrl="/dashboard" afterSignUpUrl="/dashboard">
-      {children}
-    </ClerkProvider>
-  );
+  : ClerkProviderWithRouter;
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <AuthProvider>
-      <QueryClientProvider client={queryClient}>
-        <App />
-      </QueryClientProvider>
-    </AuthProvider>
+    <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <AuthProvider>
+        <QueryClientProvider client={queryClient}>
+          <App />
+        </QueryClientProvider>
+      </AuthProvider>
+    </Router>
   </React.StrictMode>
 );

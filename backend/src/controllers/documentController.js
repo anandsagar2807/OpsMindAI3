@@ -1,14 +1,26 @@
+import mongoose from 'mongoose';
 import Document from '../models/Document.js';
 import SOPChunk from '../models/SOPChunk.js';
 import UploadLog from '../models/UploadLog.js';
 import upload from '../config/multer.js';
 import { extractTextFromPDF, chunkText } from '../services/pdfProcessor.js';
 import embeddingService from '../services/embeddingService.js';
-import { getDocumentInsights as generateAIInsights } from '../services/openRouterService.js';
+import { generateStructuredInsights as generateAIInsights } from '../services/insightsService.js';
 import fs from 'fs/promises';
 import path from 'path';
 
 export const uploadDocument = async (req, res) => {
+  // Check MongoDB connectivity before accepting the upload.
+  // Without a DB connection, Document.create() and UploadLog.create() would
+  // buffer indefinitely (or fail after 2 min timeout), causing the client to
+  // receive a network error / timeout instead of a clear message.
+  if (mongoose.connection.readyState !== 1) {
+    return res.status(503).json({
+      success: false,
+      message: 'Database is not connected. Please ensure MongoDB is running and MONGODB_URI is set in .env. Uploads cannot be processed without a database.',
+    });
+  }
+
   const userId = req.auth?.userId || req.dbUser?.clerkId;
   const orgId = req.auth?.orgId || null;
 
@@ -103,7 +115,8 @@ async function processDocument(documentId, filePath, userId, orgId, uploadLogId)
     uploadLog.steps[uploadLog.steps.length - 1].durationMs = parseDuration;
     await uploadLog.save();
 
-    // Generate insights
+    // Always generate structured insights (heuristic + optional AI). This guarantees
+    // every uploaded document has actionable insights, even when no LLM is configured.
     let insights = null;
     try {
       insights = await generateAIInsights(pdfData.text);
@@ -116,6 +129,8 @@ async function processDocument(documentId, filePath, userId, orgId, uploadLogId)
       totalPages: pdfData.numPages,
       textPreview: pdfData.textPreview,
       insights,
+      insightsGeneratedAt: new Date(),
+      insightsVersion: 2,
       status: 'chunking',
       processingProgress: 30
     });
@@ -379,8 +394,9 @@ export const getDocumentInsights = async (req, res) => {
       });
     }
 
-    // If no insights yet (edge case: insights generation failed during processing),
-    // try regenerating them now from the text preview or chunks
+    // If no insights yet (edge case: insights generation failed during processing,
+    // or this is a legacy document that predates the structured insights service),
+    // try regenerating them now from the chunks.
     const chunks = await SOPChunk.find({ documentId: id })
       .select('text')
       .sort({ chunkIndex: 1 })
@@ -403,9 +419,16 @@ export const getDocumentInsights = async (req, res) => {
 
     let insights = null;
     try {
+      // Use the structured insights service so the regenerated payload matches the
+      // current schema. If the document already had the legacy string insights,
+      // we replace them with the structured object.
       insights = await generateAIInsights(textToAnalyze);
       if (insights) {
-        await Document.findByIdAndUpdate(document._id, { insights });
+        await Document.findByIdAndUpdate(document._id, {
+          insights,
+          insightsGeneratedAt: new Date(),
+          insightsVersion: 2,
+        });
       }
     } catch (insightError) {
       console.error('Failed to generate insights on demand:', insightError);
@@ -430,5 +453,5 @@ export const getDocumentInsights = async (req, res) => {
     });
   }
 };
- 
- 
+
+

@@ -19,6 +19,10 @@ const connectDB = async () => {
     const conn = await mongoose.connect(MONGODB_URI, {
       serverSelectionTimeoutMS: 5000,
       socketTimeoutMS: 45000,
+      // Fail fast on operations when connection is lost instead of buffering
+      // for 2 minutes (default). This prevents upload requests from hanging
+      // indefinitely when MongoDB is unreachable.
+      bufferCommands: false,
     });
     console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
 
