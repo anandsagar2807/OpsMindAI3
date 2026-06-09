@@ -8,7 +8,6 @@ The system combines:
 - Real-time streaming responses (Server-Sent Events)
 - Secure authentication (Clerk in prod, dev-mode bypass available)
 - Modular frontend/backend architecture
-
 ---
 
 ## Repository Layout (current)
