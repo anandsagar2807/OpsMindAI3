@@ -92,7 +92,6 @@ Return answer (optionally streamed via SSE)
 ---
 
 ## Tech Stack
-
 ### Backend
 
 - Node.js + Express
