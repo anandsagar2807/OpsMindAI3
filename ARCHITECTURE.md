@@ -9,7 +9,6 @@ The system combines:
 - Secure authentication (Clerk in prod, dev-mode bypass available)
 - Modular frontend/backend architecture
 ---
-
 ## Repository Layout (current)
 - `frontend/` — React + Vite enterprise dashboard UI
 - `backend/` — Node.js + Express API server
