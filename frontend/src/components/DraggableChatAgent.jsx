@@ -12,22 +12,41 @@ const RELEVANCE_CHAT_URL =
 
 const STORAGE_KEY = 'relevance_chat_widget_state';
 
-const WIDGET_WIDTH = 420;
-const WIDGET_HEIGHT = 640;
+// ─── Size constants ────────────────────────────────────────────────
+const DEFAULT_WIDGET_WIDTH = 420;
+const DEFAULT_WIDGET_HEIGHT = 640;
+const MIN_WIDGET_WIDTH = 320;
+const MAX_WIDGET_WIDTH = 800;
+const MIN_WIDGET_HEIGHT = 400;
+// maxHeight computed dynamically as 90 % of viewport height
 const COLLAPSED_SIZE = 56;
 const HEADER_HEIGHT = 36;
 const EDGE_MARGIN = 16;
+const RESIZE_HANDLE = 6; // thickness (px) of the invisible resize grab‑zone
 
+/**
+ * Read persisted state from localStorage, clamping values to the viewport.
+ */
 const getInitialState = () => {
     if (typeof window === 'undefined') {
-        return { x: 0, y: 0, isOpen: true, isMaximized: false };
+        return {
+            x: 0, y: 0,
+            isOpen: true,
+            isMaximized: false,
+            customW: DEFAULT_WIDGET_WIDTH,
+            customH: DEFAULT_WIDGET_HEIGHT,
+        };
     }
     try {
         const saved = localStorage.getItem(STORAGE_KEY);
         if (saved) {
             const parsed = JSON.parse(saved);
-            const visibleW = parsed.isOpen ? WIDGET_WIDTH : COLLAPSED_SIZE;
-            const visibleH = parsed.isOpen ? WIDGET_HEIGHT : COLLAPSED_SIZE;
+            // Clamp dimensions so they never exceed the viewport
+            const maxH = Math.floor(window.innerHeight * 0.9);
+            const cw = Math.max(MIN_WIDGET_WIDTH, Math.min(parsed.customW ?? DEFAULT_WIDGET_WIDTH, MAX_WIDGET_WIDTH));
+            const ch = Math.max(MIN_WIDGET_HEIGHT, Math.min(parsed.customH ?? DEFAULT_WIDGET_HEIGHT, maxH));
+            const visibleW = parsed.isOpen ? cw : COLLAPSED_SIZE;
+            const visibleH = parsed.isOpen ? ch : COLLAPSED_SIZE;
             const maxX = Math.max(EDGE_MARGIN, window.innerWidth - visibleW - EDGE_MARGIN);
             const maxY = Math.max(EDGE_MARGIN, window.innerHeight - visibleH - EDGE_MARGIN);
             return {
@@ -35,59 +54,86 @@ const getInitialState = () => {
                 y: Math.max(EDGE_MARGIN, Math.min(parsed.y ?? maxY, maxY)),
                 isOpen: parsed.isOpen ?? true,
                 isMaximized: parsed.isMaximized ?? false,
+                customW: cw,
+                customH: ch,
             };
         }
-    } catch (e) {
-        // ignore
-    }
+    } catch (_) { /* ignore */ }
     return {
-        x: window.innerWidth - WIDGET_WIDTH - EDGE_MARGIN,
-        y: window.innerHeight - WIDGET_HEIGHT - EDGE_MARGIN,
+        x: window.innerWidth - DEFAULT_WIDGET_WIDTH - EDGE_MARGIN,
+        y: window.innerHeight - DEFAULT_WIDGET_HEIGHT - EDGE_MARGIN,
         isOpen: true,
         isMaximized: false,
+        customW: DEFAULT_WIDGET_WIDTH,
+        customH: DEFAULT_WIDGET_HEIGHT,
     };
 };
 
 /**
- * Draggable, transparent, resizable Relevance AI chat agent widget.
- * - Renders as a floating window in the corner of the dashboard.
- * - Can be dragged anywhere on the screen (constrained to the viewport).
- * - Can be minimized to a small floating bubble.
- * - Can be maximized to fill most of the viewport.
- * - Position and state persist across page reloads via localStorage.
+ * Resize direction → CSS cursor mapping (8 cardinal + corner points).
+ */
+const CURSOR_MAP = {
+    n: 'ns-resize',
+    s: 'ns-resize',
+    e: 'ew-resize',
+    w: 'ew-resize',
+    ne: 'nesw-resize',
+    sw: 'nesw-resize',
+    nw: 'nwse-resize',
+    se: 'nwse-resize',
+};
+
+/**
+ * Draggable, transparent, **resizable** Relevance AI chat agent widget.
+ *
+ * - Resize from any edge or corner (8 handles).
+ * - Drag anywhere on screen (constrained to viewport).
+ * - Minimise / maximise toggles.
+ * - Position, open state, maximise flag and **custom dimensions** persist
+ *   across page reloads via localStorage.
+ * - Pointer‑events on the embedded iframe are disabled during drag /
+ *   resize so that focus is never lost.
  */
 export default function DraggableChatAgent({ locked = false }) {
     const navigate = useNavigate();
     const { isSignedIn } = useUser();
-    // If locked is explicitly passed, use it; otherwise derive from auth state
     const isLocked = locked || !isSignedIn;
 
     const [state, setState] = useState(getInitialState);
     const [isDragging, setIsDragging] = useState(false);
+    const [isResizing, setIsResizing] = useState(false);
+    const [resizeDir, setResizeDir] = useState(null);   // e.g. 'se', 'e', 'n'
+
     const widgetRef = useRef(null);
     const dragOriginRef = useRef({ mouseX: 0, mouseY: 0, widgetX: 0, widgetY: 0 });
+    const resizeOriginRef = useRef({
+        mouseX: 0, mouseY: 0,
+        widgetX: 0, widgetY: 0,
+        width: 0, height: 0,
+    });
 
-    // Persist state on every change
+    // ── Persist entire state on every change ─────────────────────────
     useEffect(() => {
-        try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-        } catch (e) {
-            // localStorage may be disabled — silently ignore
-        }
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (_) { }
     }, [state]);
 
-    // Keep the widget on-screen if the viewport is resized
+    // ── Keep on‑screen when viewport resizes ─────────────────────────
     useEffect(() => {
         const handleResize = () => {
             setState((prev) => {
-                const visibleW = prev.isOpen ? WIDGET_WIDTH : COLLAPSED_SIZE;
-                const visibleH = prev.isOpen ? WIDGET_HEIGHT : COLLAPSED_SIZE;
+                const maxH = Math.floor(window.innerHeight * 0.9);
+                const cw = Math.max(MIN_WIDGET_WIDTH, Math.min(prev.customW, MAX_WIDGET_WIDTH));
+                const ch = Math.max(MIN_WIDGET_HEIGHT, Math.min(prev.customH, maxH));
+                const visibleW = prev.isOpen ? cw : COLLAPSED_SIZE;
+                const visibleH = prev.isOpen ? ch : COLLAPSED_SIZE;
                 const maxX = Math.max(EDGE_MARGIN, window.innerWidth - visibleW - EDGE_MARGIN);
                 const maxY = Math.max(EDGE_MARGIN, window.innerHeight - visibleH - EDGE_MARGIN);
                 return {
                     ...prev,
                     x: Math.max(EDGE_MARGIN, Math.min(prev.x, maxX)),
                     y: Math.max(EDGE_MARGIN, Math.min(prev.y, maxY)),
+                    customW: cw,
+                    customH: ch,
                 };
             });
         };
@@ -95,9 +141,11 @@ export default function DraggableChatAgent({ locked = false }) {
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
+    /* ------------------------------------------------------------------ */
+    /*  Drag logic                                                         */
+    /* ------------------------------------------------------------------ */
     const handleDragStart = useCallback(
         (e) => {
-            // Only allow drag from the header area; ignore clicks on buttons/links
             if (e.target.closest('[data-no-drag]')) return;
             e.preventDefault();
             setIsDragging(true);
@@ -116,8 +164,8 @@ export default function DraggableChatAgent({ locked = false }) {
         const handleMouseMove = (e) => {
             const dx = e.clientX - dragOriginRef.current.mouseX;
             const dy = e.clientY - dragOriginRef.current.mouseY;
-            const visibleW = state.isOpen ? WIDGET_WIDTH : COLLAPSED_SIZE;
-            const visibleH = state.isOpen ? WIDGET_HEIGHT : COLLAPSED_SIZE;
+            const visibleW = state.isOpen ? state.customW : COLLAPSED_SIZE;
+            const visibleH = state.isOpen ? state.customH : COLLAPSED_SIZE;
             const maxX = Math.max(EDGE_MARGIN, window.innerWidth - visibleW - EDGE_MARGIN);
             const maxY = Math.max(EDGE_MARGIN, window.innerHeight - visibleH - EDGE_MARGIN);
             setState((prev) => ({
@@ -133,8 +181,96 @@ export default function DraggableChatAgent({ locked = false }) {
             document.removeEventListener('mousemove', handleMouseMove);
             document.removeEventListener('mouseup', handleMouseUp);
         };
-    }, [isDragging, state.isOpen]);
+    }, [isDragging, state.isOpen, state.customW, state.customH]);
 
+    /* ------------------------------------------------------------------ */
+    /*  Resize logic                                                       */
+    /* ------------------------------------------------------------------ */
+    const handleResizeStart = useCallback(
+        (e, direction) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setIsResizing(true);
+            setResizeDir(direction);
+            resizeOriginRef.current = {
+                mouseX: e.clientX,
+                mouseY: e.clientY,
+                widgetX: state.x,
+                widgetY: state.y,
+                width: state.customW,
+                height: state.customH,
+            };
+        },
+        [state.x, state.y, state.customW, state.customH]
+    );
+
+    useEffect(() => {
+        if (!isResizing) return;
+
+        const handleMouseMove = (e) => {
+            const o = resizeOriginRef.current;
+            const dx = e.clientX - o.mouseX;
+            const dy = e.clientY - o.mouseY;
+            const maxH = Math.floor(window.innerHeight * 0.9);
+
+            setState((prev) => {
+                let newW = o.width;
+                let newH = o.height;
+                let newX = o.widgetX;
+                let newY = o.widgetY;
+
+                // Horizontal adjustments
+                if (resizeDir.includes('e')) {
+                    newW = Math.min(MAX_WIDGET_WIDTH, Math.max(MIN_WIDGET_WIDTH, o.width + dx));
+                }
+                if (resizeDir.includes('w')) {
+                    const desiredW = Math.min(MAX_WIDGET_WIDTH, Math.max(MIN_WIDGET_WIDTH, o.width - dx));
+                    const delta = desiredW - o.width;
+                    newW = desiredW;
+                    newX = o.widgetX - delta;
+                }
+
+                // Vertical adjustments
+                if (resizeDir.includes('s')) {
+                    newH = Math.min(maxH, Math.max(MIN_WIDGET_HEIGHT, o.height + dy));
+                }
+                if (resizeDir.includes('n')) {
+                    const desiredH = Math.min(maxH, Math.max(MIN_WIDGET_HEIGHT, o.height - dy));
+                    const delta = desiredH - o.height;
+                    newH = desiredH;
+                    newY = o.widgetY - delta;
+                }
+
+                // Clamp position so widget never leaves viewport
+                const maxX = Math.max(EDGE_MARGIN, window.innerWidth - newW - EDGE_MARGIN);
+                const maxY = Math.max(EDGE_MARGIN, window.innerHeight - newH - EDGE_MARGIN);
+
+                return {
+                    ...prev,
+                    x: Math.max(EDGE_MARGIN, Math.min(newX, maxX)),
+                    y: Math.max(EDGE_MARGIN, Math.min(newY, maxY)),
+                    customW: newW,
+                    customH: newH,
+                };
+            });
+        };
+
+        const handleMouseUp = () => {
+            setIsResizing(false);
+            setResizeDir(null);
+        };
+
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
+        return () => {
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
+        };
+    }, [isResizing, resizeDir]);
+
+    /* ------------------------------------------------------------------ */
+    /*  Toggle helpers                                                     */
+    /* ------------------------------------------------------------------ */
     const toggleMinimize = () => setState((prev) => ({ ...prev, isOpen: !prev.isOpen }));
     const toggleMaximize = () =>
         setState((prev) => ({
@@ -144,7 +280,7 @@ export default function DraggableChatAgent({ locked = false }) {
             y: !prev.isMaximized ? EDGE_MARGIN : prev.y,
         }));
 
-    // ─── Minimized state: floating circular launcher ───
+    // ─── Minimized state: floating circular launcher ──────────────────
     if (!state.isOpen) {
         return (
             <button
@@ -167,35 +303,39 @@ export default function DraggableChatAgent({ locked = false }) {
         );
     }
 
-    // ─── Open state: full draggable widget ───
-    const width = state.isMaximized ? 'calc(100vw - 32px)' : `${WIDGET_WIDTH}px`;
-    const height = state.isMaximized ? 'calc(100vh - 32px)' : `${WIDGET_HEIGHT}px`;
+    // ─── Open state: full draggable + resizable widget ────────────────
+    const width = state.isMaximized ? 'calc(100vw - 32px)' : `${state.customW}px`;
+    const height = state.isMaximized ? 'calc(100vh - 32px)' : `${state.customH}px`;
+
+    // While dragging OR resizing the iframe should ignore pointer events
+    const blockInteraction = isDragging || isResizing;
 
     return (
         <div
             ref={widgetRef}
-            onMouseDown={handleDragStart}
-            className={`fixed z-50 rounded-2xl overflow-hidden border border-white/15 shadow-2xl shadow-black/40 transition-shadow duration-200 ${isDragging ? 'cursor-grabbing shadow-violet-500/20' : 'cursor-grab'
-                }`}
+            onMouseDown={blockInteraction ? undefined : handleDragStart}
+            className={`fixed z-50 rounded-2xl overflow-hidden border border-white/15 shadow-2xl shadow-black/40 transition-shadow duration-200
+                ${blockInteraction ? 'select-none' : ''}
+            `}
             style={{
                 left: `${state.x}px`,
                 top: `${state.y}px`,
                 width,
                 height,
-                // White transparent shade (frosted-glass effect) — semi-transparent so the page beneath is subtly visible
                 background: 'rgba(255, 255, 255, 0.08)',
                 backdropFilter: 'blur(16px) saturate(180%)',
                 WebkitBackdropFilter: 'blur(16px) saturate(180%)',
-                userSelect: isDragging ? 'none' : 'auto',
+                userSelect: blockInteraction ? 'none' : 'auto',
+                cursor: isResizing && resizeDir ? CURSOR_MAP[resizeDir] : blockInteraction ? 'grabbing' : 'grab',
             }}
         >
-            {/* Header (drag handle) */}
+            {/* Header (drag handle) — hidden resize handles are placed
+                around the *entire* widget outside of this header area */}
             <div
                 className="flex items-center justify-between px-3 select-none"
                 style={{
                     height: `${HEADER_HEIGHT}px`,
-                    background:
-                        'linear-gradient(90deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.10) 50%, rgba(255,255,255,0.18) 100%)',
+                    background: 'linear-gradient(90deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.10) 50%, rgba(255,255,255,0.18) 100%)',
                     backdropFilter: 'blur(20px)',
                     WebkitBackdropFilter: 'blur(20px)',
                     borderBottom: '1px solid rgba(255,255,255,0.15)',
@@ -234,7 +374,64 @@ export default function DraggableChatAgent({ locked = false }) {
                 </div>
             </div>
 
-            {/* White transparent shade backing the iframe so the chat is clearly readable on any page */}
+            {/* ── Resize handles (8 directions) ────────────────────────
+                Only rendered when the widget is NOT maximised, because
+                a maximised widget fills the viewport and should not be
+                user‑resizable. */}
+            {!state.isMaximized && (
+                <>
+                    {/* Top edge */}
+                    <div
+                        onMouseDown={(e) => handleResizeStart(e, 'n')}
+                        className="absolute top-0 left-0 right-0 z-20"
+                        style={{ height: RESIZE_HANDLE, cursor: CURSOR_MAP.n }}
+                    />
+                    {/* Bottom edge */}
+                    <div
+                        onMouseDown={(e) => handleResizeStart(e, 's')}
+                        className="absolute bottom-0 left-0 right-0 z-20"
+                        style={{ height: RESIZE_HANDLE, cursor: CURSOR_MAP.s }}
+                    />
+                    {/* Left edge */}
+                    <div
+                        onMouseDown={(e) => handleResizeStart(e, 'w')}
+                        className="absolute top-0 bottom-0 left-0 z-20"
+                        style={{ width: RESIZE_HANDLE, cursor: CURSOR_MAP.w }}
+                    />
+                    {/* Right edge */}
+                    <div
+                        onMouseDown={(e) => handleResizeStart(e, 'e')}
+                        className="absolute top-0 bottom-0 right-0 z-20"
+                        style={{ width: RESIZE_HANDLE, cursor: CURSOR_MAP.e }}
+                    />
+                    {/* Top‑left corner */}
+                    <div
+                        onMouseDown={(e) => handleResizeStart(e, 'nw')}
+                        className="absolute top-0 left-0 z-20"
+                        style={{ width: RESIZE_HANDLE * 2, height: RESIZE_HANDLE * 2, cursor: CURSOR_MAP.nw }}
+                    />
+                    {/* Top‑right corner */}
+                    <div
+                        onMouseDown={(e) => handleResizeStart(e, 'ne')}
+                        className="absolute top-0 right-0 z-20"
+                        style={{ width: RESIZE_HANDLE * 2, height: RESIZE_HANDLE * 2, cursor: CURSOR_MAP.ne }}
+                    />
+                    {/* Bottom‑left corner */}
+                    <div
+                        onMouseDown={(e) => handleResizeStart(e, 'sw')}
+                        className="absolute bottom-0 left-0 z-20"
+                        style={{ width: RESIZE_HANDLE * 2, height: RESIZE_HANDLE * 2, cursor: CURSOR_MAP.sw }}
+                    />
+                    {/* Bottom‑right corner */}
+                    <div
+                        onMouseDown={(e) => handleResizeStart(e, 'se')}
+                        className="absolute bottom-0 right-0 z-20"
+                        style={{ width: RESIZE_HANDLE * 2, height: RESIZE_HANDLE * 2, cursor: CURSOR_MAP.se }}
+                    />
+                </>
+            )}
+
+            {/* White transparent backing layer */}
             <div
                 aria-hidden="true"
                 style={{
@@ -251,18 +448,14 @@ export default function DraggableChatAgent({ locked = false }) {
                 }}
             />
 
-            {/*
-              When the widget is locked (user is not signed in), show a sign-up CTA overlay
-              instead of the iframe. The widget remains draggable / minimizable in this state.
-            */}
+            {/* Locked overlay (not signed in) */}
             {isLocked ? (
                 <div
                     data-no-drag
                     className="absolute inset-0 z-10 flex flex-col items-center justify-center px-8 text-center"
                     style={{
                         top: `${HEADER_HEIGHT}px`,
-                        background:
-                            'linear-gradient(180deg, rgba(15, 23, 42, 0.55) 0%, rgba(15, 23, 42, 0.85) 100%)',
+                        background: 'linear-gradient(180deg, rgba(15, 23, 42, 0.55) 0%, rgba(15, 23, 42, 0.85) 100%)',
                         backdropFilter: 'blur(14px) saturate(160%)',
                         WebkitBackdropFilter: 'blur(14px) saturate(160%)',
                     }}
@@ -299,12 +492,7 @@ export default function DraggableChatAgent({ locked = false }) {
                     </p>
                 </div>
             ) : (
-                /*
-                 * Relevance AI chat iframe. We apply `filter: invert(1) hue-rotate(180deg)` to force
-                 * the chat UI into a dark theme — this flips black text to white (so it's readable
-                 * on the dashboard) while `hue-rotate` keeps the brand colors recognizable. The
-                 * `color-scheme: dark` hint also nudges the embedded page to use dark colors.
-                 */
+                /* Relevance AI chat iframe */
                 <iframe
                     src={RELEVANCE_CHAT_URL}
                     title="OpsMind AI Chat Agent"
@@ -322,7 +510,7 @@ export default function DraggableChatAgent({ locked = false }) {
                         colorScheme: 'dark',
                         filter: 'invert(1) hue-rotate(180deg)',
                         WebkitFilter: 'invert(1) hue-rotate(180deg)',
-                        pointerEvents: isDragging ? 'none' : 'auto',
+                        pointerEvents: blockInteraction ? 'none' : 'auto',
                         display: 'block',
                     }}
                 />

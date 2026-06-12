@@ -1,30 +1,8 @@
-import { useAuth as clerkUseAuth, useUser as clerkUseUser } from '@clerk/react';
-import { DEV_MODE, useDevAuth, useDevUser } from '../lib/devAuth';
+// Real Clerk auth hooks — replaces the previous dev-mode mock.
+// All components import { useAuth, useUser } from here so auth
+// can be swapped or extended in one place.
 
-/**
- * Unified auth hooks that automatically switch between Clerk and dev-mode
- * based on whether the Clerk publishable key is a placeholder.
- *
- * DEV_MODE is a constant evaluated at module load time from import.meta.env,
- * so the conditional is effectively static — only one branch ever runs.
- *
- * In dev mode: useDevAuth/useDevUser are called (requires DevAuthProvider in tree)
- * In Clerk mode: clerkUseAuth/clerkUseUser are called (requires ClerkProvider in tree)
- *
- * Usage: Replace `import { useAuth } from '@clerk/react'` with
- *        `import { useAuth } from '../hooks/useAuthContext'`
- */
+import { useAuth as useClerkAuth, useUser as useClerkUser } from '@clerk/react';
 
-export const useAuth = () => {
-    if (DEV_MODE) {
-        return useDevAuth();
-    }
-    return clerkUseAuth();
-};
-
-export const useUser = () => {
-    if (DEV_MODE) {
-        return useDevUser();
-    }
-    return clerkUseUser();
-};
+export const useAuth = useClerkAuth;
+export const useUser = useClerkUser;

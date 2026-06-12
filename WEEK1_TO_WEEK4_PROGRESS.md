@@ -14,7 +14,6 @@
 - Planned authentication and vector-search integration
 ---
 # Week 2 — Backend Development & AI Workflow Setup
-
 ## Objectives
 - Build backend infrastructure
 - Configure AI integration pipeline

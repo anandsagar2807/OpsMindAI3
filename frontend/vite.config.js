@@ -3,11 +3,42 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          const normalizedId = id.replace(/\\/g, '/')
+          if (!normalizedId.includes('/node_modules/')) return undefined
+
+          const packagePath = normalizedId.split('/node_modules/').pop()
+          const packageName = packagePath.startsWith('@')
+            ? packagePath.split('/').slice(0, 2).join('/')
+            : packagePath.split('/')[0]
+
+          if (['react', 'react-dom', 'react-router-dom', 'scheduler'].includes(packageName)) {
+            return 'vendor-react'
+          }
+
+          if (packageName.startsWith('@clerk/')) return 'vendor-clerk'
+          if (packageName === 'recharts' || packageName.startsWith('d3-')) return 'vendor-charts'
+          if (packageName.startsWith('@tanstack/')) return 'vendor-query'
+          if (packageName === 'framer-motion') return 'vendor-motion'
+          if (packageName === 'lucide-react') return 'vendor-icons'
+          if (packageName === 'react-dropzone') return 'vendor-upload'
+          if (packageName === 'axios') return 'vendor-api'
+          if (packageName === 'zustand') return 'vendor-state'
+          if (packageName === 'react-hot-toast') return 'vendor-toast'
+
+          return undefined
+        },
+      },
+    },
+  },
   server: {
     port: 3000,
     proxy: {
       '/api': {
-        target: 'http://localhost:5002',
+        target: 'http://localhost:5004',
         changeOrigin: true,
         // Increase timeout for large file uploads (2 minutes)
         timeout: 120000,
@@ -21,7 +52,7 @@ export default defineConfig({
               res.writeHead(502, { 'Content-Type': 'application/json' });
               res.end(JSON.stringify({
                 success: false,
-                message: 'Proxy error — backend server is not reachable. Please ensure the backend is running on port 5002.',
+                message: 'Proxy error — backend server is not reachable. Please ensure the backend is running on port 5004.',
                 proxyError: err.message,
               }));
             }

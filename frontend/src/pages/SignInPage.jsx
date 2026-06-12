@@ -1,622 +1,135 @@
-import { motion } from 'framer-motion';
-import { useState, useEffect } from 'react';
-import { SignIn } from '@clerk/react';
-import { Sparkles, Brain, Shield, Zap, ArrowLeft, AlertTriangle, RefreshCw, Mail, Lock, Eye, EyeOff } from 'lucide-react';
-import { Link, Navigate, useNavigate } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuthContext';
-import { DEV_MODE } from '../lib/devAuth';
+import { SignIn, useAuth as useClerkAuth } from '@clerk/react'
+import { useNavigate } from 'react-router-dom'
+import { LogOut, ArrowRight, Loader2 } from 'lucide-react'
+import AuthPanel from '../components/AuthPanel'
 
+// Premium light-themed sign-in page — dark content panel on the left, Clerk form on the right
 export default function SignInPage() {
-    const { isSignedIn, isLoaded, signIn } = useAuth();
-    const navigate = useNavigate();
-    const [clerkError, setClerkError] = useState(false);
+    const { isSignedIn, isLoaded, signOut } = useClerkAuth()
+    const navigate = useNavigate()
 
-    // Dev mode form state
-    const [formData, setFormData] = useState({ email: '', password: '' });
-    const [showPassword, setShowPassword] = useState(false);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
-
-    // If Clerk doesn't load within 10 seconds, show an error (production mode only)
-    useEffect(() => {
-        if (!DEV_MODE && !isLoaded) {
-            const timer = setTimeout(() => setClerkError(true), 10000);
-            return () => clearTimeout(timer);
-        } else {
-            setClerkError(false);
-        }
-    }, [isLoaded]);
-
-    // Dev mode form submission
-    const handleDevSubmit = async (e) => {
-        e.preventDefault();
-        setError('');
-        setLoading(true);
-        try {
-            if (signIn) await signIn();
-            navigate('/dashboard');
-        } catch (err) {
-            setError(err.message || 'Sign in failed. Please try again.');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    // If already signed in, redirect to dashboard
-    if (isSignedIn) {
-        return <Navigate to="/dashboard" replace />;
-    }
-
-    // In production mode, wait for Clerk to load
-    if (!DEV_MODE && !isLoaded) {
-        if (clerkError) {
-            return (
-                <div className="min-h-screen bg-[#070B1A] flex items-center justify-center">
-                    <div className="flex flex-col items-center gap-6 max-w-md text-center px-6">
-                        <div className="w-14 h-14 rounded-2xl flex items-center justify-center"
-                            style={{
-                                background: 'rgba(239,68,68,0.1)',
-                                border: '1px solid rgba(239,68,68,0.2)',
-                            }}
-                        >
-                            <AlertTriangle className="w-7 h-7 text-red-400" />
-                        </div>
-                        <h2 className="text-xl font-bold text-[#F8FAFC]">Authentication Service Unavailable</h2>
-                        <p className="text-sm text-[rgba(255,255,255,0.7)] leading-relaxed">
-                            Unable to connect to the Clerk authentication service. This may be due to an invalid or expired publishable key in your configuration.
-                        </p>
-                        <div className="w-full p-4 text-xs text-[rgba(255,255,255,0.7)] rounded-xl"
-                            style={{
-                                background: 'rgba(255,255,255,0.04)',
-                                border: '1px solid rgba(255,255,255,0.08)',
-                            }}
-                        >
-                            <p className="font-semibold text-[#F8FAFC] mb-2">How to fix:</p>
-                            <ol className="list-decimal list-inside space-y-1">
-                                <li>Check your <code className="text-[#7C6BFF]">frontend/.env</code> file</li>
-                                <li>Verify <code className="text-[#7C6BFF]">VITE_CLERK_PUBLISHABLE_KEY</code> is valid</li>
-                                <li>Get a new key from <a href="https://dashboard.clerk.com" target="_blank" rel="noopener noreferrer" className="text-[#7C6BFF] hover:text-[#2BCBFF] underline">Clerk Dashboard</a></li>
-                                <li>Restart the dev server after updating the key</li>
-                            </ol>
-                        </div>
-                        <div className="flex gap-3">
-                            <button
-                                onClick={() => { setClerkError(false); window.location.reload(); }}
-                                className="flex items-center gap-2 px-4 py-2 rounded-xl text-white text-sm font-medium transition-all duration-300"
-                                style={{
-                                    background: 'linear-gradient(135deg, #7C6BFF 0%, #2BCBFF 100%)',
-                                    boxShadow: '0 8px 24px rgba(124,107,255,0.3)',
-                                }}
-                            >
-                                <RefreshCw className="w-4 h-4" />
-                                Retry
-                            </button>
-                            <Link
-                                to="/"
-                                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300"
-                                style={{
-                                    color: 'rgba(255,255,255,0.7)',
-                                    border: '1px solid rgba(255,255,255,0.08)',
-                                }}
-                            >
-                                <ArrowLeft className="w-4 h-4" />
-                                Back to Home
-                            </Link>
-                        </div>
-                    </div>
-                </div>
-            );
-        }
+    // Clerk is still loading — show a clean spinner
+    if (!isLoaded) {
         return (
-            <div className="min-h-screen bg-[#070B1A] flex items-center justify-center">
-                <div className="flex flex-col items-center gap-4">
-                    <div className="w-11 h-11 rounded-xl flex items-center justify-center shadow-lg animate-pulse"
-                        style={{
-                            background: 'linear-gradient(135deg, #7C6BFF 0%, #2BCBFF 100%)',
-                            boxShadow: '0 8px 24px rgba(124,107,255,0.3)',
-                        }}
-                    >
-                        <Sparkles className="w-5 h-5 text-white" />
+            <div className="min-h-screen flex">
+                <div className="flex-1">
+                    <AuthPanel
+                        heading="Welcome back to"
+                        highlight="OpsMind"
+                        description="Sign in to access your AI-powered knowledge assistant, upload documents, and get instant answers with source citations."
+                    />
+                </div>
+                <div className="flex-1 flex items-center justify-center bg-gradient-to-br from-white via-slate-50/30 to-white relative overflow-hidden">
+                    {/* Subtle decorative elements */}
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50/40 rounded-full blur-3xl" />
+                    <div className="absolute bottom-0 left-0 w-24 h-24 bg-purple-50/30 rounded-full blur-2xl" />
+                    <div className="flex flex-col items-center gap-3">
+                        <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
+                        <p className="text-sm text-neutral-400 font-medium">Loading authentication...</p>
                     </div>
-                    <p className="text-[rgba(255,255,255,0.7)] text-sm">Loading authentication...</p>
                 </div>
             </div>
-        );
+        )
     }
 
-    const featureCards = [
-        {
-            icon: Brain,
-            title: 'Intelligent RAG',
-            desc: 'Context-aware answers from your documents with zero hallucinations',
-        },
-        {
-            icon: Zap,
-            title: 'Real-Time Streaming',
-            desc: 'ChatGPT-quality responses with lightning-fast streaming',
-        },
-        {
-            icon: Shield,
-            title: 'Enterprise Security',
-            desc: 'Role-based access control with SOC 2 compliance',
-        },
-    ];
-
-    const clerkAppearance = {
-        variables: {
-            colorPrimary: '#7C6BFF',
-            colorBackground: 'transparent',
-            colorText: '#F8FAFC',
-            colorTextSecondary: 'rgba(255,255,255,0.7)',
-            colorInputBackground: 'rgba(255,255,255,0.04)',
-            colorInputText: '#F8FAFC',
-            colorBorderPrimary: 'rgba(255,255,255,0.08)',
-            borderRadius: '1rem',
-            colorSuccess: '#2BCBFF',
-            colorNeutral: '#94A3B8',
-        },
-        elements: {
-            rootBox: 'w-full',
-            card: 'bg-transparent border-0 shadow-none rounded-none w-full p-0',
-            headerLogo: 'hidden',
-            headerTitle: 'hidden',
-            headerSubtitle: 'hidden',
-            socialButtonsBlockButton:
-                'rounded-2xl border border-white/[0.08] bg-[rgba(255,255,255,0.04)] text-[#F8FAFC] hover:bg-[rgba(255,255,255,0.08)] hover:border-white/[0.15] hover:shadow-[0_0_20px_rgba(124,107,255,0.15)] transition-all duration-300 h-[56px] font-medium',
-            socialButtonsBlockButtonText: 'text-sm font-medium text-[#F8FAFC]',
-            socialButtonsBlockButtonArrow: 'text-[#94A3B8]',
-            dividerRow: 'my-6',
-            dividerText: 'text-[rgba(255,255,255,0.4)] text-xs uppercase tracking-widest font-semibold',
-            dividerLine: 'bg-white/[0.06]',
-            formButtonPrimary:
-                'bg-gradient-to-r from-[#6C63FF] to-[#A855F7] hover:from-[#7C6BFF] hover:to-[#B86FFF] text-white font-bold text-sm rounded-[18px] shadow-[0_10px_30px_rgba(124,107,255,0.35)] hover:shadow-[0_14px_40px_rgba(124,107,255,0.5)] hover:scale-[1.02] transition-all duration-300 w-full h-[56px] tracking-wide border-0',
-            formFieldLabel:
-                'text-[rgba(255,255,255,0.5)] text-[11px] font-semibold uppercase tracking-[0.1em] mb-2',
-            formFieldInput:
-                'rounded-2xl bg-[rgba(255,255,255,0.04)] border border-white/[0.08] text-[#F8FAFC] placeholder-[rgba(255,255,255,0.25)] focus:border-[#7C6BFF] focus:ring-[4px] focus:ring-[rgba(124,107,255,0.15)] transition-all duration-300 h-[56px] px-5 text-sm',
-            formFieldInputShowPasswordButton: 'text-[#94A3B8] hover:text-[#F8FAFC]',
-            formFieldAction: 'text-[#7C6BFF] hover:text-[#2BCBFF] text-sm font-medium transition-colors',
-            footer: 'bg-transparent border-0 mt-6 pt-0',
-            footerActionText: 'text-[rgba(255,255,255,0.4)] text-sm',
-            footerActionLink:
-                'text-[#7C6BFF] hover:text-[#2BCBFF] font-medium text-sm transition-colors hover:underline',
-            identityPreviewText: 'text-[#F8FAFC]',
-            identityPreviewEditButton: 'text-[#7C6BFF] hover:text-[#2BCBFF]',
-            alert: 'rounded-2xl bg-red-500/10 border border-red-500/20 text-red-200 p-4 text-sm',
-            alertText: 'text-sm text-red-200',
-            formFieldErrorText: 'text-red-400 text-xs mt-1',
-            otpCodeFieldInput:
-                'rounded-2xl bg-[rgba(255,255,255,0.04)] border border-white/[0.08] text-[#F8FAFC]',
-            form: 'gap-5',
-            formFieldRow: 'gap-1',
-            formFieldsWrapper: 'gap-5',
-        },
-    };
-
-    // ─── Auth Card Content: Dev Mode or Clerk ───
-    const authCardContent = DEV_MODE ? (
-        /* Dev Mode: Custom Signin Form */
-        <>
-            {/* Dev mode banner */}
-            <div className="mb-6">
-                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs">
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>Dev Mode — Any credentials will work. Replace <code className="text-amber-200">VITE_CLERK_PUBLISHABLE_KEY</code> with a real key for production auth.</span>
+    // Already signed in — show dashboard redirect + sign‑out option
+    if (isSignedIn) {
+        return (
+            <div className="min-h-screen flex">
+                <div className="flex-1">
+                    <AuthPanel
+                        heading="Welcome back to"
+                        highlight="OpsMind"
+                        description="Sign in to access your AI-powered knowledge assistant, upload documents, and get instant answers with source citations."
+                    />
                 </div>
-            </div>
+                <div className="flex-1 flex items-center justify-center bg-gradient-to-br from-white via-slate-50/30 to-white relative overflow-hidden">
+                    {/* Subtle decorative elements */}
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50/40 rounded-full blur-3xl" />
+                    <div className="absolute bottom-0 left-0 w-24 h-24 bg-purple-50/30 rounded-full blur-2xl" />
 
-            {error && (
-                <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="mb-4 p-3 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-200 text-sm"
-                >
-                    {error}
-                </motion.div>
-            )}
-
-            <form onSubmit={handleDevSubmit} className="space-y-5">
-                {/* Email */}
-                <div>
-                    <label className="text-[rgba(255,255,255,0.5)] text-[11px] font-semibold uppercase tracking-[0.1em] mb-2 block">Email Address</label>
-                    <div className="relative">
-                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[rgba(255,255,255,0.25)]" />
-                        <input
-                            type="email"
-                            value={formData.email}
-                            onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                            placeholder="you@company.com"
-                            required
-                            className="w-full pl-12 pr-5 h-[56px] rounded-2xl bg-[rgba(255,255,255,0.04)] border border-white/[0.08] text-[#F8FAFC] placeholder-[rgba(255,255,255,0.25)] focus:border-[#7C6BFF] focus:ring-[4px] focus:ring-[rgba(124,107,255,0.15)] transition-all duration-300 text-sm"
-                        />
-                    </div>
-                </div>
-
-                {/* Password */}
-                <div>
-                    <label className="text-[rgba(255,255,255,0.5)] text-[11px] font-semibold uppercase tracking-[0.1em] mb-2 block">Password</label>
-                    <div className="relative">
-                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[rgba(255,255,255,0.25)]" />
-                        <input
-                            type={showPassword ? 'text' : 'password'}
-                            value={formData.password}
-                            onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                            placeholder="Enter your password"
-                            required
-                            className="w-full pl-12 pr-12 h-[56px] rounded-2xl bg-[rgba(255,255,255,0.04)] border border-white/[0.08] text-[#F8FAFC] placeholder-[rgba(255,255,255,0.25)] focus:border-[#7C6BFF] focus:ring-[4px] focus:ring-[rgba(124,107,255,0.15)] transition-all duration-300 text-sm"
-                        />
-                        <button
-                            type="button"
-                            onClick={() => setShowPassword(!showPassword)}
-                            className="absolute right-4 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#F8FAFC] transition-colors"
-                        >
-                            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                        </button>
-                    </div>
-                </div>
-
-                {/* Submit */}
-                <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    type="submit"
-                    disabled={loading}
-                    className="w-full h-[56px] rounded-[18px] bg-gradient-to-r from-[#6C63FF] to-[#A855F7] hover:from-[#7C6BFF] hover:to-[#B86FFF] text-white font-bold text-sm shadow-[0_10px_30px_rgba(124,107,255,0.35)] hover:shadow-[0_14px_40px_rgba(124,107,255,0.5)] transition-all duration-300 tracking-wide border-0 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                    {loading ? 'Signing in...' : 'Sign In'}
-                </motion.button>
-            </form>
-
-            {/* Bottom Section */}
-            <div className="mt-6 text-center">
-                <p className="text-sm" style={{ color: 'rgba(255,255,255,0.4)' }}>
-                    Don't have an account?{' '}
-                    <Link
-                        to="/sign-up"
-                        className="font-medium transition-all duration-300 hover:underline"
-                        style={{
-                            backgroundImage: 'linear-gradient(135deg, #7C6BFF 0%, #2BCBFF 100%)',
-                            WebkitBackgroundClip: 'text',
-                            WebkitTextFillColor: 'transparent',
-                            backgroundClip: 'text',
-                        }}
-                    >
-                        Sign Up
-                    </Link>
-                </p>
-            </div>
-        </>
-    ) : (
-        /* Production Mode: Clerk SignIn Component */
-        <>
-            <SignIn
-                routing="path"
-                path="/sign-in"
-                signUpUrl="/sign-up"
-                afterSignInUrl="/dashboard"
-                appearance={clerkAppearance}
-            />
-
-            {/* Bottom Section */}
-            <div className="mt-6 text-center">
-                <p className="text-sm" style={{ color: 'rgba(255,255,255,0.4)' }}>
-                    Don't have an account?{' '}
-                    <Link
-                        to="/sign-up"
-                        className="font-medium transition-all duration-300 hover:underline"
-                        style={{
-                            backgroundImage: 'linear-gradient(135deg, #7C6BFF 0%, #2BCBFF 100%)',
-                            WebkitBackgroundClip: 'text',
-                            WebkitTextFillColor: 'transparent',
-                            backgroundClip: 'text',
-                        }}
-                    >
-                        Sign Up
-                    </Link>
-                </p>
-            </div>
-        </>
-    );
-
-    return (
-        <div className="min-h-screen flex relative w-full overflow-hidden text-[#F8FAFC] animate-signin-page-fadein">
-            {/* ─── LEFT PANEL (55%) ─── */}
-            <div
-                className="hidden lg:flex w-[55%] flex-col justify-between p-10 xl:p-14 relative overflow-hidden shrink-0"
-                style={{
-                    background:
-                        'linear-gradient(180deg, #070B1A 0%, #0B1025 30%, #0D1735 60%, #0B1F4A 100%)',
-                }}
-            >
-                {/* Blue radial glow behind content */}
-                <div
-                    className="absolute top-[20%] left-[30%] w-[40rem] h-[40rem] rounded-full pointer-events-none"
-                    style={{
-                        background:
-                            'radial-gradient(circle, rgba(124,107,255,0.08) 0%, rgba(43,203,255,0.04) 40%, transparent 70%)',
-                        filter: 'blur(60px)',
-                    }}
-                />
-                {/* Purple accent glow */}
-                <div
-                    className="absolute bottom-[10%] right-[5%] w-[28rem] h-[28rem] rounded-full pointer-events-none animate-float"
-                    style={{
-                        background:
-                            'radial-gradient(circle, rgba(168,85,247,0.06) 0%, transparent 60%)',
-                        filter: 'blur(50px)',
-                    }}
-                />
-                {/* Soft blurred background shape */}
-                <div
-                    className="absolute top-[60%] left-[10%] w-[20rem] h-[20rem] rounded-full pointer-events-none animate-float-slow"
-                    style={{
-                        background:
-                            'radial-gradient(circle, rgba(43,203,255,0.04) 0%, transparent 50%)',
-                        filter: 'blur(40px)',
-                        animationDelay: '2s',
-                    }}
-                />
-                {/* Decorative grid pattern */}
-                <div
-                    className="absolute inset-0 opacity-[0.015] pointer-events-none"
-                    style={{
-                        backgroundImage:
-                            'radial-gradient(circle, rgba(255,255,255,0.2) 1px, transparent 1px)',
-                        backgroundSize: '32px 32px',
-                    }}
-                />
-
-                {/* Left Panel Content */}
-                <div className="relative z-10 flex flex-col h-full justify-between gap-8">
-                    {/* ─── Top-left: Logo ─── */}
-                    <div className="flex items-center gap-3">
-                        <div
-                            className="w-11 h-11 rounded-xl flex items-center justify-center shadow-lg transition-all duration-300 hover:scale-105"
-                            style={{
-                                background:
-                                    'linear-gradient(135deg, #7C6BFF 0%, #2BCBFF 100%)',
-                                boxShadow: '0 8px 24px rgba(124,107,255,0.3)',
-                            }}
-                        >
-                            <Sparkles className="w-5 h-5 text-white" />
+                    <div className="w-full max-w-sm text-center relative z-10">
+                        <div className="w-16 h-16 mx-auto mb-5 rounded-2xl bg-gradient-to-br from-emerald-50 to-emerald-100 border border-emerald-200/50 flex items-center justify-center shadow-lg shadow-emerald-500/10">
+                            <svg className="w-8 h-8 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
                         </div>
-                        <div>
-                            <h1 className="text-xl font-bold text-white tracking-[-0.02em] leading-tight">
-                                OpsMind AI
-                            </h1>
-                            <p
-                                className="text-[10px] font-semibold uppercase tracking-[0.15em]"
-                                style={{ color: '#7C6BFF' }}
-                            >
-                                Enterprise Knowledge AI
-                            </p>
-                        </div>
-                    </div>
-
-                    {/* ─── Hero Section ─── */}
-                    <div className="my-auto">
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.7, ease: 'easeOut' }}
-                        >
-                            <h2
-                                className="text-4xl xl:text-5xl font-extrabold text-white mb-5 leading-[1.15] tracking-[-0.03em]"
-                            >
-                                Welcome back to{' '}
-                                <span
-                                    className="bg-clip-text text-transparent"
-                                    style={{
-                                        backgroundImage:
-                                            'linear-gradient(135deg, #7C6BFF 0%, #2BCBFF 100%)',
-                                    }}
-                                >
-                                    OpsMind
-                                </span>
-                            </h2>
-                            <p
-                                className="text-base xl:text-lg max-w-md leading-relaxed mb-10"
-                                style={{ color: 'rgba(255,255,255,0.7)' }}
-                            >
-                                Sign in to access your AI-powered knowledge
-                                assistant, upload documents, and get instant
-                                answers with source citations.
-                            </p>
-                        </motion.div>
-
-                        {/* ─── Feature Cards ─── */}
-                        <div className="flex flex-col gap-4 max-w-lg">
-                            {featureCards.map((feature, i) => (
-                                <motion.div
-                                    key={i}
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{
-                                        delay: 0.3 + i * 0.12,
-                                        duration: 0.5,
-                                        ease: 'easeOut',
-                                    }}
-                                    className="group flex items-start gap-4 p-5 transition-all duration-300 hover:-translate-y-1 cursor-default"
-                                    style={{
-                                        background: 'rgba(255,255,255,0.04)',
-                                        border: '1px solid rgba(255,255,255,0.08)',
-                                        borderRadius: '24px',
-                                        backdropFilter: 'blur(20px)',
-                                        WebkitBackdropFilter: 'blur(20px)',
-                                        boxShadow:
-                                            '0 4px 20px rgba(0,0,0,0.15)',
-                                    }}
-                                    onMouseEnter={(e) => {
-                                        e.currentTarget.style.borderColor =
-                                            'rgba(124,107,255,0.2)';
-                                        e.currentTarget.style.boxShadow =
-                                            '0 8px 30px rgba(124,107,255,0.1), 0 4px 20px rgba(0,0,0,0.2)';
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        e.currentTarget.style.borderColor =
-                                            'rgba(255,255,255,0.08)';
-                                        e.currentTarget.style.boxShadow =
-                                            '0 4px 20px rgba(0,0,0,0.15)';
-                                    }}
-                                >
-                                    <div
-                                        className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-transform duration-300 group-hover:scale-110"
-                                        style={{
-                                            background:
-                                                'linear-gradient(135deg, rgba(124,107,255,0.12) 0%, rgba(43,203,255,0.08) 100%)',
-                                            border: '1px solid rgba(124,107,255,0.15)',
-                                        }}
-                                    >
-                                        <feature.icon
-                                            className="w-5 h-5"
-                                            style={{ color: '#7C6BFF' }}
-                                        />
-                                    </div>
-                                    <div>
-                                        <p className="text-sm font-semibold text-white/90 mb-1">
-                                            {feature.title}
-                                        </p>
-                                        <p
-                                            className="text-xs leading-relaxed"
-                                            style={{
-                                                color: 'rgba(255,255,255,0.55)',
-                                            }}
-                                        >
-                                            {feature.desc}
-                                        </p>
-                                    </div>
-                                </motion.div>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* ─── Back to homepage ─── */}
-                    <div>
-                        <Link
-                            to="/"
-                            className="inline-flex items-center gap-2 text-sm transition-colors duration-300 group"
-                            style={{ color: 'rgba(255,255,255,0.5)' }}
-                            onMouseEnter={(e) =>
-                                (e.currentTarget.style.color = '#7C6BFF')
-                            }
-                            onMouseLeave={(e) =>
-                            (e.currentTarget.style.color =
-                                'rgba(255,255,255,0.5)')
-                            }
-                        >
-                            <ArrowLeft
-                                className="w-4 h-4 transition-transform duration-300 group-hover:-translate-x-1"
-                            />
-                            Back to homepage
-                        </Link>
-                    </div>
-                </div>
-            </div>
-
-            {/* ─── CENTER DIVIDER ─── */}
-            <div
-                className="hidden lg:block shrink-0"
-                style={{
-                    borderRight: '1px solid rgba(255,255,255,0.06)',
-                }}
-            />
-
-            {/* ─── RIGHT PANEL (45%) ─── */}
-            <div
-                className="flex-1 lg:w-[45%] flex flex-col justify-center items-center relative py-10 px-5 sm:px-8 md:px-10 overflow-y-auto min-h-screen"
-                style={{ background: '#070B1A' }}
-            >
-                {/* Ambient glow behind auth card */}
-                <div
-                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[30rem] h-[30rem] rounded-full pointer-events-none animate-float-slow"
-                    style={{
-                        background:
-                            'radial-gradient(circle, rgba(124,107,255,0.04) 0%, transparent 60%)',
-                        filter: 'blur(60px)',
-                    }}
-                />
-
-                {/* ─── Mobile Logo (visible only on mobile/tablet) ─── */}
-                <div className="lg:hidden flex items-center justify-between w-full max-w-[520px] mb-8">
-                    <Link to="/" className="inline-flex items-center gap-3 group">
-                        <div
-                            className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg transition-all duration-300 group-hover:scale-105"
-                            style={{
-                                background:
-                                    'linear-gradient(135deg, #7C6BFF 0%, #2BCBFF 100%)',
-                                boxShadow: '0 8px 24px rgba(124,107,255,0.3)',
-                            }}
-                        >
-                            <Sparkles className="w-5 h-5 text-white" />
-                        </div>
-                        <div>
-                            <h1 className="text-lg font-bold text-white tracking-[-0.02em] leading-tight">
-                                OpsMind AI
-                            </h1>
-                            <p
-                                className="text-[10px] font-semibold uppercase tracking-[0.15em]"
-                                style={{ color: '#7C6BFF' }}
-                            >
-                                Enterprise Knowledge AI
-                            </p>
-                        </div>
-                    </Link>
-                    <Link
-                        to="/"
-                        className="flex items-center gap-1 text-xs transition-colors"
-                        style={{ color: 'rgba(255,255,255,0.5)' }}
-                    >
-                        <ArrowLeft className="w-3.5 h-3.5" />
-                        Home
-                    </Link>
-                </div>
-
-                {/* ─── AUTH CARD ─── */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, delay: 0.1, ease: 'easeOut' }}
-                    className="w-full max-w-[520px] z-10 p-8 md:p-10"
-                    style={{
-                        background: 'rgba(10,15,35,0.75)',
-                        backdropFilter: 'blur(30px)',
-                        WebkitBackdropFilter: 'blur(30px)',
-                        border: '1px solid rgba(255,255,255,0.08)',
-                        borderRadius: '32px',
-                        boxShadow: '0 25px 80px rgba(0,0,0,0.45)',
-                    }}
-                >
-                    {/* ─── Card Header ─── */}
-                    <div className="mb-8">
-                        <h3
-                            className="text-[28px] md:text-[32px] font-bold text-white tracking-[-0.02em] leading-tight mb-2"
-                        >
-                            Sign in to OpsMind AI
-                        </h3>
-                        <p
-                            className="text-sm md:text-base"
-                            style={{ color: 'rgba(255,255,255,0.7)' }}
-                        >
-                            Welcome back! Please sign in to continue
+                        <h2 className="text-xl font-bold text-neutral-800 mb-2 tracking-[-0.02em]">You're already signed in</h2>
+                        <p className="text-sm text-neutral-500 mb-8 leading-relaxed">
+                            Your session is active. Go to your dashboard or sign out to switch accounts.
                         </p>
+                        <div className="flex flex-col gap-3">
+                            <button
+                                onClick={() => navigate('/dashboard')}
+                                className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 text-sm font-semibold text-white bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-200"
+                            >
+                                Go to Dashboard
+                                <ArrowRight className="w-4 h-4" />
+                            </button>
+                            <button
+                                onClick={async () => {
+                                    await signOut()
+                                    window.location.reload()
+                                }}
+                                className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 text-sm font-medium text-neutral-400 hover:text-red-600 hover:bg-red-50/80 rounded-xl transition-all duration-200"
+                            >
+                                <LogOut className="w-4 h-4" />
+                                Sign out & switch accounts
+                            </button>
+                        </div>
                     </div>
-
-                    {/* ─── Auth Content (Dev Mode or Clerk) ─── */}
-                    {authCardContent}
-                </motion.div>
-
-                {/* ─── Mobile: Back to homepage ─── */}
-                <div className="lg:hidden mt-6">
-                    <Link
-                        to="/"
-                        className="inline-flex items-center gap-2 text-xs transition-colors"
-                        style={{ color: 'rgba(255,255,255,0.4)' }}
-                    >
-                        <ArrowLeft className="w-3.5 h-3.5" />
-                        Back to homepage
-                    </Link>
                 </div>
+            </div>
+        )
+    }
+
+    // Not signed in — show the Clerk form
+    return (
+        <div className="min-h-screen flex">
+            {/* Left: Dark content panel */}
+            <div className="flex-1">
+                <AuthPanel
+                    heading="Welcome back to"
+                    highlight="OpsMind"
+                    description="Sign in to access your AI-powered knowledge assistant, upload documents, and get instant answers with source citations."
+                />
+            </div>
+
+            {/* Right: Premium Clerk Sign-In form area */}
+            <div className="flex-1 flex items-center justify-center py-12 px-8 bg-gradient-to-br from-white via-slate-50/20 to-white relative overflow-hidden">
+                {/* ─── Subtle decorative background ─── */}
+                <div className="absolute top-0 right-0 w-40 h-40 bg-indigo-50/50 rounded-full blur-3xl" />
+                <div className="absolute bottom-0 left-0 w-32 h-32 bg-purple-50/40 rounded-full blur-2xl" />
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-blue-50/20 rounded-full blur-3xl" />
+                {/* Subtle dot pattern */}
+                <div className="absolute inset-0 opacity-[0.015]" style={{
+                    backgroundImage: `radial-gradient(circle, rgba(99,102,241,0.3) 1px, transparent 1px)`,
+                    backgroundSize: '24px 24px'
+                }} />
+
+                <SignIn
+                    routing="path"
+                    path="/sign-in"
+                    signUpUrl="/sign-up"
+                    forceRedirectUrl="/dashboard"
+                    appearance={{
+                        layout: {
+                            socialButtonsPlacement: 'bottom',
+                            socialButtonsVariant: 'iconButton',
+                        },
+                        elements: {
+                            headerTitle: {
+                                fontSize: '1.75rem',
+                                fontWeight: '800',
+                                letterSpacing: '-0.03em',
+                            },
+                            footer: {
+                                marginTop: '24px',
+                            },
+                        },
+                    }}
+                />
             </div>
         </div>
-    );
+    )
 }

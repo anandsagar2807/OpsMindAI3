@@ -7,8 +7,14 @@ const Button = ({
   className = '',
   icon: Icon,
   iconPosition = 'right',
+  onClick,
   ...props
 }) => {
+  const handleClick = async (e) => {
+    e.persist();
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    if (onClick) onClick(e);
+  };
   const variants = {
     primary: 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50',
     secondary: 'bg-white/5 hover:bg-white/10 text-white border border-white/10 hover:border-white/20',
@@ -26,6 +32,7 @@ const Button = ({
     <motion.button
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
+      onClick={handleClick}
       className={`
         ${variants[variant]}
         ${sizes[size]}

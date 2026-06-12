@@ -16,6 +16,7 @@ import {
     Building2
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuthContext';
+import { useSignUp } from '@clerk/react';
 
 const fadeInUp = {
     initial: { opacity: 0, y: 30 },
@@ -25,7 +26,8 @@ const fadeInUp = {
 
 export default function RegisterPage() {
     const navigate = useNavigate();
-    const { isSignedIn, signUp } = useAuth();
+    const { isSignedIn } = useAuth();
+    const { isLoaded, signUp } = useSignUp();
     const [formData, setFormData] = useState({
         fullName: '',
         email: '',
@@ -60,16 +62,22 @@ export default function RegisterPage() {
 
         try {
             if (signUp) {
-                await signUp({
+                const result = await signUp.create({
                     emailAddress: formData.email,
                     password: formData.password,
                     firstName: formData.fullName.split(' ')[0],
                     lastName: formData.fullName.split(' ').slice(1).join(' ') || '',
                 });
+                if (result.status === 'complete') {
+                    navigate('/dashboard');
+                } else {
+                    // Additional verification steps may be needed (e.g. email verification)
+                    setError('Registration requires additional verification. Please check your email to complete sign-up.');
+                }
             }
-            navigate('/dashboard');
         } catch (err) {
-            setError(err.message || 'Registration failed. Please try again.');
+            const message = err.errors?.[0]?.message || err.message || 'Registration failed. Please try again.';
+            setError(message);
         } finally {
             setLoading(false);
         }
