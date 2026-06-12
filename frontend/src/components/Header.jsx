@@ -1,20 +1,22 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { Brain, Sparkles, ChevronRight, Zap, Menu, X, LogOut, User } from 'lucide-react'
-import { UserButton as ClerkUserButton } from '@clerk/react'
-import { DEV_MODE } from '../lib/devAuth'
+import { Brain, Sparkles, ChevronRight, Zap, Menu, X, User, LogOut } from 'lucide-react'
 import { useAuth, useUser } from '../hooks/useAuthContext'
 
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false)
   const [isHovered, setIsHovered] = useState(null)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [userMenuOpen, setUserMenuOpen] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
   const isHomePage = location.pathname === '/'
 
-  const { isSignedIn, signOut } = useAuth()
+  const { isSignedIn } = useAuth()
   const { user } = useUser()
+
+  const userName = user?.fullName || user?.username || 'User'
+  const userInitials = userName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
 
   useEffect(() => {
     const handleScroll = () => {
@@ -210,179 +212,139 @@ const Header = () => {
 
             {/* ========== Auth Buttons ========== */}
             <div className="flex items-center gap-3">
-              {DEV_MODE ? (
-                /* ===== Dev Mode Auth UI ===== */
+              {isHomePage ? (
                 <>
-                  {!isSignedIn ? (
-                    <>
-                      {/* Dev mode: Sign In button (secondary outline style) */}
-                      <button
-                        onClick={() => navigate('/sign-in')}
-                        className="
-                          relative group px-5 py-2.5 text-sm font-medium
-                          text-neutral-300 hover:text-white
-                          transition-all duration-300 ease-out
-                          rounded-lg border border-white/[0.08] hover:border-white/[0.15]
-                          bg-white/[0.02] hover:bg-white/[0.05]
-                          focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#060a12]
-                        "
-                      >
-                        <span className="relative z-10">Sign In</span>
-                        <span className="absolute inset-0 rounded-lg bg-gradient-to-r from-blue-500/8 via-cyan-400/4 to-blue-600/8 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                      </button>
+                  {/* Sign In button (secondary outline style) */}
+                  <button
+                    onClick={() => navigate('/sign-in')}
+                    className="
+                      relative group px-5 py-2.5 text-sm font-medium
+                      text-neutral-300 hover:text-white
+                      transition-all duration-300 ease-out
+                      rounded-lg border border-white/[0.08] hover:border-white/[0.15]
+                      bg-white/[0.02] hover:bg-white/[0.05]
+                      focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#060a12]
+                    "
+                  >
+                    <span className="relative z-10">Sign In</span>
+                    <span className="absolute inset-0 rounded-lg bg-gradient-to-r from-blue-500/8 via-cyan-400/4 to-blue-600/8 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  </button>
 
-                      {/* Dev mode: Sign Up button (premium gradient CTA) */}
-                      <button
-                        onClick={() => navigate('/sign-up')}
-                        className="
-                          relative group px-6 py-2.5 text-sm font-semibold
-                          text-white overflow-hidden
-                          transition-all duration-300 ease-out
-                          rounded-lg
-                          shadow-[0_4px_20px_rgba(59,130,246,0.35)]
-                          hover:shadow-[0_8px_30px_rgba(59,130,246,0.5)]
-                          hover:-translate-y-[1px]
-                          active:scale-[0.98]
-                          focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#060a12]
-                        "
-                      >
-                        <span className="absolute inset-0 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 bg-[length:200%_100%] animate-gradient-x" />
-                        <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.08] to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out" />
-                        <span className="absolute top-0 left-4 right-4 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                        <span className="relative flex items-center gap-2 z-10">
-                          Sign Up
-                          <ChevronRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
-                        </span>
-                        <span className="absolute inset-0 rounded-lg border border-blue-400/20 group-hover:border-blue-400/40 transition-all duration-300" />
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      {/* Dashboard link */}
-                      <Link
-                        to="/dashboard"
-                        className="
-                          relative group px-5 py-2.5 text-sm font-medium
-                          text-neutral-300 hover:text-white
-                          transition-all duration-300 ease-out
-                          hover:bg-[rgba(255,255,255,0.04)]
-                          rounded-lg
-                          focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50
-                        "
-                      >
-                        <span className="relative flex items-center gap-2">
-                          Dashboard
-                          <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_6px_rgba(34,211,238,0.5)] opacity-0 group-hover:opacity-100 transition-all duration-300" />
-                        </span>
-                        <span className="absolute inset-0 rounded-lg bg-gradient-to-r from-blue-500/8 via-cyan-400/4 to-blue-600/8 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                      </Link>
-
-                      {/* Dev mode user avatar */}
-                      <div className="relative">
-                        <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/0 via-blue-500/10 to-blue-500/0 rounded-xl blur-md opacity-0 hover:opacity-100 transition-opacity duration-300" />
-                        <button
-                          onClick={signOut}
-                          className="w-[42px] h-[42px] rounded-xl overflow-hidden ring-2 ring-white/[0.08] hover:ring-blue-500/40 transition-all duration-300 shadow-[0_4px_12px_rgba(0,0,0,0.2)] bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center"
-                          title="Dev User — Click to sign out"
-                        >
-                          <User className="w-5 h-5 text-white" />
-                        </button>
-                      </div>
-
-                      {/* Dev mode badge */}
-                      <span className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full bg-gradient-to-r from-orange-500/20 to-yellow-500/20 border border-orange-400/30 text-orange-300">
-                        DEV
-                      </span>
-                    </>
-                  )}
+                  {/* Sign Up button (premium gradient CTA) */}
+                  <button
+                    onClick={() => navigate('/sign-up')}
+                    className="
+                      relative group px-6 py-2.5 text-sm font-semibold
+                      text-white overflow-hidden
+                      transition-all duration-300 ease-out
+                      rounded-lg
+                      shadow-[0_4px_20px_rgba(59,130,246,0.35)]
+                      hover:shadow-[0_8px_30px_rgba(59,130,246,0.5)]
+                      hover:-translate-y-[1px] active:scale-[0.98]
+                      focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#060a12]
+                    "
+                  >
+                    {/* Animated gradient background */}
+                    <span className="absolute inset-0 bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 bg-[length:200%_100%] animate-gradient-x" />
+                    {/* Shimmer sweep */}
+                    <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.08] to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out" />
+                    {/* Top highlight */}
+                    <span className="absolute top-0 left-4 right-4 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    {/* Content */}
+                    <span className="relative flex items-center gap-2 z-10">
+                      Sign Up
+                      <ChevronRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
+                    </span>
+                    {/* Border glow */}
+                    <span className="absolute inset-0 rounded-lg border border-indigo-400/20 group-hover:border-indigo-400/40 transition-all duration-300" />
+                  </button>
                 </>
               ) : (
-                /* ===== Clerk Auth UI (production) ===== */
                 <>
-                  {!isSignedIn ? (
-                    <>
-                      {/* Sign In button (secondary outline style) */}
-                      <button
-                        onClick={() => navigate('/sign-in')}
-                        className="
-                          relative group px-5 py-2.5 text-sm font-medium
-                          text-neutral-300 hover:text-white
-                          transition-all duration-300 ease-out
-                          rounded-lg border border-white/[0.08] hover:border-white/[0.15]
-                          bg-white/[0.02] hover:bg-white/[0.05]
-                          focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#060a12]
-                        "
-                      >
-                        <span className="relative z-10">Sign In</span>
-                        <span className="absolute inset-0 rounded-lg bg-gradient-to-r from-blue-500/8 via-cyan-400/4 to-blue-600/8 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                      </button>
+                  {/* Dashboard link */}
+                  <Link
+                    to="/dashboard"
+                    className="
+                      relative group px-5 py-2.5 text-sm font-medium
+                      text-neutral-300 hover:text-white
+                      transition-all duration-300 ease-out
+                      hover:bg-[rgba(255,255,255,0.04)]
+                      rounded-lg
+                      focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50
+                    "
+                  >
+                    <span className="relative flex items-center gap-2">
+                      Dashboard
+                      <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_6px_rgba(34,211,238,0.5)] opacity-0 group-hover:opacity-100 transition-all duration-300" />
+                    </span>
+                    <span className="absolute inset-0 rounded-lg bg-gradient-to-r from-blue-500/8 via-cyan-400/4 to-blue-600/8 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  </Link>
 
-                      {/* Sign Up button (premium gradient CTA) */}
-                      <button
-                        onClick={() => navigate('/sign-up')}
-                        className="
-                          relative group px-6 py-2.5 text-sm font-semibold
-                          text-white overflow-hidden
-                          transition-all duration-300 ease-out
-                          rounded-lg
-                          shadow-[0_4px_20px_rgba(59,130,246,0.35)]
-                          hover:shadow-[0_8px_30px_rgba(59,130,246,0.5)]
-                          hover:-translate-y-[1px]
-                          active:scale-[0.98]
-                          focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#060a12]
-                        "
-                      >
-                        {/* Animated gradient background */}
-                        <span className="absolute inset-0 bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 bg-[length:200%_100%] animate-gradient-x" />
-                        {/* Shimmer sweep */}
-                        <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.08] to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out" />
-                        {/* Top highlight */}
-                        <span className="absolute top-0 left-4 right-4 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                        {/* Content */}
-                        <span className="relative flex items-center gap-2 z-10">
-                          Sign Up
-                          <ChevronRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
-                        </span>
-                        {/* Border glow */}
-                        <span className="absolute inset-0 rounded-lg border border-indigo-400/20 group-hover:border-indigo-400/40 transition-all duration-300" />
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      {/* Dashboard link */}
-                      <Link
-                        to="/dashboard"
-                        className="
-                          relative group px-5 py-2.5 text-sm font-medium
-                          text-neutral-300 hover:text-white
-                          transition-all duration-300 ease-out
-                          hover:bg-[rgba(255,255,255,0.04)]
-                          rounded-lg
-                          focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50
-                        "
-                      >
-                        <span className="relative flex items-center gap-2">
-                          Dashboard
-                          <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_6px_rgba(34,211,238,0.5)] opacity-0 group-hover:opacity-100 transition-all duration-300" />
-                        </span>
-                        <span className="absolute inset-0 rounded-lg bg-gradient-to-r from-blue-500/8 via-cyan-400/4 to-blue-600/8 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                      </Link>
+                  {/* Dev user avatar + dropdown */}
+                  <div className="relative">
+                    <button
+                      onClick={() => setUserMenuOpen(!userMenuOpen)}
+                      onBlur={() => setTimeout(() => setUserMenuOpen(false), 200)}
+                      className="
+                        relative w-[42px] h-[42px] rounded-xl overflow-hidden
+                        ring-2 ring-white/[0.08] hover:ring-blue-500/40
+                        transition-all duration-300
+                        shadow-[0_4px_12px_rgba(0,0,0,0.2)]
+                        bg-gradient-to-br from-indigo-600 to-purple-700
+                        flex items-center justify-center
+                        text-white text-sm font-bold
+                        focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50
+                      "
+                    >
+                      {userInitials}
+                    </button>
 
-                      {/* User button with premium styling */}
-                      <div className="relative">
-                        <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/0 via-blue-500/10 to-blue-500/0 rounded-xl blur-md opacity-0 hover:opacity-100 transition-opacity duration-300" />
-                        <ClerkUserButton
-                          afterSignOutUrl="/"
-                          appearance={{
-                            elements: {
-                              avatarBox: "w-[42px] h-[42px] rounded-xl overflow-hidden ring-2 ring-white/[0.08] hover:ring-blue-500/40 transition-all duration-300 shadow-[0_4px_12px_rgba(0,0,0,0.2)]",
-                              userAvatarBox: "w-full h-full"
-                            }
-                          }}
-                        />
+                    {/* Dropdown menu */}
+                    {userMenuOpen && (
+                      <div className="
+                        absolute right-0 top-full mt-2 w-56
+                        bg-[rgba(12,16,28,0.98)] backdrop-blur-2xl
+                        border border-white/[0.08] rounded-xl
+                        shadow-[0_16px_48px_rgba(0,0,0,0.5)]
+                        overflow-hidden z-50
+                        animate-[fadeIn_150ms_ease-out]
+                      ">
+                        {/* User info header */}
+                        <div className="px-4 py-3 border-b border-white/[0.06]">
+                          <p className="text-sm font-semibold text-white truncate">{userName}</p>
+                          <p className="text-xs text-neutral-400 mt-0.5">admin@opsmind.dev</p>
+                        </div>
+
+                        <div className="py-1">
+                          {/* Profile */}
+                          <button
+                            onClick={() => { setUserMenuOpen(false); navigate('/settings'); }}
+                            className="
+                              w-full flex items-center gap-3 px-4 py-2.5 text-sm
+                              text-neutral-300 hover:text-white hover:bg-white/[0.04]
+                              transition-all duration-150
+                            "
+                          >
+                            <User className="w-4 h-4 text-neutral-400" />
+                            Profile & Settings
+                          </button>
+
+                          {/* Sign Out */}
+                          <button
+                            onClick={() => { setUserMenuOpen(false); navigate('/'); }}
+                            className="
+                              w-full flex items-center gap-3 px-4 py-2.5 text-sm
+                              text-neutral-300 hover:text-red-400 hover:bg-white/[0.04]
+                              transition-all duration-150
+                            "
+                          >
+                            <LogOut className="w-4 h-4 text-neutral-400" />
+                            Sign Out
+                          </button>
+                        </div>
                       </div>
-                    </>
-                  )}
+                    )}
+                  </div>
                 </>
               )}
 

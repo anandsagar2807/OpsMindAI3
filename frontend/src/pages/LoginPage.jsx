@@ -13,6 +13,7 @@ import {
     Loader2
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuthContext';
+import { useSignIn } from '@clerk/react';
 
 const fadeInUp = {
     initial: { opacity: 0, y: 30 },
@@ -22,7 +23,8 @@ const fadeInUp = {
 
 export default function LoginPage() {
     const navigate = useNavigate();
-    const { isSignedIn, signIn } = useAuth();
+    const { isSignedIn } = useAuth();
+    const { isLoaded, signIn } = useSignIn();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -42,11 +44,20 @@ export default function LoginPage() {
 
         try {
             if (signIn) {
-                await signIn({ identifier: email, password });
+                const result = await signIn.create({
+                    identifier: email,
+                    password,
+                });
+                if (result.status === 'complete') {
+                    navigate('/dashboard');
+                } else {
+                    // Additional verification steps may be needed
+                    setError('Sign in requires additional verification. Please check your email.');
+                }
             }
-            navigate('/dashboard');
         } catch (err) {
-            setError(err.message || 'Sign in failed. Please check your credentials.');
+            const message = err.errors?.[0]?.message || err.message || 'Sign in failed. Please check your credentials.';
+            setError(message);
         } finally {
             setLoading(false);
         }

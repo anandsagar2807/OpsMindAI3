@@ -18,7 +18,7 @@ import {
   Play
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useUser } from '../hooks/useAuthContext';
+import { useAuth, useUser } from '../hooks/useAuthContext';
 import Card from '../components/ui/Card.jsx';
 import Button from '../components/ui/Button.jsx';
 import PremiumNotificationBar from '../components/PremiumNotificationBar.jsx';
@@ -27,7 +27,8 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5002';
 
 export default function EnterpriseLandingPage() {
   const navigate = useNavigate();
-  const { isSignedIn, user } = useUser();
+  const { isSignedIn } = useAuth();
+  const { user } = useUser();
 
   const [health, setHealth] = useState(null);
   const [healthError, setHealthError] = useState(null);
@@ -279,42 +280,29 @@ export default function EnterpriseLandingPage() {
             </div>
 
             <div className="flex items-center gap-3">
-              {isSignedIn ? (
-                <Button
-                  onClick={() => navigate('/dashboard')}
-                  variant="primary"
-                  className="btn-premium"
-                >
-                  Go to Dashboard
-                  <ArrowRight className="w-4 h-4" />
-                </Button>
-              ) : (
-                <>
-                  {/* Sign In button (secondary outline style) */}
-                  <button
-                    onClick={() => navigate('/sign-in')}
-                    className="relative group px-5 py-2.5 text-sm font-medium text-gray-200 hover:text-white transition-all duration-300 ease-out rounded-lg border border-white/[0.10] hover:border-white/[0.18] bg-white/[0.03] hover:bg-white/[0.06]"
-                  >
-                    <span className="relative z-10">Sign In</span>
-                    <span className="absolute inset-0 rounded-lg bg-gradient-to-r from-indigo-500/8 via-violet-400/4 to-purple-500/8 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  </button>
+              {/* Sign In button (secondary outline style) */}
+              <button
+                onClick={() => navigate('/sign-in')}
+                className="relative group px-5 py-2.5 text-sm font-medium text-gray-200 hover:text-white transition-all duration-300 ease-out rounded-lg border border-white/[0.10] hover:border-white/[0.18] bg-white/[0.03] hover:bg-white/[0.06]"
+              >
+                <span className="relative z-10">Sign In</span>
+                <span className="absolute inset-0 rounded-lg bg-gradient-to-r from-indigo-500/8 via-violet-400/4 to-purple-500/8 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              </button>
 
-                  {/* Sign Up button (premium gradient CTA) */}
-                  <button
-                    onClick={() => navigate('/sign-up')}
-                    className="relative group px-6 py-2.5 text-sm font-semibold text-white overflow-hidden transition-all duration-300 ease-out rounded-lg shadow-[0_4px_20px_rgba(99,102,241,0.35)] hover:shadow-[0_8px_30px_rgba(99,102,241,0.5)] hover:-translate-y-[1px] active:scale-[0.98]"
-                  >
-                    <span className="absolute inset-0 bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 bg-[length:200%_100%] animate-gradient-x" />
-                    <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.08] to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out" />
-                    <span className="absolute top-0 left-4 right-4 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                    <span className="relative flex items-center gap-2 z-10">
-                      Sign Up
-                      <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
-                    </span>
-                    <span className="absolute inset-0 rounded-lg border border-indigo-400/20 group-hover:border-indigo-400/40 transition-all duration-300" />
-                  </button>
-                </>
-              )}
+              {/* Sign Up button (premium gradient CTA) */}
+              <button
+                onClick={() => navigate('/sign-up')}
+                className="relative group px-6 py-2.5 text-sm font-semibold text-white overflow-hidden transition-all duration-300 ease-out rounded-lg shadow-[0_4px_20px_rgba(99,102,241,0.35)] hover:shadow-[0_8px_30px_rgba(99,102,241,0.5)] hover:-translate-y-[1px] active:scale-[0.98]"
+              >
+                <span className="absolute inset-0 bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 bg-[length:200%_100%] animate-gradient-x" />
+                <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.08] to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out" />
+                <span className="absolute top-0 left-4 right-4 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <span className="relative flex items-center gap-2 z-10">
+                  Sign Up
+                  <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
+                </span>
+                <span className="absolute inset-0 rounded-lg border border-indigo-400/20 group-hover:border-indigo-400/40 transition-all duration-300" />
+              </button>
             </div>
           </div>
         </div>
@@ -383,7 +371,7 @@ export default function EnterpriseLandingPage() {
                 allow="clipboard-write"
               />
 
-              {/* Lock overlay for unauthenticated users */}
+              {/* Lock overlay for unauthenticated users — uses real Clerk auth */}
               {!isSignedIn && (
                 <div className="absolute inset-0 z-10 flex flex-col items-center justify-center px-8 text-center rounded-2xl"
                   style={{

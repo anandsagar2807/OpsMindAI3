@@ -12,16 +12,16 @@ import {
   X,
   ArrowUpRight,
   Shield,
-  Zap,
-  File,
-  Lightbulb,
-  Sparkles,
   Brain,
   Hash,
   Layers,
   BookOpen,
   ExternalLink,
-  RefreshCw
+  RefreshCw,
+  Zap,
+  File,
+  Sparkles,
+  Lightbulb
 } from 'lucide-react';
 import { useUploadDocument, useDocumentInsights } from '../hooks/useDocuments';
 import { useAuth } from '../hooks/useAuthContext';
@@ -50,7 +50,7 @@ export default function UploadPage() {
     try {
       await fetch('/api/health', { method: 'GET', signal: AbortSignal.timeout(5000) });
     } catch (healthErr) {
-      toast.error('Backend server is not reachable. Please ensure the server is running on port 5002 and try again.', { duration: 8000, id: 'backend-unreachable' });
+      toast.error('Backend server is not reachable. Please ensure the server is running on port 5004 and try again.', { duration: 8000, id: 'backend-unreachable' });
       for (const file of acceptedFiles) {
         setUploadQueue(prev => [...prev, {
           id: Date.now() + Math.random(),

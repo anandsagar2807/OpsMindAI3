@@ -36,7 +36,8 @@ const tabs = [
 export default function SettingsPage() {
     const [activeTab, setActiveTab] = useState('profile');
     const [saving, setSaving] = useState(false);
-    const { user, isSignedIn } = useAuth();
+    const { isSignedIn } = useAuth();
+    const { user } = useUser();
 
     const userName = user?.fullName || user?.username || 'User';
     const userEmail = user?.primaryEmailAddress?.emailAddress || user?.email || 'user@opsmind.ai';

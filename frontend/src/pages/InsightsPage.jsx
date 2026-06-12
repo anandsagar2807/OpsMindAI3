@@ -1,13 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
     Brain, Sparkles, BookOpen, Layers, ArrowLeft, RefreshCw, FileText,
     AlertCircle, Clock, Tag, Clock3, Type, ListChecks, ListOrdered, Hash,
-    ChevronRight
+    ChevronRight, Download, ChevronDown, FileJson2, FileText as FileTxtIcon
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuthContext';
 import { documentAPI } from '../services/api';
+import { exportInsights } from '../utils/exportInsights';
 import toast from 'react-hot-toast';
 
 const fadeInUp = {
@@ -16,22 +17,35 @@ const fadeInUp = {
     transition: { duration: 0.4, ease: [0.4, 0, 0.2, 1] }
 };
 
+const stripMarkdown = (str) => {
+    if (!str || typeof str !== 'string') return str;
+    return str
+        .replace(/^#{1,6}\s+/gm, '')           // remove ####, ###, ##, # headings
+        .replace(/\*{1,2}(.*?)\*{1,2}/g, '$1')  // remove **bold** and *italic* markers
+        .replace(/^[-*+]\s+/gm, '')              // remove leading bullet markers (-, *, +)
+        .trim();
+};
+
 const normalizeInsights = (raw) => {
     if (!raw) return null;
     if (typeof raw === 'string') {
         return {
-            summary: raw, keyTopics: [], keyPoints: [], actionItems: [],
+            summary: stripMarkdown(raw), keyTopics: [], keyPoints: [], actionItems: [],
             importantTerms: [], sections: [], statistics: null,
             generatedBy: 'legacy', generatedAt: null, isLegacy: true,
         };
     }
     return {
-        summary: raw.summary || '',
-        keyTopics: Array.isArray(raw.keyTopics) ? raw.keyTopics : [],
-        keyPoints: Array.isArray(raw.keyPoints) ? raw.keyPoints : [],
-        actionItems: Array.isArray(raw.actionItems) ? raw.actionItems : [],
-        importantTerms: Array.isArray(raw.importantTerms) ? raw.importantTerms : (Array.isArray(raw.importantsTerms) ? raw.importantsTerms : []),
-        sections: Array.isArray(raw.sections) ? raw.sections : [],
+        summary: stripMarkdown(raw.summary || ''),
+        keyTopics: Array.isArray(raw.keyTopics) ? raw.keyTopics.map(stripMarkdown) : [],
+        keyPoints: Array.isArray(raw.keyPoints) ? raw.keyPoints.map(stripMarkdown) : [],
+        actionItems: Array.isArray(raw.actionItems) ? raw.actionItems.map(stripMarkdown) : [],
+        importantTerms: Array.isArray(raw.importantTerms)
+            ? raw.importantTerms.map(t => typeof t === 'object' ? { ...t, term: stripMarkdown(t.term) } : stripMarkdown(t))
+            : (Array.isArray(raw.importantsTerms) ? raw.importantsTerms.map(t => typeof t === 'object' ? { ...t, term: stripMarkdown(t.term) } : stripMarkdown(t)) : []),
+        sections: Array.isArray(raw.sections)
+            ? raw.sections.map(s => ({ heading: stripMarkdown(s.heading || ''), preview: stripMarkdown(s.preview || '') }))
+            : [],
         statistics: raw.statistics || null,
         generatedBy: raw.generatedBy || 'unknown',
         generatedAt: raw.generatedAt || null,
@@ -111,6 +125,31 @@ export default function InsightsPage() {
     const [error, setError] = useState(null);
     const [insightsData, setInsightsData] = useState(null);
     const [polling, setPolling] = useState(false);
+    const [downloadMenuOpen, setDownloadMenuOpen] = useState(false);
+    const downloadRef = useRef(null);
+
+    // Close download menu on outside click
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (downloadRef.current && !downloadRef.current.contains(e.target)) {
+                setDownloadMenuOpen(false);
+            }
+        };
+        if (downloadMenuOpen) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [downloadMenuOpen]);
+
+    const handleExport = (format) => {
+        setDownloadMenuOpen(false);
+        try {
+            exportInsights(insights, insightsData, format);
+            toast.success(`Insights exported as ${format.toUpperCase()}`);
+        } catch (err) {
+            toast.error(`Export failed: ${err.message}`);
+        }
+    };
 
     const fetchInsights = async () => {
         try {
@@ -154,7 +193,7 @@ export default function InsightsPage() {
         <div className="max-w-[980px] mx-auto space-y-4">
             <motion.div {...fadeInUp} className="flex items-center justify-between flex-wrap gap-2">
                 <div className="flex items-center gap-3">
-                    <button onClick={() => navigate(-1)} className="w-8 h-8 rounded-[8px] bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/[0.08] transition-all duration-200">
+                    <button onClick={async (e) => { e.persist(); await new Promise(resolve => setTimeout(resolve, 1000)); navigate(-1); }} className="w-8 h-8 rounded-[8px] bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/[0.08] transition-all duration-200">
                         <ArrowLeft className="w-[16px] h-[16px]" />
                     </button>
                     <div>
@@ -169,12 +208,51 @@ export default function InsightsPage() {
                         </p>
                     </div>
                 </div>
-                {generatedBy && (
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-[0.06em] bg-violet-500/[0.08] border border-violet-500/[0.20] text-violet-300">
-                        <Sparkles className="w-3 h-3" />
-                        {isLegacy ? 'Legacy insights' : `Generated by ${generatedBy}`}
-                    </span>
-                )}
+                <div className="flex items-center gap-2">
+                    {insights && !isProcessing && (
+                        <div className="relative" ref={downloadRef}>
+                            <button
+                                onClick={() => setDownloadMenuOpen(!downloadMenuOpen)}
+                                className="flex items-center gap-1.5 px-3.5 py-2 rounded-[8px] bg-gradient-to-b from-[#238636] to-[#1a7f37] border border-[#2ea043]/50 text-white hover:from-[#2ea043] hover:to-[#238636] hover:border-[#3fb950]/70 hover:text-white text-[12px] font-semibold shadow-lg shadow-green-900/40 transition-all duration-200"
+                            >
+                                <Download className="w-[14px] h-[14px]" />
+                                Export
+                                <ChevronDown className="w-[12px] h-[12px]" />
+                            </button>
+                            {downloadMenuOpen && (
+                                <div className="absolute right-0 top-full mt-1 z-50 w-[180px] rounded-[10px] bg-[#1a1f2e] border border-white/[0.08] shadow-xl shadow-black/40 py-1.5">
+                                    <button
+                                        onClick={() => handleExport('pdf')}
+                                        className="w-full flex items-center gap-2.5 px-3 py-2 text-[13px] text-gray-300 hover:text-white hover:bg-white/[0.06] transition-all duration-150"
+                                    >
+                                        <FileText className="w-[14px] h-[14px] text-red-400" />
+                                        PDF Document
+                                    </button>
+                                    <button
+                                        onClick={() => handleExport('txt')}
+                                        className="w-full flex items-center gap-2.5 px-3 py-2 text-[13px] text-gray-300 hover:text-white hover:bg-white/[0.06] transition-all duration-150"
+                                    >
+                                        <FileTxtIcon className="w-[14px] h-[14px] text-blue-400" />
+                                        Plain Text
+                                    </button>
+                                    <button
+                                        onClick={() => handleExport('json')}
+                                        className="w-full flex items-center gap-2.5 px-3 py-2 text-[13px] text-gray-300 hover:text-white hover:bg-white/[0.06] transition-all duration-150"
+                                    >
+                                        <FileJson2 className="w-[14px] h-[14px] text-amber-400" />
+                                        JSON Data
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                    {generatedBy && (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-[0.06em] bg-violet-500/[0.08] border border-violet-500/[0.20] text-violet-300">
+                            <Sparkles className="w-3 h-3" />
+                            {isLegacy ? 'Legacy insights' : `Generated by ${generatedBy}`}
+                        </span>
+                    )}
+                </div>
             </motion.div>
 
             {loading && !insightsData && (
@@ -216,7 +294,7 @@ export default function InsightsPage() {
                             <p className="text-[12px] text-red-400/60">{error}</p>
                         </div>
                     </div>
-                    <button onClick={fetchInsights} className="flex items-center gap-1.5 px-3 py-1.5 rounded-[7px] bg-red-500/[0.10] border border-red-500/[0.18] text-red-400 hover:bg-red-500/[0.18] hover:text-red-300 text-[12px] font-medium transition-all duration-200">
+                    <button onClick={async (e) => { e.persist(); await new Promise(resolve => setTimeout(resolve, 1000)); fetchInsights(); }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-[7px] bg-red-500/[0.10] border border-red-500/[0.18] text-red-400 hover:bg-red-500/[0.18] hover:text-red-300 text-[12px] font-medium transition-all duration-200">
                         <RefreshCw className="w-[12px] h-[12px]" /> Retry
                     </button>
                 </motion.div>
@@ -283,9 +361,13 @@ export default function InsightsPage() {
                     </Section>
 
                     <div className="flex items-center gap-2 pt-1">
-                        <button onClick={() => navigate("/dashboard/documents")} className="flex items-center gap-1.5 px-4 py-2 rounded-[8px] bg-violet-500/[0.10] border border-violet-500/[0.18] text-violet-400 hover:bg-violet-500/[0.18] hover:text-violet-300 text-[13px] font-medium transition-all duration-200">
+                        <button onClick={async (e) => { e.persist(); await new Promise(resolve => setTimeout(resolve, 1000)); navigate("/dashboard/documents"); }} className="flex items-center gap-1.5 px-4 py-2 rounded-[8px] bg-violet-500/[0.10] border border-violet-500/[0.18] text-violet-400 hover:bg-violet-500/[0.18] hover:text-violet-300 text-[13px] font-medium transition-all duration-200">
                             View in Documents
                             <ChevronRight className="w-[14px] h-[14px]" />
+                        </button>
+                        <button onClick={() => handleExport('pdf')} className="flex items-center gap-1.5 px-4 py-2 rounded-[8px] bg-gradient-to-b from-[#238636] to-[#1a7f37] border border-[#2ea043]/50 text-white hover:from-[#2ea043] hover:to-[#238636] hover:border-[#3fb950]/70 hover:text-white text-[13px] font-semibold shadow-lg shadow-green-900/40 transition-all duration-200">
+                            <Download className="w-[14px] h-[14px]" />
+                            Download PDF
                         </button>
                     </div>
                 </motion.div>

@@ -4,8 +4,8 @@ import axios from 'axios';
 // the proxy (same-origin, no CORS issues, more resilient).
 // In production builds, use the full API URL for direct connections.
 const API_URL = import.meta.env.DEV
-  ? ''  // Vite proxy handles /api → http://localhost:5002
-  : (import.meta.env.VITE_API_URL || 'http://localhost:5002');
+  ? ''  // Vite proxy handles /api → http://localhost:5004
+  : (import.meta.env.VITE_API_URL || 'http://localhost:5004');
 
 const api = axios.create({
   baseURL: API_URL,
