@@ -15,7 +15,6 @@ The system combines:
 - `ARCHITECTURE.md` — this document
 
 ---
-
 ## Core Workflow
 
 ### 1) Authentication & User Isolation
