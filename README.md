@@ -1,5 +1,5 @@
 # OpsMind AI
---
+
 OpsMind AI transforms your internal PDFs—such as SOPs, policies, runbooks, and manuals—into a searchable knowledge base and an enterprise chat assistant. By leveraging Retrieval-Augmented Generation (RAG), the system ensures every answer is strictly grounded in your uploaded documents.
 ---
 
