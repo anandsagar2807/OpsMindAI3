@@ -1,7 +1,6 @@
 # OpsMind AI
 --
-OpsMind AI turns internal PDFs (SOPs, policies, runbooks, manuals) into a **searchable knowledge base** and an **enterprise chat assistant** that answers questions **grounded in your uploaded documents** (Retrieval-Augmented Generation / RAG).
-**High-level flow:** Upload PDFs → extract text → chunk → generate embeddings → store in MongoDB → similarity search (Top‑K + threshold) → build a grounded prompt → LLM generates an answer (+ citations) → optionally stream via SSE.
+OpsMind AI transforms your internal PDFs—such as SOPs, policies, runbooks, and manuals—into a searchable knowledge base and an enterprise chat assistant. By leveraging Retrieval-Augmented Generation (RAG), the system ensures every answer is strictly grounded in your uploaded documents.
 ---
 
 ## Table of Contents
