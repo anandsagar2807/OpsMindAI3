@@ -1,5 +1,6 @@
 # OpsMind AI — Development Weekly Progress
 ---
+
 # Week 1 — Project Initialization & Architecture Planning
 ## Objectives
 - Establish foundational project architecture
