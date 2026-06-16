@@ -13,7 +13,6 @@ The system combines:
 - `frontend/` — React + Vite enterprise dashboard UI
 - `backend/` — Node.js + Express API server
 - `ARCHITECTURE.md` — this document
-
 ---
 ## Core Workflow
 
