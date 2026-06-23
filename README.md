@@ -4,7 +4,6 @@ OpsMind AI transforms your internal PDFs—such as SOPs, policies, runbooks, and
 ---
 
 ## Table of Contents
-
 - [Key Features](#key-features)
 - [Project Structure](#project-structure)
 - [How It Works (RAG Flow)](#how-it-works-rag-flow)
