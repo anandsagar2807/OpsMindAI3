@@ -1,5 +1,3 @@
-import fetch from 'node-fetch';
-
 export const getDocumentInsights = async (text) => {
   const apiKey = process.env.OPENROUTER_API_KEY;
   const model = process.env.OPENROUTER_MODEL || 'openrouter/free';
