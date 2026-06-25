@@ -10,33 +10,30 @@ const Button = ({
   onClick,
   ...props
 }) => {
-  const handleClick = async (e) => {
-    e.persist();
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    if (onClick) onClick(e);
-  };
   const variants = {
-    primary: 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50',
-    secondary: 'bg-white/5 hover:bg-white/10 text-white border border-white/10 hover:border-white/20',
-    ghost: 'bg-transparent hover:bg-white/5 text-white',
-    danger: 'bg-red-500 hover:bg-red-600 text-white',
+    primary: 'btn-premium hover:shadow-xl hover:shadow-indigo-500/30',
+    secondary: 'btn-ghost hover:bg-white/[0.08] hover:border-white/[0.15]',
+    ghost: 'btn-ghost hover:bg-white/[0.05]',
+    danger: 'bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 hover:border-rose-500/40',
+    outline: 'btn-outline',
+    gradient: 'btn-gradient',
   }
 
   const sizes = {
-    sm: 'px-4 py-2 text-sm',
-    md: 'px-6 py-3 text-base',
-    lg: 'px-8 py-4 text-lg',
+    sm: 'btn-sm',
+    md: '', // default size
+    lg: 'btn-lg',
   }
 
   return (
     <motion.button
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
-      onClick={handleClick}
+      whileHover={{ scale: 1.01 }}
+      whileTap={{ scale: 0.99 }}
+      onClick={onClick}
       className={`
         ${variants[variant]}
         ${sizes[size]}
-        rounded-xl font-semibold
+        font-medium
         transition-all duration-200
         flex items-center justify-center gap-2
         disabled:opacity-50 disabled:cursor-not-allowed

@@ -1,6 +1,6 @@
 export const API_CONFIG = {
     BASE_URL_DEV: '',
-    BASE_URL_PROD: 'http://localhost:5002',
+    BASE_URL_PROD: 'https://gitgaurd-ai.onrender.com',
     TIMEOUT: 30000,
     UPLOAD_TIMEOUT: 120000,
 };

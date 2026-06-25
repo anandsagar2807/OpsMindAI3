@@ -15,7 +15,8 @@ import {
   Lock,
   BarChart3,
   Quote,
-  Play
+  Play,
+  Eye
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth, useUser } from '../hooks/useAuthContext';
@@ -23,7 +24,7 @@ import Card from '../components/ui/Card.jsx';
 import Button from '../components/ui/Button.jsx';
 import PremiumNotificationBar from '../components/PremiumNotificationBar.jsx';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5002';
+const API_URL = import.meta.env.VITE_API_URL || 'https://gitgaurd-ai.onrender.com';
 
 export default function EnterpriseLandingPage() {
   const navigate = useNavigate();
@@ -79,6 +80,10 @@ export default function EnterpriseLandingPage() {
   const handleWatchDemo = () => {
     // Open demo video or demo page
     window.open('https://www.youtube.com/watch?v=ILRl6Xir0J0', '_blank');
+  };
+
+  const handleViewDemo = () => {
+    navigate('/dashboard');
   };
 
   const scrollToSection = (sectionId) => {
@@ -349,15 +354,15 @@ export default function EnterpriseLandingPage() {
                 <ArrowRight className="w-5 h-5" />
               </Button>
               <button
-                onClick={handleWatchDemo}
-                className="btn btn-secondary text-lg px-8 py-4 flex items-center gap-2"
+                onClick={handleViewDemo}
+                className="relative group px-8 py-4 text-lg font-semibold text-white overflow-hidden transition-all duration-300 ease-out rounded-xl border border-white/[0.12] hover:border-white/[0.22] bg-white/[0.04] hover:bg-white/[0.08] flex items-center gap-2"
               >
-                <Play className="w-5 h-5" />
-                Watch Demo
+                <span className="absolute inset-0 bg-gradient-to-r from-indigo-500/8 via-violet-400/4 to-purple-500/8 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <span className="absolute inset-0 rounded-xl border border-white/[0.08] group-hover:border-white/[0.16] transition-all duration-300" />
+                <Eye className="w-5 h-5 relative z-10" />
+                <span className="relative z-10">View Demo</span>
               </button>
             </div>
-
-
             <p className="text-sm text-gray-300 mt-4">
               No credit card required • 14-day free trial • Cancel anytime
             </p>

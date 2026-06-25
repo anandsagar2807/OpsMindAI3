@@ -29,7 +29,7 @@ class EmbeddingService {
         headers: {
           'Authorization': `Bearer ${this.apiKey}`,
           'Content-Type': 'application/json',
-          'HTTP-Referer': 'http://localhost:5002',
+          'HTTP-Referer': process.env.APP_URL || 'https://frontend-amber-six-35.vercel.app',
           'X-Title': 'OpsMind AI'
         },
         body: JSON.stringify({

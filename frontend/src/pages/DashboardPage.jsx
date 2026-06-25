@@ -108,25 +108,38 @@ function StatCard({ icon: Icon, label, value, subValue, color, trend, delay = 0 
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay, ease: [0.4, 0, 0.2, 1] }}
             className={`relative overflow-hidden rounded-xl ${c.bg} border ${c.border} p-4
-                hover:${c.bgStrong} hover:${c.borderStrong} transition-all duration-300 group`}
+                hover:${c.bgStrong} hover:${c.borderStrong} transition-all duration-300 group cursor-pointer`}
         >
-            <div className="flex items-start justify-between mb-3">
-                <div className={`w-10 h-10 rounded-lg ${c.bg} border ${c.border} flex items-center justify-center ${c.text}`}>
-                    <Icon className="w-5 h-5" />
-                </div>
-                {trend && (
-                    <div className="flex items-center gap-1 text-emerald-400/80 text-[11px] font-medium">
-                        <TrendingUp className="w-3 h-3" />
-                        <span>{trend}</span>
+            {/* Premium ambient glow */}
+            <div className={`absolute -top-8 -right-8 w-24 h-24 rounded-full bg-gradient-to-br ${c.gradient} opacity-[0.04] blur-3xl group-hover:opacity-[0.08] transition-all duration-500`} />
+            <div className={`absolute -bottom-8 -left-8 w-20 h-20 rounded-full bg-gradient-to-br ${c.gradient} opacity-[0.02] blur-2xl group-hover:opacity-[0.06] transition-all duration-500`} />
+
+            {/* Shine effect on hover */}
+            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none">
+                <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/[0.02] to-transparent" />
+            </div>
+
+            <div className="relative z-10">
+                <div className="flex items-start justify-between mb-3">
+                    <div className={`w-10 h-10 rounded-lg ${c.bgStrong} border ${c.borderStrong} flex items-center justify-center ${c.text} shadow-sm ${c.shadow}`}>
+                        <Icon className="w-5 h-5" />
                     </div>
-                )}
+                    {trend && (
+                        <div className="flex items-center gap-1 text-emerald-400/80 text-[11px] font-medium bg-emerald-500/[0.06] px-2 py-0.5 rounded-full border border-emerald-500/[0.10]">
+                            <TrendingUp className="w-3 h-3" />
+                            <span>{trend}</span>
+                        </div>
+                    )}
+                </div>
+                <div>
+                    <p className="text-[28px] font-bold text-white tracking-[-0.02em] leading-tight tabular-nums">{value}</p>
+                    <p className="text-[13px] text-gray-400/80 mt-1 leading-tight flex items-center gap-1.5">
+                        <span className={`w-1 h-1 rounded-full ${c.text} opacity-60`} />
+                        {label}
+                    </p>
+                    {subValue && <p className="text-[11px] text-gray-500/70 mt-0.5 leading-tight">{subValue}</p>}
+                </div>
             </div>
-            <div>
-                <p className="text-[24px] font-bold text-white tracking-[-0.02em] leading-tight">{value}</p>
-                <p className="text-[13px] text-gray-400/80 mt-1 leading-tight">{label}</p>
-                {subValue && <p className="text-[11px] text-gray-500/70 mt-0.5 leading-tight">{subValue}</p>}
-            </div>
-            <div className="absolute -top-8 -right-8 w-24 h-24 rounded-full bg-gradient-to-br from-violet-500/[0.06] to-transparent blur-3xl group-hover:from-violet-500/[0.08] transition-all duration-500" />
         </motion.div>
     );
 }
@@ -144,9 +157,9 @@ function ActivityItem({ item, index }) {
             initial={{ opacity: 0, x: -8 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: index * 0.04, duration: 0.3 }}
-            className="flex items-center gap-3 py-2.5 px-3 rounded-lg hover:bg-white/[0.03] transition-colors duration-200 group"
+            className="flex items-center gap-3 py-2.5 px-3 rounded-lg hover:bg-white/[0.04] transition-all duration-200 group cursor-default"
         >
-            <div className={`w-8 h-8 rounded-lg ${config.bg} flex items-center justify-center ${config.color}`}>
+            <div className={`w-8 h-8 rounded-lg ${config.bg} flex items-center justify-center ${config.color} ring-1 ring-white/[0.04]`}>
                 <config.icon className="w-4 h-4" />
             </div>
             <div className="flex-1 min-w-0">
@@ -186,20 +199,20 @@ function generateMockData() {
         conversations: Math.floor(Math.random() * 10) + 1,
         documents: Math.floor(Math.random() * 5) + 1
     }));
-    
+
     const documentStatusData = [
         { name: 'Completed', value: 65 },
         { name: 'Processing', value: 20 },
         { name: 'Failed', value: 15 }
     ];
-    
+
     const messageTrendData = [
         { name: 'Week 1', messages: 40 },
         { name: 'Week 2', messages: 75 },
         { name: 'Week 3', messages: 120 },
         { name: 'Week 4', messages: 95 }
     ];
-    
+
     return { activityData, documentStatusData, messageTrendData };
 }
 
@@ -211,17 +224,25 @@ function QuickAction({ icon: Icon, label, description, color, onClick }) {
             whileHover={{ scale: 1.01, y: -1 }}
             whileTap={{ scale: 0.98 }}
             onClick={onClick}
-            className={`flex items-center gap-3 p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.06]
-                hover:border-white/[0.10] hover:bg-white/[0.05] transition-all duration-200 group w-full text-left`}
+            className="relative overflow-hidden flex items-center gap-3 p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.06]
+                hover:border-white/[0.12] hover:bg-white/[0.06] transition-all duration-300 group w-full text-left"
         >
-            <div className={`w-11 h-11 rounded-lg bg-gradient-to-br ${c.gradient} flex items-center justify-center shadow-md ${c.shadow} shrink-0`}>
+            {/* Ambient glow */}
+            <div className={`absolute -top-6 -right-6 w-16 h-16 rounded-full bg-gradient-to-br ${c.gradient} opacity-[0.03] blur-2xl group-hover:opacity-[0.06] transition-all duration-500`} />
+
+            {/* Shine overlay */}
+            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none rounded-xl">
+                <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/[0.015] to-transparent rounded-xl" />
+            </div>
+
+            <div className={`relative z-10 w-11 h-11 rounded-lg bg-gradient-to-br ${c.gradient} flex items-center justify-center shadow-lg ${c.shadow} shrink-0 ring-1 ring-white/[0.08]`}>
                 <Icon className="w-5 h-5 text-white" />
             </div>
-            <div className="flex-1 min-w-0">
+            <div className="relative z-10 flex-1 min-w-0">
                 <p className="text-[14px] font-semibold text-white/90 leading-tight">{label}</p>
                 <p className="text-[12px] text-gray-500/80 leading-tight">{description}</p>
             </div>
-            <ArrowUpRight className="w-4 h-4 text-gray-600 group-hover:text-violet-400 transition-colors duration-200 shrink-0" />
+            <ArrowUpRight className="relative z-10 w-4 h-4 text-gray-600 group-hover:text-violet-400 transition-colors duration-200 shrink-0" />
         </motion.button>
     );
 }
@@ -240,7 +261,7 @@ export default function DashboardPage() {
     const timeline = activity?.timeline || [];
     const recentConversations = conversationsData?.conversations || activity?.conversations || [];
     const recentDocuments = documentsData?.documents || activity?.documents || [];
-    
+
     // Mock chart data
     const { activityData, documentStatusData, messageTrendData } = generateMockData();
 
@@ -250,25 +271,27 @@ export default function DashboardPage() {
             <motion.div {...fadeInUp} className="flex items-start justify-between">
                 <div>
                     <h1 className="text-[24px] font-bold text-white tracking-[-0.02em] flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-xl bg-violet-500/[0.10] border border-violet-500/[0.15] flex items-center justify-center">
+                        <div className="w-9 h-9 rounded-xl bg-violet-500/[0.10] border border-violet-500/[0.15] flex items-center justify-center shadow-sm shadow-violet-900/20">
                             <Sparkles className="w-5 h-5 text-violet-400" />
                         </div>
                         Dashboard
                     </h1>
                     <p className="text-[14px] text-gray-400/70 mt-1.5 ml-[46px]">Welcome back! Here's your OpsMind overview.</p>
                 </div>
-            <div className="flex items-center gap-3">
-                <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.02] border border-white/[0.06]">
-                    <Command className="w-3.5 h-3.5 text-gray-500" />
-                    <span className="text-[11px] text-gray-500">K</span>
-                    <span className="text-[11px] text-gray-400">Quick search</span>
-                </div>
-                <div className="relative">
-                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-600 to-purple-700 flex items-center justify-center shadow-lg shadow-indigo-900/20 ring-1 ring-white/10 cursor-pointer hover:scale-105 transition-transform duration-200">
-                        <User className="w-5 h-5 text-white" />
+                <div className="flex items-center gap-3">
+                    <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.05] hover:border-white/[0.10] transition-all duration-200 cursor-pointer">
+                        <Command className="w-3.5 h-3.5 text-gray-500" />
+                        <span className="text-[11px] text-gray-500 font-mono">K</span>
+                        <span className="text-[11px] text-gray-400">Quick search</span>
+                    </div>
+                    <div className="relative group">
+                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-900/30 ring-2 ring-white/[0.08] cursor-pointer hover:scale-105 hover:ring-white/[0.15] transition-all duration-200">
+                            <User className="w-5 h-5 text-white" />
+                        </div>
+                        {/* Status dot */}
+                        <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-[#0a0a0f]" />
                     </div>
                 </div>
-            </div>
             </motion.div>
 
             {/* Stats Grid */}
@@ -311,72 +334,92 @@ export default function DashboardPage() {
             </motion.div>
 
             {/* Charts Section */}
-            <motion.div 
-                variants={staggerContainer} 
-                initial="initial" 
-                animate="animate" 
+            <motion.div
+                variants={staggerContainer}
+                initial="initial"
+                animate="animate"
                 className="grid grid-cols-1 lg:grid-cols-3 gap-5"
             >
                 <div className="lg:col-span-2 space-y-5">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                        <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-4">
-                            <BarChartComponent 
-                                data={activityData} 
-                                dataKey="conversations" 
-                                nameKey="name" 
-                                title="Weekly Conversations" 
-                                color="#8b5cf6"
-                            />
+                        <div className="relative overflow-hidden rounded-xl bg-white/[0.03] border border-white/[0.06] p-4 hover:bg-white/[0.04] hover:border-white/[0.09] transition-all duration-300">
+                            {/* Ambient glow */}
+                            <div className="absolute -top-10 -right-10 w-28 h-28 rounded-full bg-gradient-to-br from-indigo-500/10 to-purple-600/5 blur-3xl" />
+                            <div className="relative z-10">
+                                <BarChartComponent
+                                    data={activityData}
+                                    dataKey="conversations"
+                                    nameKey="name"
+                                    title="Weekly Conversations"
+                                    color="#8b5cf6"
+                                />
+                            </div>
                         </div>
-                        <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-4">
-                            <BarChartComponent 
-                                data={activityData} 
-                                dataKey="documents" 
-                                nameKey="name" 
-                                title="Weekly Documents" 
-                                color="#10b981"
-                            />
+                        <div className="relative overflow-hidden rounded-xl bg-white/[0.03] border border-white/[0.06] p-4 hover:bg-white/[0.04] hover:border-white/[0.09] transition-all duration-300">
+                            {/* Ambient glow */}
+                            <div className="absolute -top-10 -right-10 w-28 h-28 rounded-full bg-gradient-to-br from-emerald-500/10 to-teal-600/5 blur-3xl" />
+                            <div className="relative z-10">
+                                <BarChartComponent
+                                    data={activityData}
+                                    dataKey="documents"
+                                    nameKey="name"
+                                    title="Weekly Documents"
+                                    color="#10b981"
+                                />
+                            </div>
                         </div>
                     </div>
-                    
-                    <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-4">
-                        <LineChartComponent 
-                            data={messageTrendData} 
-                            dataKey="messages" 
-                            nameKey="name" 
-                            title="Message Trends (Last 4 Weeks)" 
-                            color="#3b82f6"
-                        />
+
+                    <div className="relative overflow-hidden rounded-xl bg-white/[0.03] border border-white/[0.06] p-4 hover:bg-white/[0.04] hover:border-white/[0.09] transition-all duration-300">
+                        {/* Ambient glow */}
+                        <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-gradient-to-br from-blue-600/10 to-indigo-600/5 blur-3xl" />
+                        <div className="relative z-10">
+                            <LineChartComponent
+                                data={messageTrendData}
+                                dataKey="messages"
+                                nameKey="name"
+                                title="Message Trends (Last 4 Weeks)"
+                                color="#3b82f6"
+                            />
+                        </div>
                     </div>
                 </div>
-                
+
                 <div className="space-y-5">
-                    <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-4">
-                        <PieChartComponent 
-                            data={documentStatusData} 
-                            dataKey="value" 
-                            nameKey="name" 
-                            title="Document Status Distribution"
-                        />
+                    <div className="relative overflow-hidden rounded-xl bg-white/[0.03] border border-white/[0.06] p-4 hover:bg-white/[0.04] hover:border-white/[0.09] transition-all duration-300">
+                        {/* Ambient glow */}
+                        <div className="absolute -top-10 -right-10 w-28 h-28 rounded-full bg-gradient-to-br from-amber-500/10 to-orange-600/5 blur-3xl" />
+                        <div className="relative z-10">
+                            <PieChartComponent
+                                data={documentStatusData}
+                                dataKey="value"
+                                nameKey="name"
+                                title="Document Status Distribution"
+                            />
+                        </div>
                     </div>
-                    
-                    <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-4">
-                        <h3 className="text-[15px] font-semibold text-white/90 mb-4 flex items-center gap-2">
-                            <Calendar className="w-4 h-4 text-violet-400" />
-                            Quick Stats
-                        </h3>
-                        <div className="space-y-3">
-                            <div className="flex items-center justify-between py-2 border-b border-white/[0.05]">
-                                <span className="text-[13px] text-gray-300/80">Avg. Response Time</span>
-                                <span className="text-[13px] font-semibold text-white/90">1.2s</span>
-                            </div>
-                            <div className="flex items-center justify-between py-2 border-b border-white/[0.05]">
-                                <span className="text-[13px] text-gray-300/80">Knowledge Coverage</span>
-                                <span className="text-[13px] font-semibold text-white/90">87%</span>
-                            </div>
-                            <div className="flex items-center justify-between py-2">
-                                <span className="text-[13px] text-gray-300/80">Active Users</span>
-                                <span className="text-[13px] font-semibold text-white/90">24</span>
+
+                    <div className="relative overflow-hidden rounded-xl bg-white/[0.03] border border-white/[0.06] p-4 hover:bg-white/[0.04] hover:border-white/[0.09] transition-all duration-300">
+                        {/* Ambient glow */}
+                        <div className="absolute -bottom-8 -right-8 w-24 h-24 rounded-full bg-gradient-to-br from-violet-500/10 to-purple-600/5 blur-3xl" />
+                        <div className="relative z-10">
+                            <h3 className="text-[15px] font-semibold text-white/90 mb-4 flex items-center gap-2">
+                                <Calendar className="w-4 h-4 text-violet-400" />
+                                Quick Stats
+                            </h3>
+                            <div className="space-y-3">
+                                <div className="flex items-center justify-between py-2 border-b border-white/[0.05]">
+                                    <span className="text-[13px] text-gray-300/80">Avg. Response Time</span>
+                                    <span className="text-[13px] font-semibold text-white/90 tabular-nums">1.2s</span>
+                                </div>
+                                <div className="flex items-center justify-between py-2 border-b border-white/[0.05]">
+                                    <span className="text-[13px] text-gray-300/80">Knowledge Coverage</span>
+                                    <span className="text-[13px] font-semibold text-white/90 tabular-nums">87%</span>
+                                </div>
+                                <div className="flex items-center justify-between py-2">
+                                    <span className="text-[13px] text-gray-300/80">Active Users</span>
+                                    <span className="text-[13px] font-semibold text-white/90 tabular-nums">24</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -414,21 +457,26 @@ export default function DashboardPage() {
                     </div>
 
                     {/* Document Status Summary */}
-                    <div className="mt-4 p-4 rounded-xl bg-white/[0.03] border border-white/[0.06]">
-                        <h3 className="text-[13px] font-semibold text-white/80 mb-3 flex items-center gap-1.5 uppercase tracking-[0.04em]">
-                            <BarChart3 className="w-3.5 h-3.5 text-violet-400/70" />
-                            Document Status
-                        </h3>
-                        <div className="space-y-2">
-                            <StatusRow icon={CheckCircle2} label="Completed" count={documents.completed} color="emerald" />
-                            <StatusRow icon={Loader2} label="Processing" count={documents.processing} color="amber" />
-                            <StatusRow icon={AlertCircle} label="Failed" count={documents.failed || 0} color="rose" />
+                    <div className="relative overflow-hidden p-4 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.04] hover:border-white/[0.09] transition-all duration-300">
+                        {/* Ambient glow */}
+                        <div className="absolute -bottom-8 -right-8 w-20 h-20 rounded-full bg-gradient-to-br from-violet-500/[0.04] to-purple-600/[0.02] blur-2xl" />
+                        <div className="relative z-10">
+                            <h3 className="text-[13px] font-semibold text-white/80 mb-3 flex items-center gap-1.5 uppercase tracking-[0.04em]">
+                                <BarChart3 className="w-3.5 h-3.5 text-violet-400/70" />
+                                Document Status
+                            </h3>
+                            <div className="space-y-2">
+                                <StatusRow icon={CheckCircle2} label="Completed" count={documents.completed} color="emerald" />
+                                <StatusRow icon={Loader2} label="Processing" count={documents.processing} color="amber" />
+                                <StatusRow icon={AlertCircle} label="Failed" count={documents.failed || 0} color="rose" />
+                            </div>
+                            {documents.totalSize > 0 && (
+                                <p className="text-[11px] text-gray-500/70 mt-3 pt-2.5 border-t border-white/[0.04] flex items-center gap-1.5">
+                                    <Layers className="w-3 h-3" />
+                                    Total: {formatFileSize(documents.totalSize)} &bull; {documents.totalPages} pages
+                                </p>
+                            )}
                         </div>
-                        {documents.totalSize > 0 && (
-                            <p className="text-[11px] text-gray-500/70 mt-3 pt-2.5 border-t border-white/[0.04]">
-                                Total: {formatFileSize(documents.totalSize)} • {documents.totalPages} pages
-                            </p>
-                        )}
                     </div>
                 </motion.div>
 
@@ -439,59 +487,73 @@ export default function DashboardPage() {
                     transition={{ delay: 0.30, duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
                     className="lg:col-span-2 space-y-4"
                 >
-                    <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] overflow-hidden">
-                        <div className="px-4 py-3 border-b border-white/[0.05] flex items-center justify-between">
-                            <h2 className="text-[15px] font-semibold text-white/90 flex items-center gap-2">
-                                <Clock className="w-4 h-4 text-violet-400" />
-                                Recent Activity
-                            </h2>
-                            <span className="text-[11px] text-gray-500/70">{timeline.length} items</span>
-                        </div>
+                    <div className="relative overflow-hidden rounded-xl bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.04] hover:border-white/[0.09] transition-all duration-300">
+                        {/* Ambient glow */}
+                        <div className="absolute -top-10 -right-10 w-28 h-28 rounded-full bg-gradient-to-br from-violet-500/[0.06] to-purple-600/[0.03] blur-3xl" />
+                        <div className="relative z-10">
+                            <div className="px-4 py-3 border-b border-white/[0.05] flex items-center justify-between">
+                                <h2 className="text-[15px] font-semibold text-white/90 flex items-center gap-2">
+                                    <Clock className="w-4 h-4 text-violet-400" />
+                                    Recent Activity
+                                </h2>
+                                <span className="text-[11px] text-gray-500/70 px-2 py-0.5 rounded-full bg-white/[0.03] border border-white/[0.04]">{timeline.length} items</span>
+                            </div>
 
-                        {activityLoading ? (
-                            <div className="p-10 flex items-center justify-center">
-                                <Loader2 className="w-6 h-6 text-violet-400 animate-spin" />
-                            </div>
-                        ) : timeline.length > 0 ? (
-                            <div className="max-h-[340px] overflow-y-auto px-1.5 py-1.5">
-                                {timeline.map((item, i) => (
-                                    <ActivityItem key={item.id || i} item={item} index={i} />
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="p-10 text-center">
-                                <Layers className="w-10 h-10 text-gray-600/50 mx-auto mb-2" />
-                                <p className="text-gray-400/80 text-[13px]">No recent activity</p>
-                                <p className="text-gray-500/60 text-[11px] mt-1">Start a conversation or upload documents</p>
-                            </div>
-                        )}
+                            {activityLoading ? (
+                                <div className="p-10 flex items-center justify-center">
+                                    <div className="flex flex-col items-center gap-2">
+                                        <Loader2 className="w-6 h-6 text-violet-400 animate-spin" />
+                                        <span className="text-[11px] text-gray-500/70">Loading activity...</span>
+                                    </div>
+                                </div>
+                            ) : timeline.length > 0 ? (
+                                <div className="max-h-[340px] overflow-y-auto px-1.5 py-1.5 scrollbar-thin">
+                                    {timeline.map((item, i) => (
+                                        <ActivityItem key={item.id || i} item={item} index={i} />
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="p-10 text-center">
+                                    <div className="w-14 h-14 rounded-xl bg-violet-500/[0.06] border border-violet-500/[0.08] flex items-center justify-center mx-auto mb-3">
+                                        <Layers className="w-7 h-7 text-violet-400/50" />
+                                    </div>
+                                    <p className="text-gray-400/80 text-[14px] font-medium">No recent activity</p>
+                                    <p className="text-gray-500/60 text-[12px] mt-1">Start a conversation or upload a document to get started</p>
+                                </div>
+                            )}
+                        </div>
                     </div>
 
                     {/* Recent Conversations Preview */}
                     {recentConversations.length > 0 && (
-                        <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] overflow-hidden">
-                            <div className="px-4 py-3 border-b border-white/[0.05] flex items-center justify-between">
-                                <h3 className="text-[13px] font-semibold text-white/80 flex items-center gap-1.5">
-                                    <MessageSquare className="w-3.5 h-3.5 text-violet-400/70" />
-                                    Recent Conversations
-                                </h3>
-                            </div>
-                            <div className="divide-y divide-white/[0.04]">
-                                {recentConversations.slice(0, 5).map((conv, i) => (
-                                    <motion.button
-                                        key={conv._id || i}
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        transition={{ delay: i * 0.04 }}
-                                        onClick={() => navigate('/dashboard')}
-                                        className="flex items-center gap-2.5 px-4 py-2.5 hover:bg-white/[0.03] transition-colors duration-200 w-full text-left"
-                                    >
-                                        <MessageSquare className="w-3.5 h-3.5 text-violet-400/50 shrink-0" />
-                                        <span className="text-[13px] text-white/80 truncate flex-1">{conv.title}</span>
-                                        <span className="text-[11px] text-gray-500/70 shrink-0">{conv.messageCount || 0} msgs</span>
-                                        <span className="text-[11px] text-gray-500/60 shrink-0">{getTimeAgo(conv.updatedAt || conv.createdAt)}</span>
-                                    </motion.button>
-                                ))}
+                        <div className="relative overflow-hidden rounded-xl bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.04] hover:border-white/[0.09] transition-all duration-300">
+                            {/* Ambient glow */}
+                            <div className="absolute -bottom-8 -right-8 w-20 h-20 rounded-full bg-gradient-to-br from-emerald-500/[0.04] to-teal-600/[0.02] blur-2xl" />
+                            <div className="relative z-10">
+                                <div className="px-4 py-3 border-b border-white/[0.05] flex items-center justify-between">
+                                    <h3 className="text-[13px] font-semibold text-white/80 flex items-center gap-1.5">
+                                        <MessageSquare className="w-3.5 h-3.5 text-violet-400/70" />
+                                        Recent Conversations
+                                    </h3>
+                                    <span className="text-[11px] text-gray-500/70">{recentConversations.length} total</span>
+                                </div>
+                                <div className="divide-y divide-white/[0.04]">
+                                    {recentConversations.slice(0, 5).map((conv, i) => (
+                                        <motion.button
+                                            key={conv._id || i}
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            transition={{ delay: i * 0.04 }}
+                                            onClick={() => navigate('/dashboard')}
+                                            className="flex items-center gap-2.5 px-4 py-2.5 hover:bg-white/[0.04] transition-all duration-200 w-full text-left group"
+                                        >
+                                            <MessageSquare className="w-3.5 h-3.5 text-violet-400/50 shrink-0 group-hover:text-violet-400/80 transition-colors duration-200" />
+                                            <span className="text-[13px] text-white/80 truncate flex-1">{conv.title}</span>
+                                            <span className="text-[11px] text-gray-500/70 shrink-0 bg-white/[0.02] px-1.5 py-0.5 rounded">{conv.messageCount || 0} msgs</span>
+                                            <span className="text-[11px] text-gray-500/60 shrink-0">{getTimeAgo(conv.updatedAt || conv.createdAt)}</span>
+                                        </motion.button>
+                                    ))}
+                                </div>
                             </div>
                         </div>
                     )}
@@ -503,14 +565,16 @@ export default function DashboardPage() {
 
 function StatusRow({ icon: Icon, label, count, color }) {
     const colorMap = {
-        emerald: 'text-emerald-400',
-        amber: 'text-amber-400',
-        rose: 'text-rose-400',
+        emerald: 'text-emerald-400 bg-emerald-500/[0.08] ring-emerald-500/20',
+        amber: 'text-amber-400 bg-amber-500/[0.08] ring-amber-500/20',
+        rose: 'text-rose-400 bg-rose-500/[0.08] ring-rose-500/20',
     };
     return (
-        <div className="flex items-center justify-between py-1">
+        <div className="flex items-center justify-between py-1 group">
             <div className="flex items-center gap-2">
-                <Icon className={`w-3.5 h-3.5 ${colorMap[color]}`} />
+                <div className={`w-6 h-6 rounded-md ${colorMap[color]} flex items-center justify-center ring-1 transition-all duration-200`}>
+                    <Icon className="w-3 h-3" />
+                </div>
                 <span className="text-[13px] text-gray-300/80">{label}</span>
             </div>
             <span className="text-[13px] font-semibold text-white/90 tabular-nums">{count}</span>

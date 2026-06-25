@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useAuth } from '../hooks/useAuthContext';
+import { useAuth } from './useAuthContext';
 import { documentAPI } from '../services/api';
 import useUploadStore from '../store/uploadStore';
 import toast from 'react-hot-toast';
@@ -11,7 +11,7 @@ export const useDocuments = (params = {}) => {
         queryKey: ['documents', params],
         queryFn: async () => {
             const token = await getToken();
-            const response = await documentAPI.getAll(token);
+            const response = await documentAPI.getAll(token, params);
             return response.data;
         },
         staleTime: 2 * 60 * 1000,

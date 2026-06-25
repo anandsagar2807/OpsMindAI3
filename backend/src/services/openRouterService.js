@@ -12,7 +12,7 @@ export const getDocumentInsights = async (text) => {
       headers: {
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
-        'HTTP-Referer': 'http://localhost:5173',
+        'HTTP-Referer': process.env.APP_URL || 'https://frontend-amber-six-35.vercel.app',
         'X-Title': 'OpsMind AI'
       },
       body: JSON.stringify({

@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { dashboardAPI } from '../services/api';
-import { useAuth } from '../hooks/useAuthContext';
+import { useAuth } from './useAuthContext';
 
 export const useDashboardStats = () => {
     const { getToken } = useAuth();

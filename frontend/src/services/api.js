@@ -5,7 +5,7 @@ import axios from 'axios';
 // In production builds, use the full API URL for direct connections.
 const API_URL = import.meta.env.DEV
   ? ''  // Vite proxy handles /api → http://localhost:5004
-  : (import.meta.env.VITE_API_URL || 'http://localhost:5004');
+  : (import.meta.env.VITE_API_URL || 'https://gitgaurd-ai.onrender.com');
 
 const api = axios.create({
   baseURL: API_URL,
@@ -45,11 +45,26 @@ const RETRY_DELAY_MS = 1000; // base delay, exponential backoff applied
 
 function transformError(error) {
   if (error.response) {
-    // Server responded with an error status code
-    const message = error.response.data?.message || error.response.data?.error || error.response.statusText;
+    // Server responded with an error status code. Backend envelopes errors
+    // as either { message } or { success: false, error: { message } } (or
+    // sometimes a plain string in `error`). Extract the first string we can
+    // find, otherwise fall back to the HTTP status text.
+    const data = error.response.data;
+    let message = error.response.statusText || 'Request failed';
+    if (data) {
+      if (typeof data === 'string') {
+        message = data;
+      } else if (typeof data.message === 'string') {
+        message = data.message;
+      } else if (typeof data.error === 'string') {
+        message = data.error;
+      } else if (data.error && typeof data.error.message === 'string') {
+        message = data.error.message;
+      }
+    }
     const enhanced = new Error(message);
     enhanced.status = error.response.status;
-    enhanced.data = error.response.data;
+    enhanced.data = data;
     enhanced.isNetworkError = false;
     enhanced.isServerError = error.response.status >= 500;
     enhanced.isAuthError = error.response.status === 401 || error.response.status === 403;
@@ -129,9 +144,9 @@ export const documentAPI = {
       __retryCount: MAX_RETRIES, // skip retry interceptor
     });
   },
-  getAll: (token) => {
+  getAll: (token, params = {}) => {
     setAuthToken(token);
-    return api.get('/api/documents');
+    return api.get('/api/documents', { params });
   },
   getOne: (id, token) => {
     setAuthToken(token);

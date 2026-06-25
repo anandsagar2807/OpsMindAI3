@@ -25,18 +25,48 @@ connectDB();
 // CORS must come BEFORE helmet so that CORS headers are set correctly
 // on preflight (OPTIONS) responses.  Helmet's crossOriginResourcePolicy
 // middleware would otherwise block cross-origin requests.
+//
+// Production origins are supplied via the FRONTEND_URL env var (set on
+// Render). Multiple origins can be supplied as a comma-separated list.
+// Vercel preview deployments use dynamic URLs, so we also allow any
+// *.vercel.app origin when FRONTEND_URL includes a vercel.app entry.
+const productionOrigins = (process.env.FRONTEND_URL || '')
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean);
+
+const allowedOrigins = [
+  // Local development origins
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'http://127.0.0.1:3000',
+  'http://127.0.0.1:3001',
+  'http://127.0.0.1:5173',
+  'http://127.0.0.1:5174',
+  // Production origins from FRONTEND_URL env var
+  ...productionOrigins,
+];
+
+// Allow any Vercel preview/production deployment when a vercel.app origin
+// is configured. This keeps CORS secure in dev while supporting Vercel's
+// dynamic preview URLs in production.
+const allowVercelPreviews = productionOrigins.some((o) => o.includes('vercel.app'));
+
+function corsOriginValidator(origin, callback) {
+  // Allow requests with no Origin header (same-origin, server-to-server, curl)
+  if (!origin) return callback(null, true);
+  if (allowedOrigins.includes(origin)) return callback(null, true);
+  // Permit any *.vercel.app subdomain when vercel is an allowed origin
+  if (allowVercelPreviews && /^https:\/\/[\w-]+\.vercel\.app$/.test(origin)) {
+    return callback(null, true);
+  }
+  callback(new Error(`Not allowed by CORS: ${origin}`));
+}
+
 app.use(cors({
-  origin: [
-    'http://localhost:3000',
-    'http://localhost:3001',
-    'http://localhost:5173',
-    'http://localhost:5174',
-    'http://127.0.0.1:3000',
-    'http://127.0.0.1:3001',
-    'http://127.0.0.1:5173',
-    'http://127.0.0.1:5174',
-    process.env.FRONTEND_URL
-  ].filter(Boolean),
+  origin: corsOriginValidator,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],

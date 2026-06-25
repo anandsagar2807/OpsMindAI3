@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useAuth } from '../hooks/useAuthContext';
+import { useAuth } from './useAuthContext';
 import { chatAPI } from '../services/api';
 import useChatStore from '../store/chatStore';
 

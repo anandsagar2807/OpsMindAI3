@@ -1,4 +1,10 @@
 import mongoose from 'mongoose';
+import dns from 'dns';
+
+// Override Node.js DNS servers to use Google DNS, bypassing local DNS
+// (127.0.0.1) that blocks SRV record lookups (ECONNREFUSED on _mongodb SRV).
+// This is required for mongodb+srv:// connection strings which rely on SRV.
+dns.setServers(['8.8.8.8', '8.8.4.4']);
 
 const MONGODB_URI = process.env.MONGODB_URI;
 const PLACEHOLDER_PATTERNS = ['username:password', 'your-mongodb-uri-here'];

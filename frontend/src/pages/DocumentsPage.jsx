@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -19,7 +19,10 @@ import {
     BarChart3,
     RefreshCw,
     X,
-    ChevronDown
+    ChevronDown,
+    ArrowUpDown,
+    ArrowUp,
+    ArrowDown
 } from 'lucide-react';
 import { useDocuments, useDeleteDocument } from '../hooks/useDocuments';
 import { useDocumentsOverview } from '../hooks/useDashboard';
@@ -61,21 +64,51 @@ function formatDate(dateStr) {
 
 export default function DocumentsPage() {
     const navigate = useNavigate();
-    const [searchQuery, setSearchQuery] = useState('');
+    const [searchInput, setSearchInput] = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
-    const { data: documentsData, isLoading, refetch } = useDocuments({ limit: 50 });
+    const [sortBy, setSortBy] = useState('createdAt');
+    const [sortDir, setSortDir] = useState('desc');
+
+    // Debounce the search input so we don't hammer the server on every keystroke.
+    useEffect(() => {
+        const handle = setTimeout(() => setDebouncedSearch(searchInput.trim()), 300);
+        return () => clearTimeout(handle);
+    }, [searchInput]);
+
+    // Build the query params for the server. Empty/defaults are omitted so the
+    // queryKey stays stable when nothing is filtered.
+    const queryParams = useMemo(() => {
+        const params = { limit: 50 };
+        if (debouncedSearch) params.search = debouncedSearch;
+        if (statusFilter !== 'all') params.status = statusFilter;
+        params.sort = `${sortBy}:${sortDir}`;
+        return params;
+    }, [debouncedSearch, statusFilter, sortBy, sortDir]);
+
+    const { data: documentsData, isLoading, isFetching, refetch } = useDocuments(queryParams);
     const { data: overviewData } = useDocumentsOverview();
     const deleteMutation = useDeleteDocument();
 
     const documents = documentsData?.documents || [];
+    const pagination = documentsData?.pagination || null;
     const statusBreakdown = overviewData?.statusBreakdown || {};
 
-    // Filter documents
-    const filteredDocs = documents.filter(doc => {
-        const matchesSearch = !searchQuery || doc.originalName.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesStatus = statusFilter === 'all' || doc.status === statusFilter;
-        return matchesSearch && matchesStatus;
-    });
+    // The server already filters/sorts/paginates, so the displayed list is the
+    // raw response. We keep the name for minimal churn in the JSX below.
+    const filteredDocs = documents;
+
+    const hasActiveFilters = debouncedSearch !== '' || statusFilter !== 'all' || sortBy !== 'createdAt' || sortDir !== 'desc';
+
+    const clearFilters = () => {
+        setSearchInput('');
+        setDebouncedSearch('');
+        setStatusFilter('all');
+        setSortBy('createdAt');
+        setSortDir('desc');
+    };
+
+    const toggleSortDir = () => setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
 
     const handleDelete = async (docId, docName) => {
         if (!window.confirm(`Delete "${docName}"? This action cannot be undone.`)) return;
@@ -87,12 +120,15 @@ export default function DocumentsPage() {
         }
     };
 
-    // Status summary counts
+    // Status summary counts — prefer the dashboard overview (unfiltered totals),
+    // fall back to counting the currently loaded page.
     const statusCounts = {
         completed: statusBreakdown.completed?.count || documents.filter(d => d.status === 'completed').length,
         processing: (statusBreakdown.processing?.count || 0) + (statusBreakdown.chunking?.count || 0) + (statusBreakdown.embedding?.count || 0) + documents.filter(d => ['processing', 'chunking', 'embedding'].includes(d.status)).length,
         failed: statusBreakdown.failed?.count || documents.filter(d => d.status === 'failed').length,
-        total: documents.length,
+        total: statusBreakdown
+            ? Object.values(statusBreakdown).reduce((sum, s) => sum + (s?.count || 0), 0)
+            : documents.length,
     };
 
     return (
@@ -148,44 +184,115 @@ export default function DocumentsPage() {
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.16, duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-                className="flex items-center gap-3"
+                className="space-y-3"
             >
-                <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-[14px] h-[14px] text-gray-500/70" />
-                    <input
-                        type="text"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Search documents..."
-                        className="w-full pl-9 pr-4 h-9 rounded-[8px] bg-white/[0.03] border border-white/[0.06]
-                            text-white/90 placeholder-gray-500/60 text-[13px]
-                            focus:outline-none focus:border-violet-500/[0.30] focus:ring-2 focus:ring-violet-500/[0.10] transition-all duration-200"
-                    />
-                    {searchQuery && (
-                        <button
-                            onClick={() => setSearchQuery('')}
-                            className="absolute right-2.5 top-1/2 -translate-y-1/2 w-[16px] h-[16px] rounded-full bg-white/[0.06] flex items-center justify-center text-gray-400 hover:text-white transition-colors"
+                <div className="flex items-center gap-3 flex-wrap">
+                    {/* Search input (debounced) */}
+                    <div className="relative flex-1 min-w-[200px]">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-[14px] h-[14px] text-gray-500/70" />
+                        <input
+                            type="text"
+                            value={searchInput}
+                            onChange={(e) => setSearchInput(e.target.value)}
+                            placeholder="Search by document name..."
+                            className="w-full pl-9 pr-9 h-9 rounded-[8px] bg-white/[0.03] border border-white/[0.06]
+                                text-white/90 placeholder-gray-500/60 text-[13px]
+                                focus:outline-none focus:border-violet-500/[0.30] focus:ring-2 focus:ring-violet-500/[0.10] transition-all duration-200"
+                        />
+                        {searchInput && (
+                            <button
+                                onClick={() => setSearchInput('')}
+                                className="absolute right-2.5 top-1/2 -translate-y-1/2 w-[16px] h-[16px] rounded-full bg-white/[0.06] flex items-center justify-center text-gray-400 hover:text-white transition-colors"
+                            >
+                                <X className="w-[10px] h-[10px]" />
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Status filter */}
+                    <div className="flex items-center gap-1.5">
+                        <Filter className="w-[14px] h-[14px] text-gray-500/70" />
+                        <select
+                            value={statusFilter}
+                            onChange={(e) => setStatusFilter(e.target.value)}
+                            className="h-9 px-3 rounded-[8px] bg-white/[0.03] border border-white/[0.06] text-gray-300/80 text-[13px]
+                                focus:outline-none focus:border-violet-500/[0.30] appearance-none cursor-pointer pr-8"
+                            style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center' }}
                         >
-                            <X className="w-[10px] h-[10px]" />
-                        </button>
+                            <option value="all">All Status</option>
+                            <option value="completed">Completed</option>
+                            <option value="processing">Processing</option>
+                            <option value="chunking">Chunking</option>
+                            <option value="embedding">Embedding</option>
+                            <option value="failed">Failed</option>
+                        </select>
+                    </div>
+
+                    {/* Sort field */}
+                    <div className="flex items-center gap-1.5">
+                        <ArrowUpDown className="w-[14px] h-[14px] text-gray-500/70" />
+                        <select
+                            value={sortBy}
+                            onChange={(e) => setSortBy(e.target.value)}
+                            className="h-9 px-3 rounded-[8px] bg-white/[0.03] border border-white/[0.06] text-gray-300/80 text-[13px]
+                                focus:outline-none focus:border-violet-500/[0.30] appearance-none cursor-pointer pr-8"
+                            style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center' }}
+                        >
+                            <option value="createdAt">Date Added</option>
+                            <option value="originalName">Name</option>
+                            <option value="fileSize">File Size</option>
+                            <option value="totalChunks">Chunks</option>
+                            <option value="totalPages">Pages</option>
+                        </select>
+                    </div>
+
+                    {/* Sort direction toggle */}
+                    <motion.button
+                        whileHover={{ scale: 1.04 }}
+                        whileTap={{ scale: 0.96 }}
+                        onClick={toggleSortDir}
+                        title={sortDir === 'asc' ? 'Ascending — click for descending' : 'Descending — click for ascending'}
+                        className="h-9 w-9 rounded-[8px] bg-white/[0.03] border border-white/[0.06] text-gray-300/80 hover:text-white hover:border-white/[0.10] transition-all duration-200 flex items-center justify-center"
+                    >
+                        {sortDir === 'asc' ? <ArrowUp className="w-[14px] h-[14px]" /> : <ArrowDown className="w-[14px] h-[14px]" />}
+                    </motion.button>
+
+                    {/* Clear filters */}
+                    {hasActiveFilters && (
+                        <motion.button
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            whileHover={{ scale: 1.04 }}
+                            whileTap={{ scale: 0.96 }}
+                            onClick={clearFilters}
+                            className="h-9 px-3 rounded-[8px] bg-white/[0.03] border border-white/[0.06] text-gray-400/80 hover:text-white hover:border-white/[0.10] transition-all duration-200 flex items-center gap-1.5 text-[13px] font-medium"
+                        >
+                            <X className="w-[14px] h-[14px]" />
+                            Clear
+                        </motion.button>
                     )}
                 </div>
-                <div className="flex items-center gap-1.5">
-                    <Filter className="w-[14px] h-[14px] text-gray-500/70" />
-                    <select
-                        value={statusFilter}
-                        onChange={(e) => setStatusFilter(e.target.value)}
-                        className="h-9 px-3 rounded-[8px] bg-white/[0.03] border border-white/[0.06] text-gray-300/80 text-[13px]
-                            focus:outline-none focus:border-violet-500/[0.30] appearance-none cursor-pointer pr-8"
-                        style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center' }}
-                    >
-                        <option value="all">All Status</option>
-                        <option value="completed">Completed</option>
-                        <option value="processing">Processing</option>
-                        <option value="chunking">Chunking</option>
-                        <option value="embedding">Embedding</option>
-                        <option value="failed">Failed</option>
-                    </select>
+
+                {/* Result count + live-fetching indicator */}
+                <div className="flex items-center justify-between">
+                    <p className="text-[12px] text-gray-500/70">
+                        {isLoading ? (
+                            'Searching…'
+                        ) : pagination ? (
+                            <>
+                                Showing <span className="text-gray-300/90 font-medium tabular-nums">{filteredDocs.length}</span>
+                                {' '}of{' '}
+                                <span className="text-gray-300/90 font-medium tabular-nums">{pagination.total}</span>
+                                {' '}document{pagination.total === 1 ? '' : 's'}
+                                {debouncedSearch && <> for “<span className="text-gray-300/90">{debouncedSearch}</span>”</>}
+                            </>
+                        ) : (
+                            `${filteredDocs.length} document${filteredDocs.length === 1 ? '' : 's'}`
+                        )}
+                    </p>
+                    {isFetching && !isLoading && (
+                        <Loader2 className="w-[13px] h-[13px] text-violet-400/70 animate-spin" />
+                    )}
                 </div>
             </motion.div>
 
@@ -280,15 +387,25 @@ export default function DocumentsPage() {
                     <div className="p-10 text-center">
                         <FileText className="w-10 h-10 text-gray-600/40 mx-auto mb-3" />
                         <p className="text-gray-400/80 text-[14px] font-medium">
-                            {searchQuery || statusFilter !== 'all' ? 'No documents match your filters' : 'No documents yet'}
+                            {hasActiveFilters ? 'No documents match your filters' : 'No documents yet'}
                         </p>
                         <p className="text-gray-500/60 text-[12px] mt-1.5">
-                            {searchQuery || statusFilter !== 'all'
+                            {hasActiveFilters
                                 ? 'Try adjusting your search or filter criteria'
                                 : 'Upload your first document to start building your knowledge base'
                             }
                         </p>
-                        {!searchQuery && statusFilter === 'all' && (
+                        {hasActiveFilters ? (
+                            <motion.button
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                                onClick={clearFilters}
+                                className="mt-3 h-9 px-3.5 rounded-[8px] bg-white/[0.05] border border-white/[0.10] text-gray-300 font-medium text-[13px] flex items-center gap-1.5 mx-auto hover:bg-white/[0.08] transition-colors"
+                            >
+                                <X className="w-[14px] h-[14px]" />
+                                Clear Filters
+                            </motion.button>
+                        ) : (
                             <motion.button
                                 whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.98 }}

@@ -40,7 +40,7 @@ async function openRouterChatCompletions({ messages, temperature, max_tokens, to
         headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-            'HTTP-Referer': 'http://localhost:5002',
+            'HTTP-Referer': process.env.APP_URL || 'https://frontend-amber-six-35.vercel.app',
             'X-Title': 'OpsMind AI'
         },
         body: JSON.stringify({
@@ -71,7 +71,7 @@ async function* openRouterStreamChatCompletions({ messages, temperature, max_tok
         headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-            'HTTP-Referer': 'http://localhost:5002',
+            'HTTP-Referer': process.env.APP_URL || 'https://frontend-amber-six-35.vercel.app',
             'X-Title': 'OpsMind AI'
         },
         body: JSON.stringify({

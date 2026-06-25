@@ -255,17 +255,110 @@ async function processDocument(documentId, filePath, userId, orgId, uploadLogId)
   }
 }
 
+// Allowed sort fields mapped to their mongoose sort spec.
+// Supports an optional direction suffix, e.g. "createdAt:desc".
+const SORT_FIELDS = {
+  createdAt: 'createdAt',
+  name: 'name',
+  originalName: 'originalName',
+  fileSize: 'fileSize',
+  totalChunks: 'totalChunks',
+  totalPages: 'totalPages',
+};
+
+const VALID_STATUSES = ['uploading', 'processing', 'chunking', 'embedding', 'completed', 'failed'];
+
 export const getDocuments = async (req, res) => {
   const userId = req.auth?.userId || req.dbUser?.clerkId;
 
   try {
-    const documents = await Document.find({ uploadedBy: userId })
-      .sort({ createdAt: -1 })
-      .lean();
+    // ── Parse query params ──
+    const {
+      search,
+      status,
+      sort = 'createdAt:desc',
+      page: pageParam,
+      limit: limitParam,
+    } = req.query;
+
+    // Build the base query (always scoped to the authenticated user)
+    const query = { uploadedBy: userId };
+
+    // Status filter — accept a single status or a comma-separated list.
+    // "processing" is a convenience alias that expands to all in-flight states.
+    if (status && status !== 'all') {
+      const statuses = String(status)
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
+
+      const expanded = statuses.flatMap((s) =>
+        s === 'processing'
+          ? ['uploading', 'processing', 'chunking', 'embedding']
+          : [s]
+      );
+
+      const valid = expanded.filter((s) => VALID_STATUSES.includes(s));
+      if (valid.length) {
+        query.status = valid.length === 1 ? valid[0] : { $in: valid };
+      }
+    }
+
+    // Search — case-insensitive regex against name and originalName.
+    if (search && String(search).trim()) {
+      const escaped = String(search).trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      query.$or = [
+        { name: { $regex: escaped, $options: 'i' } },
+        { originalName: { $regex: escaped, $options: 'i' } },
+      ];
+    }
+
+    // ── Sorting ──
+    let sortSpec = { createdAt: -1 };
+    if (sort) {
+      const [field, dir] = String(sort).split(':');
+      const sortField = SORT_FIELDS[field];
+      if (sortField) {
+        const direction = String(dir || 'desc').toLowerCase() === 'asc' ? 1 : -1;
+        sortSpec = { [sortField]: direction };
+      }
+    }
+
+    // ── Pagination ──
+    let page = parseInt(pageParam, 10);
+    let limit = parseInt(limitParam, 10);
+    if (Number.isNaN(page) || page < 1) page = 1;
+    if (Number.isNaN(limit) || limit < 1) limit = 50;
+    // Cap to prevent abuse
+    if (limit > 200) limit = 200;
+    const skip = (page - 1) * limit;
+
+    // Run count + data queries in parallel
+    const [documents, total] = await Promise.all([
+      Document.find(query).sort(sortSpec).skip(skip).limit(limit).lean(),
+      Document.countDocuments(query),
+    ]);
+
+    const totalPages = Math.ceil(total / limit) || 0;
 
     res.json({
       success: true,
-      data: documents
+      data: {
+        documents,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages,
+          hasNext: page < totalPages,
+          hasPrev: page > 1,
+        },
+        filters: {
+          search: search ? String(search).trim() : '',
+          status: status || 'all',
+          sort: `${Object.keys(sortSpec)[0]}:${Object.values(sortSpec)[0] === 1 ? 'asc' : 'desc'}`,
+        },
+      },
     });
   } catch (error) {
     res.status(500).json({
