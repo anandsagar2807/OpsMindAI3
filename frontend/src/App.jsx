@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { AuthenticateWithRedirectCallback } from '@clerk/react';
 import { Toaster } from 'react-hot-toast';
 import EnterpriseLandingPage from './pages/EnterpriseLandingPage';
 import SignInPage from './pages/SignInPage';
@@ -8,7 +9,9 @@ import DocumentsPage from './pages/DocumentsPage';
 import UploadPage from './pages/UploadPage';
 import InsightsPage from './pages/InsightsPage';
 import SkillsAnalysisPage from './pages/SkillsAnalysisPage';
+import ChatWithSOPsPage from './pages/ChatWithSOPsPage';
 import SettingsPage from './pages/SettingsPage';
+import LogoShowcase from './pages/LogoShowcase';
 import DashboardLayout from './layouts/EnterpriseLayout';
 import PrivateRoute from './components/PrivateRoute';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -39,6 +42,9 @@ function App() {
         <Route path="/" element={<EnterpriseLandingPage />} />
         <Route path="/sign-in" element={<SignInPage />} />
         <Route path="/sign-up" element={<SignUpPage />} />
+        <Route path="/sign-in/sso-callback" element={<AuthenticateWithRedirectCallback />} />
+        <Route path="/sign-up/sso-callback" element={<AuthenticateWithRedirectCallback />} />
+        <Route path="/logos" element={<LogoShowcase />} />
 
         {/* Protected routes with dashboard layout */}
         <Route
@@ -54,6 +60,7 @@ function App() {
           <Route path="upload" element={<UploadPage />} />
           <Route path="insights/:id" element={<InsightsPage />} />
           <Route path="skills-analysis" element={<SkillsAnalysisPage />} />
+          <Route path="chat" element={<ChatWithSOPsPage />} />
           <Route path="settings" element={<SettingsPage />} />
         </Route>
 

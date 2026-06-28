@@ -133,7 +133,8 @@ class RAGService {
         try {
             const searchResult = await vectorSearchService.search(query, userId, {
                 topK: 5,
-                minSimilarity: 0.3
+                minSimilarity: 0.3,
+                documentId: options.documentId || null
             });
 
             const retrievalTimeMs = Date.now() - startTime;
@@ -255,7 +256,8 @@ class RAGService {
         try {
             const searchResult = await vectorSearchService.search(query, userId, {
                 topK: 5,
-                minSimilarity: 0.3
+                minSimilarity: 0.3,
+                documentId: options.documentId || null
             });
 
             const retrievalTimeMs = Date.now() - startTime;

@@ -276,7 +276,7 @@ function OverallScoreRing({ score }) {
 }
 
 // ─── Main Results Component ───
-export default function SkillsAnalysisResults({ results, onReset, isAnalyzing }) {
+export default function SkillsAnalysisResults({ results, onReset, onChatWithSOPs, isAnalyzing }) {
   // Parse results - handle various response shapes from the backend
   const overallScore = results?.overallScore ?? results?.score ?? results?.alignmentScore ?? 0;
   const alignedItems = results?.alignedItems ?? results?.matchedSkills ?? results?.aligned ?? [];
@@ -552,7 +552,7 @@ export default function SkillsAnalysisResults({ results, onReset, isAnalyzing })
       )}
 
       {/* ─── Footer Actions ─── */}
-      <motion.div {...fadeInUp} className="flex items-center justify-center gap-4 pt-4 pb-8">
+      <motion.div {...fadeInUp} className="flex items-center justify-center gap-4 pt-4 pb-8 flex-wrap">
         <motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
@@ -562,6 +562,17 @@ export default function SkillsAnalysisResults({ results, onReset, isAnalyzing })
           <ArrowLeft className="w-4 h-4" />
           Run New Analysis
         </motion.button>
+        {onChatWithSOPs && (
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={onChatWithSOPs}
+            className="flex items-center gap-2 px-6 py-3 rounded-xl bg-white/[0.04] border border-white/[0.10] text-gray-300 hover:text-white hover:bg-white/[0.08] hover:border-violet-500/30 font-semibold transition-all duration-300"
+          >
+            <MessageSquare className="w-4 h-4 text-violet-400" />
+            Chat with SOPs
+          </motion.button>
+        )}
       </motion.div>
     </div>
   );

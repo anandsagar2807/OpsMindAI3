@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { BrowserRouter as Router, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router } from 'react-router-dom';
 import { ClerkProvider } from '@clerk/react';
 import { QueryClient, QueryClientProvider, QueryCache } from '@tanstack/react-query';
 import App from './App';
@@ -53,18 +53,12 @@ const queryClient = new QueryClient({
   },
 });
 
-// Clerk v6 requires router integration when using path-based routing
-// (routing="path") on <SignIn>/<SignUp> components. Without routerPush/
-// routerReplace, Clerk's internal multi-step navigation breaks and shows
-// "Unable to complete action at this time."
 function ClerkProviderWithRouter() {
-  const navigate = useNavigate();
-
   return (
     <ClerkProvider
       publishableKey={clerkPublishableKey}
-      routerPush={(to) => navigate(to)}
-      routerReplace={(to) => navigate(to, { replace: true })}
+      afterSignInUrl="/dashboard"
+      afterSignUpUrl="/dashboard"
       afterSignOutUrl="/"
     >
       <QueryClientProvider client={queryClient}>

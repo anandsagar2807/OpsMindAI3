@@ -7,26 +7,32 @@ export const syncUser = async (req, res, next) => {
 
   try {
     const clerkId = req.auth.userId;
-    let user = await User.findOne({ clerkId });
+    const email = req.auth.email || `${clerkId}@clerk.placeholder`;
+    const fullName = req.auth.fullName || 'User';
+    const role = req.auth.orgRole === 'admin' ? 'admin' : 'user';
 
-    if (!user) {
-      const email = req.auth.email || `${clerkId}@clerk.placeholder`;
-      const fullName = req.auth.fullName || 'User';
-      const role = req.auth.orgRole === 'admin' ? 'admin' : 'user';
+    // Atomic upsert: avoids the E11000 duplicate-key race condition that
+    // occurs when multiple concurrent authenticated requests (common right
+    // after signup) each run findOne() -> create() and all try to insert.
+    // findOneAndUpdate with upsert guarantees a single document per clerkId.
+    const wasNew = !(await User.exists({ clerkId }));
+    const user = await User.findOneAndUpdate(
+      { clerkId },
+      {
+        $set: {
+          email,
+          fullName,
+          role,
+          ...(req.auth.orgId ? { orgId: req.auth.orgId } : {}),
+        },
+        $setOnInsert: { clerkId, isActive: true },
+        $currentDate: { lastLogin: true },
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
 
-      user = await User.create({
-        clerkId,
-        email,
-        fullName,
-        role,
-        orgId: req.auth.orgId || null,
-      });
+    if (wasNew) {
       console.log(`✅ New user synced: ${clerkId}`);
-    } else {
-      user.lastLogin = new Date();
-      if (req.auth.orgId) user.orgId = req.auth.orgId;
-      if (req.auth.orgRole) user.role = req.auth.orgRole === 'admin' ? 'admin' : user.role;
-      await user.save();
     }
 
     req.dbUser = user;

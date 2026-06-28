@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDropzone } from 'react-dropzone';
 import {
@@ -45,6 +46,11 @@ const staggerContainer = {
 
 export default function SkillsAnalysisPage() {
   const { getToken } = useAuth();
+  const navigate = useNavigate();
+
+  const handleChatWithSOPs = useCallback(() => {
+    navigate('/dashboard/chat');
+  }, [navigate]);
 
   // ─── Upload State ───
   const [sopFile, setSopFile] = useState(null);
@@ -761,6 +767,18 @@ export default function SkillsAnalysisPage() {
                 </motion.button>
               </motion.div>
 
+              {/* ─── Chat with SOPs CTA ─── */}
+              <motion.div {...fadeInUp} className="flex justify-center mt-5">
+                <button
+                  onClick={handleChatWithSOPs}
+                  className="group flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/[0.03] border border-white/[0.08] text-gray-300 hover:text-white hover:bg-white/[0.06] hover:border-violet-500/30 text-sm font-medium transition-all duration-300"
+                >
+                  <MessageSquare className="w-4 h-4 text-violet-400/70 group-hover:text-violet-400 transition-colors duration-300" />
+                  Chat with SOPs
+                  <ArrowRight className="w-4 h-4 text-gray-500 group-hover:text-violet-400 group-hover:translate-x-0.5 transition-all duration-300" />
+                </button>
+              </motion.div>
+
               {/* ─── Feature Highlights ─── */}
               <motion.div
                 variants={staggerContainer}
@@ -816,6 +834,7 @@ export default function SkillsAnalysisPage() {
               <SkillsAnalysisResults
                 results={analysisResults}
                 onReset={clearResults}
+                onChatWithSOPs={handleChatWithSOPs}
                 isAnalyzing={isAnalyzing}
               />
             </motion.div>

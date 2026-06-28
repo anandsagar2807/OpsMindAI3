@@ -61,6 +61,33 @@ const documentSchema = new mongoose.Schema({
     type: String,
     maxlength: 500
   },
+  // ─── SOP metadata (Chat with SOPs feature) ───
+  tags: {
+    type: [String],
+    default: []
+  },
+  version: {
+    type: String,
+    default: '1.0'
+  },
+  category: {
+    type: String,
+    default: 'General',
+    index: true
+  },
+  department: {
+    type: String,
+    default: 'General',
+    index: true
+  },
+  author: {
+    type: String,
+    default: null
+  },
+  summary: {
+    type: String,
+    default: null
+  },
   insights: {
     // Structured insights object produced by services/insightsService.js.
     // Schema:
@@ -90,5 +117,7 @@ const documentSchema = new mongoose.Schema({
 documentSchema.index({ uploadedBy: 1, createdAt: -1 });
 documentSchema.index({ status: 1 });
 documentSchema.index({ orgId: 1 });
+documentSchema.index({ version: 1 });
+documentSchema.index({ tags: 1 });
 
 export default mongoose.model('Document', documentSchema);

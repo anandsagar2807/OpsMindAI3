@@ -4,27 +4,21 @@ import {
   Sparkles,
   Zap,
   Shield,
-  TrendingUp,
-  Users,
-  MessageSquare,
-  FileText,
   ArrowRight,
   Check,
   Star,
-  Globe,
   Lock,
   BarChart3,
   Quote,
-  Play,
-  Eye
+  Eye,
+  FileText
 } from 'lucide-react';
+import LogoNeuralMind from '../components/Logo';
 import { useNavigate } from 'react-router-dom';
 import { useAuth, useUser } from '../hooks/useAuthContext';
-import Card from '../components/ui/Card.jsx';
-import Button from '../components/ui/Button.jsx';
-import PremiumNotificationBar from '../components/PremiumNotificationBar.jsx';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://gitgaurd-ai.onrender.com';
+
+const API_URL = import.meta.env.VITE_API_URL || '';
 
 export default function EnterpriseLandingPage() {
   const navigate = useNavigate();
@@ -220,93 +214,39 @@ export default function EnterpriseLandingPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-dark-900 via-dark-900 to-dark-800">
-      {/* Premium Notification Bar — dynamic, sits ABOVE the header */}
-      <PremiumNotificationBar
-        isSignedIn={isSignedIn}
-        user={user}
-        health={health}
-        healthError={healthError}
-        publicStats={publicStats}
-        onSignUp={() => navigate('/sign-up')}
-      />
-
       {/* Navigation */}
-      <nav className="bg-dark-900/70 backdrop-blur-md border-b border-white/10 sticky top-0 z-50 shadow-sm">
+      <nav className="bg-[#06080d]/80 backdrop-blur-2xl border-b border-white/[0.06] sticky top-0 z-50">
+        {/* Top accent line */}
+        <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-violet-500/50 to-transparent" />
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center shadow-lg">
-                <Sparkles className="w-6 h-6 text-white" />
-              </div>
-              <div className="flex items-center gap-3">
-                <div>
-                  <h1 className="text-xl font-bold text-white">OpsMind AI</h1>
-                  <p className="mt-0.5 text-xs font-semibold text-white/80">
-                    Enterprise Edition
-                  </p>
-                </div>
-                <div className="hidden sm:flex items-center">
-                  <span className="px-3 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-sm shadow-indigo-500/20">
-                    Enterprise
-                  </span>
-                </div>
+              <LogoNeuralMind size={40} />
+              <div>
+                <h1 className="text-xl font-bold text-white tracking-[-0.02em]">OpsMind AI</h1>
+                <p className="text-[10px] uppercase tracking-[0.18em] text-violet-400/70 font-semibold">Enterprise Knowledge AI</p>
               </div>
             </div>
 
-            <div className="hidden md:flex items-center gap-8">
-              <a
-                href="#features"
-                onClick={(e) => { e.preventDefault(); scrollToSection('features'); }}
-                className="text-gray-200/90 hover:text-white transition-colors font-medium"
-              >
-                Features
-              </a>
-              <a
-                href="#pricing"
-                onClick={(e) => { e.preventDefault(); scrollToSection('pricing'); }}
-                className="text-gray-200/90 hover:text-white transition-colors font-medium"
-              >
-                Pricing
-              </a>
-              <a
-                href="#testimonials"
-                onClick={(e) => { e.preventDefault(); scrollToSection('testimonials'); }}
-                className="text-gray-200/90 hover:text-white transition-colors font-medium"
-              >
-                Testimonials
-              </a>
-              <a
-                href="#integrations"
-                onClick={(e) => { e.preventDefault(); scrollToSection('integrations'); }}
-                className="text-gray-200/90 hover:text-white transition-colors font-medium"
-              >
-                Integrations
-              </a>
+            <div className="hidden md:flex items-center gap-1">
+              {[['#features','Features'],['#pricing','Pricing'],['#testimonials','Testimonials'],['#integrations','Integrations']].map(([href, label]) => (
+                <a key={href} href={href}
+                  onClick={(e) => { e.preventDefault(); scrollToSection(href.slice(1)); }}
+                  className="px-4 py-2 rounded-lg text-[14px] font-medium text-gray-400 hover:text-white hover:bg-white/[0.04] transition-all duration-200"
+                >{label}</a>
+              ))}
             </div>
 
             <div className="flex items-center gap-3">
-              {/* Sign In button (secondary outline style) */}
-              <button
-                onClick={() => navigate('/sign-in')}
-                className="relative group px-5 py-2.5 text-sm font-medium text-gray-200 hover:text-white transition-all duration-300 ease-out rounded-lg border border-white/[0.10] hover:border-white/[0.18] bg-white/[0.03] hover:bg-white/[0.06]"
-              >
-                <span className="relative z-10">Sign In</span>
-                <span className="absolute inset-0 rounded-lg bg-gradient-to-r from-indigo-500/8 via-violet-400/4 to-purple-500/8 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <button onClick={() => navigate('/sign-in')}
+                className="px-5 py-2 text-sm font-medium text-gray-400 hover:text-white rounded-lg border border-white/[0.08] hover:border-white/[0.15] bg-transparent hover:bg-white/[0.04] transition-all duration-200">
+                Sign In
               </button>
-
-              {/* Sign Up button (premium gradient CTA) */}
-              <button
-                onClick={() => navigate('/sign-up')}
-                className="relative group px-6 py-2.5 text-sm font-semibold text-white overflow-hidden transition-all duration-300 ease-out rounded-lg shadow-[0_4px_20px_rgba(99,102,241,0.35)] hover:shadow-[0_8px_30px_rgba(99,102,241,0.5)] hover:-translate-y-[1px] active:scale-[0.98]"
-              >
-                <span className="absolute inset-0 bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 bg-[length:200%_100%] animate-gradient-x" />
-                <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.08] to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out" />
-                <span className="absolute top-0 left-4 right-4 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                <span className="relative flex items-center gap-2 z-10">
-                  Sign Up
-                  <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
-                </span>
-                <span className="absolute inset-0 rounded-lg border border-indigo-400/20 group-hover:border-indigo-400/40 transition-all duration-300" />
+              <button onClick={() => navigate('/sign-up')}
+                className="relative group px-5 py-2 text-sm font-semibold text-white rounded-lg overflow-hidden shadow-[0_4px_20px_rgba(139,92,246,0.35)] hover:shadow-[0_8px_30px_rgba(139,92,246,0.5)] hover:-translate-y-[1px] active:scale-[0.98] transition-all duration-300">
+                <span className="absolute inset-0 bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600" />
+                <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+                <span className="relative flex items-center gap-2 z-10">Get Started <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform duration-300" /></span>
               </button>
             </div>
           </div>
@@ -324,99 +264,46 @@ export default function EnterpriseLandingPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="text-center max-w-4xl mx-auto animate-fade-in-up"
+            className="text-center max-w-4xl mx-auto"
           >
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 text-white/80 rounded-full text-sm font-medium mb-6">
-              <Star className="w-4 h-4 text-primary-400" />
-              {health?.success
-                ? `Platform Online • Updated ${new Date(health.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
-                : `Platform Status • ${healthError ? 'Offline' : 'Loading...'}`}
+            {/* Premium badge */}
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-violet-500/10 border border-violet-500/20 mb-8">
+              <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse" />
+              <span className="text-[12px] font-semibold text-violet-300 tracking-wide">AI-Powered Knowledge Platform</span>
             </div>
 
-            <h1 className="text-6xl font-bold text-white mb-6 leading-tight">
+            <h1 className="text-6xl font-extrabold text-white mb-6 leading-[1.08] tracking-[-0.03em]">
               Your Company's Knowledge,
               <br />
-              <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Instantly Accessible</span>
+              <span className="bg-gradient-to-r from-violet-400 via-purple-400 to-indigo-400 bg-clip-text text-transparent">Instantly Accessible</span>
             </h1>
 
-            <p className="text-xl text-gray-100 mb-8 leading-relaxed">
+            <p className="text-xl text-gray-400 mb-10 leading-relaxed max-w-2xl mx-auto">
               Transform your SOPs, policies, and documents into an intelligent AI assistant.
               Get accurate answers in seconds with zero hallucinations.
             </p>
 
             <div className="flex items-center justify-center gap-4 flex-wrap">
-              <Button
+              <button
                 onClick={() => navigate('/sign-up')}
-                variant="primary"
-                className="btn-premium text-lg px-8 py-4"
+                className="relative group px-8 py-4 text-[15px] font-semibold text-white rounded-xl overflow-hidden shadow-[0_8px_32px_rgba(139,92,246,0.4)] hover:shadow-[0_12px_48px_rgba(139,92,246,0.6)] hover:-translate-y-[2px] active:scale-[0.98] transition-all duration-300"
               >
-                Start Free Trial
-                <ArrowRight className="w-5 h-5" />
-              </Button>
+                <span className="absolute inset-0 bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600" />
+                <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+                <span className="relative flex items-center gap-2 z-10">Start for Free <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" /></span>
+              </button>
               <button
                 onClick={handleViewDemo}
-                className="relative group px-8 py-4 text-lg font-semibold text-white overflow-hidden transition-all duration-300 ease-out rounded-xl border border-white/[0.12] hover:border-white/[0.22] bg-white/[0.04] hover:bg-white/[0.08] flex items-center gap-2"
+                className="group px-8 py-4 text-[15px] font-semibold text-gray-300 hover:text-white rounded-xl border border-white/[0.10] hover:border-white/[0.20] bg-white/[0.03] hover:bg-white/[0.07] flex items-center gap-2 transition-all duration-300"
               >
-                <span className="absolute inset-0 bg-gradient-to-r from-indigo-500/8 via-violet-400/4 to-purple-500/8 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                <span className="absolute inset-0 rounded-xl border border-white/[0.08] group-hover:border-white/[0.16] transition-all duration-300" />
-                <Eye className="w-5 h-5 relative z-10" />
-                <span className="relative z-10">View Demo</span>
+                <Eye className="w-4 h-4" />
+                View Demo
               </button>
             </div>
-            <p className="text-sm text-gray-300 mt-4">
-              No credit card required • 14-day free trial • Cancel anytime
+            <p className="text-sm text-gray-600 mt-5">
+              No credit card required · 14-day free trial · Cancel anytime
             </p>
 
-            {/* Chat Agent Embed - Locked behind sign-up overlay for unauthenticated users */}
-            <div className="mt-8 w-full max-w-2xl mx-auto rounded-2xl overflow-hidden shadow-lg relative">
-              <iframe
-                src="https://app.relevanceai.com/agents/f1db6c/0b7a4882-502d-43b3-a4c7-a188ae52e4ca/9671bbca-9c52-422d-8dd5-e2a7618eff4a/embed-chat?hide_tool_steps=false&hide_file_uploads=false&hide_conversation_list=false&bubble_style=agent&primary_color=%23685FFF&bubble_icon=pd%2Fchat&input_placeholder_text=Type+your+message...&hide_logo=false&hide_description=false"
-                title="OpsMind AI Chat Agent"
-                style={{ width: '100%', height: '600px', border: 'none', background: '#ffffff' }}
-                allow="clipboard-write"
-              />
-
-              {/* Lock overlay for unauthenticated users — uses real Clerk auth */}
-              {!isSignedIn && (
-                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center px-8 text-center rounded-2xl"
-                  style={{
-                    background: 'linear-gradient(180deg, rgba(15, 23, 42, 0.60) 0%, rgba(15, 23, 42, 0.90) 100%)',
-                    backdropFilter: 'blur(14px) saturate(160%)',
-                    WebkitBackdropFilter: 'blur(14px) saturate(160%)',
-                  }}
-                >
-                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500 via-indigo-500 to-purple-600 flex items-center justify-center shadow-xl shadow-violet-500/30 mb-5">
-                    <Lock className="w-8 h-8 text-white" />
-                  </div>
-                  <h3 className="text-xl font-bold text-white mb-2 tracking-tight">
-                    Big Bro Sales Copilot is locked
-                  </h3>
-                  <p className="text-sm text-white/70 leading-relaxed mb-6 max-w-[320px]">
-                    Sign up for a free OpsMind AI account to unlock the sales copilot and start
-                    getting instant, citation-backed answers from your documents.
-                  </p>
-                  <div className="flex flex-col gap-2.5 w-full max-w-[280px]">
-                    <button
-                      onClick={() => navigate('/sign-up')}
-                      className="group flex items-center justify-center gap-2 w-full h-11 rounded-xl bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 hover:from-indigo-500 hover:via-violet-500 hover:to-purple-500 text-white font-semibold text-sm shadow-lg shadow-violet-500/30 hover:shadow-violet-500/50 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
-                    >
-                      <Star className="w-4 h-4" />
-                      <span>Sign up — it's free</span>
-                      <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
-                    </button>
-                    <button
-                      onClick={() => navigate('/sign-in')}
-                      className="flex items-center justify-center gap-2 w-full h-11 rounded-xl bg-white/[0.06] hover:bg-white/[0.10] border border-white/[0.10] hover:border-white/[0.20] text-white/90 hover:text-white font-medium text-sm transition-all duration-200"
-                    >
-                      <span>Already have an account? Sign in</span>
-                    </button>
-                  </div>
-                  <p className="mt-5 text-[11px] text-white/40 uppercase tracking-[0.15em] font-semibold">
-                    14-day free trial · No credit card
-                  </p>
-                </div>
-              )}
-            </div>
 
           </motion.div>
 
@@ -621,7 +508,8 @@ export default function EnterpriseLandingPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 px-6 bg-gradient-to-br from-indigo-600 to-purple-600">
+      <section className="py-20 px-6 bg-gradient-to-br from-violet-600 via-purple-700 to-indigo-800 relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(255,255,255,0.05)_0%,_transparent_70%)]" />
         <div className="max-w-4xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -638,7 +526,7 @@ export default function EnterpriseLandingPage() {
             </p>
             <button
               onClick={() => navigate('/sign-up')}
-              className="bg-white text-indigo-600 hover:bg-gray-100 px-8 py-4 rounded-xl font-semibold text-lg shadow-xl transition-all inline-flex items-center gap-2"
+              className="relative group bg-white text-violet-700 hover:bg-gray-50 px-8 py-4 rounded-xl font-bold text-[15px] shadow-2xl shadow-black/30 hover:shadow-black/40 hover:-translate-y-[2px] transition-all duration-300 inline-flex items-center gap-2"
             >
               Start Free Trial
               <ArrowRight className="w-5 h-5" />
@@ -653,12 +541,10 @@ export default function EnterpriseLandingPage() {
           <div className="grid md:grid-cols-4 gap-8 mb-8">
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center">
-                  <Sparkles className="w-5 h-5 text-white" />
-                </div>
-                <span className="font-bold text-white">OpsMind AI</span>
+                <LogoNeuralMind size={32} />
+                <span className="font-bold text-white tracking-[-0.02em]">OpsMind AI</span>
               </div>
-              <p className="text-sm text-gray-100">
+              <p className="text-sm text-gray-500 leading-relaxed">
                 Enterprise knowledge management powered by AI
               </p>
             </div>

@@ -14,6 +14,7 @@ import ragRoutes from './routes/ragRoutes.js';
 import publicRoutes from './routes/publicRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
 import skillsAnalysisRoutes from './routes/skillsAnalysisRoutes.js';
+import sopRoutes from './routes/sopRoutes.js';
 
 dotenv.config();
 
@@ -108,6 +109,7 @@ app.use('/api/chat', clerkAuthMiddleware, syncUser, chatRoutes);
 app.use('/api/rag', clerkAuthMiddleware, syncUser, ragRoutes);
 app.use('/api/dashboard', clerkAuthMiddleware, syncUser, dashboardRoutes);
 app.use('/api/skills', clerkAuthMiddleware, syncUser, skillsAnalysisRoutes);
+app.use('/api/sop', clerkAuthMiddleware, syncUser, sopRoutes);
 
 function getDbStatus() {
   const states = { 0: 'disconnected', 1: 'connected', 2: 'connecting', 3: 'disconnecting' };

@@ -22,7 +22,8 @@ import {
     ChevronDown,
     ArrowUpDown,
     ArrowUp,
-    ArrowDown
+    ArrowDown,
+    MessageSquare
 } from 'lucide-react';
 import { useDocuments, useDeleteDocument } from '../hooks/useDocuments';
 import { useDocumentsOverview } from '../hooks/useDashboard';
@@ -368,6 +369,17 @@ export default function DocumentsPage() {
 
                                         {/* Actions */}
                                         <div className="col-span-2 flex items-center gap-1.5">
+                                            {doc.status === 'completed' && (
+                                                <motion.button
+                                                    whileHover={{ scale: 1.08 }}
+                                                    whileTap={{ scale: 0.92 }}
+                                                    onClick={() => navigate(`/dashboard/chat?doc=${doc._id}`)}
+                                                    className="w-7 h-7 rounded-[6px] bg-violet-500/[0.08] border border-violet-500/[0.15] flex items-center justify-center text-violet-400/80 hover:text-violet-400 transition-colors duration-200"
+                                                    title="Chat with this document"
+                                                >
+                                                    <MessageSquare className="w-[14px] h-[14px]" />
+                                                </motion.button>
+                                            )}
                                             <motion.button
                                                 whileHover={{ scale: 1.08 }}
                                                 whileTap={{ scale: 0.92 }}

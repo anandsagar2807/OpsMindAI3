@@ -7,11 +7,20 @@ import dns from 'dns';
 dns.setServers(['8.8.8.8', '8.8.4.4']);
 
 const MONGODB_URI = process.env.MONGODB_URI;
-const PLACEHOLDER_PATTERNS = ['username:password', 'your-mongodb-uri-here'];
+const PLACEHOLDER_PATTERNS = [
+  'username:password',
+  'your-mongodb-uri-here',
+  'your_mongodb_connection_string_here',
+  'your_mongodb_uri_here',
+];
 
 const isPlaceholderURI = (uri) => {
   if (!uri) return true;
-  return PLACEHOLDER_PATTERNS.some(pattern => uri.includes(pattern));
+  if (PLACEHOLDER_PATTERNS.some(pattern => uri.includes(pattern))) return true;
+  // A valid MongoDB connection string must use the mongodb:// or mongodb+srv://
+  // scheme. Anything else (e.g. a leftover placeholder) is treated as invalid
+  // so we skip the connection instead of throwing "Invalid scheme" errors.
+  return !/^mongodb(\+srv)?:\/\//.test(uri.trim());
 };
 
 const connectDB = async () => {
@@ -40,6 +49,15 @@ const connectDB = async () => {
     });
   } catch (error) {
     console.error('❌ MongoDB connection failed:', error.message);
+    // Surface the error code/name so auth failures (code 8000) are
+    // distinguishable from network/timeout issues at a glance.
+    if (error.code || error.name) {
+      console.error(`   ↳ ${error.name}${error.code ? ` (code ${error.code})` : ''}`);
+    }
+    if (error.code === 8000) {
+      console.error('   ↳ Authentication failed. Check the username/password in MONGODB_URI');
+      console.error('     and ensure the database user exists in MongoDB Atlas with the correct password.');
+    }
     console.warn('⚠️  Server will continue running without database. Set a valid MONGODB_URI in .env to enable database features.');
   }
 };

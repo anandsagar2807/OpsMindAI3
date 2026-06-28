@@ -1,6 +1,6 @@
 export const getDocumentInsights = async (text) => {
   const apiKey = process.env.OPENROUTER_API_KEY;
-  const model = process.env.OPENROUTER_MODEL || 'openrouter/free';
+  const model = process.env.OPENROUTER_MODEL || 'deepseek/deepseek-r1:free';
 
   if (!apiKey) {
     throw new Error('OpenRouter API key is missing');

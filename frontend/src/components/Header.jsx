@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { Brain, Sparkles, ChevronRight, Zap, Menu, X, User, LogOut } from 'lucide-react'
+import { Sparkles, ChevronRight, Zap, Menu, X, User, LogOut, Brain } from 'lucide-react'
 import { useAuth, useUser } from '../hooks/useAuthContext'
+import LogoNeuralMind from './Logo'
 
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false)
@@ -107,14 +108,8 @@ const Header = () => {
                 </div>
 
                 {/* Main logo container */}
-                <div className="relative w-[52px] h-[52px] rounded-[14px] bg-gradient-to-br from-blue-600 via-indigo-600 to-blue-800 p-[2px] shadow-[0_8px_32px_rgba(59,130,246,0.25)] group-hover:shadow-[0_12px_40px_rgba(59,130,246,0.4)] transition-all duration-500 group-hover:scale-[1.04]">
-                  <div className="w-full h-full rounded-[11px] bg-gradient-to-br from-[#060a12] via-[#0d1525] to-[#111827] flex items-center justify-center overflow-hidden relative">
-                    {/* Inner ambient glow */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-blue-500/15 via-transparent to-cyan-400/5" />
-                    {/* Subtle radial highlight */}
-                    <div className="absolute top-1 left-1/2 -translate-x-1/2 w-8 h-4 bg-gradient-to-b from-white/[0.06] to-transparent rounded-full" />
-                    <Brain className="w-[26px] h-[26px] text-white relative z-10 drop-shadow-[0_0_10px_rgba(59,130,246,0.7)]" />
-                  </div>
+                <div className="relative group-hover:scale-[1.04] transition-transform duration-500">
+                  <LogoNeuralMind size={52} />
                 </div>
 
                 {/* Hover border ring */}

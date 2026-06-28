@@ -22,8 +22,10 @@ import {
     Plus,
     Brain,
     User,
-    ChevronDown
+    ChevronDown,
+    MessageSquare
 } from 'lucide-react';
+import LogoNeuralMind from '../components/Logo';
 import { useAuth, useUser } from '../hooks/useAuthContext';
 import DraggableChatAgent from '../components/DraggableChatAgent';
 
@@ -57,6 +59,13 @@ const navItems = [
         description: 'SOP & compliance analysis'
     },
     {
+        path: '/dashboard/chat',
+        icon: MessageSquare,
+        label: 'Chat with SOPs',
+        end: false,
+        description: 'Ask questions about your documents'
+    },
+    {
         path: '/dashboard/settings',
         icon: Settings,
         label: 'Settings',
@@ -70,6 +79,7 @@ const pageTitles = {
     '/dashboard/documents': 'Documents',
     '/dashboard/upload': 'Upload',
     '/dashboard/skills-analysis': 'Operational Knowledge Analysis',
+    '/dashboard/chat': 'Chat with SOPs',
     '/dashboard/settings': 'Settings',
 };
 
@@ -151,11 +161,8 @@ export default function EnterpriseLayout() {
             >
                 {/* ─── Logo Section ─── */}
                 <div className="flex items-center gap-4 px-5 h-[72px] border-b border-white/[0.04] shrink-0">
-                    <motion.div
-                        className="w-11 h-11 rounded-[12px] bg-gradient-to-br from-violet-500 via-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-violet-500/25 shrink-0"
-                        whileHover={{ scale: 1.05 }}
-                    >
-                        <Sparkles className="w-[22px] h-[22px] text-white" />
+                    <motion.div className="shrink-0" whileHover={{ scale: 1.05 }}>
+                        <LogoNeuralMind size={44} />
                     </motion.div>
                     {!collapsed && (
                         <motion.div
@@ -175,7 +182,7 @@ export default function EnterpriseLayout() {
                 </div>
 
                 {/* ─── Premium Navigation ─── */}
-                <nav className="flex-1 py-4 px-3 space-y-1.5 overflow-y-auto scrollbar-thin">
+                <nav className="flex-1 flex flex-col justify-center py-4 px-3 space-y-1.5 overflow-y-auto scrollbar-thin">
                     {navItems.map((item, index) => (
                         <motion.div
                             key={item.path}
@@ -332,7 +339,7 @@ export default function EnterpriseLayout() {
                             </div>
                             {/* Mobile logo */}
                             <div className="lg:hidden flex items-center gap-2.5">
-                                <Sparkles className="w-[20px] h-[20px] text-violet-400" />
+                                <LogoNeuralMind size={28} />
                                 <span className="font-bold text-white text-[16px]">OpsMind</span>
                             </div>
                         </div>

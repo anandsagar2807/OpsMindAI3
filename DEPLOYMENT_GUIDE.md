@@ -2,8 +2,8 @@
 
 This guide explains how to connect the **Vercel-hosted frontend** to the **Render-hosted backend**.
 
-- **Frontend (Vercel):** `https://frontend-amber-six-35.vercel.app/`
-- **Backend (Render):** `https://gitgaurd-ai.onrender.com`
+-
+- **Backend (Render):** `YOUR_BACKEND_URL`
 
 ---
 
@@ -12,7 +12,7 @@ This guide explains how to connect the **Vercel-hosted frontend** to the **Rende
 ### Frontend
 | File | Change |
 |------|--------|
-| [`frontend/.env`](frontend/.env:1) | `VITE_API_URL` → `https://gitgaurd-ai.onrender.com` |
+| [`frontend/.env`](frontend/.env:1) | `VITE_API_URL` → `YOUR_BACKEND_URL` |
 | [`frontend/src/services/api.js`](frontend/src/services/api.js:8) | Production fallback → Render backend URL |
 | [`frontend/src/config/constants.js`](frontend/src/config/constants.js:3) | `BASE_URL_PROD` → Render backend URL |
 | [`frontend/src/pages/EnterpriseLandingPage.jsx`](frontend/src/pages/EnterpriseLandingPage.jsx:27) | Fallback → Render backend URL |
@@ -37,7 +37,7 @@ Go to your Vercel project → **Settings → Environment Variables** and add:
 
 | Key | Value | Environments |
 |-----|-------|--------------|
-| `VITE_API_URL` | `https://gitgaurd-ai.onrender.com` | Production, Preview, Development |
+| `VITE_API_URL` | `YOUR_BACKEND_URL` | Production, Preview, Development |
 | `VITE_CLERK_PUBLISHABLE_KEY` | *(your Clerk publishable key — copy from `frontend/.env`)* | Production, Preview, Development |
 
 After adding these, **redeploy** the frontend (Vercel → Deployments → Redeploy, or push a new commit).
@@ -84,14 +84,14 @@ Also add any Vercel **preview** URLs you want to test (e.g. `https://frontend-am
 
 1. **Backend health check** — open in your browser:
    ```
-   https://gitgaurd-ai.onrender.com/health
+   YOUR_BACKEND_URL/health
    ```
    You should see JSON with `"success": true` and database `state: "connected"`.
 
 2. **Frontend → Backend** — visit `https://frontend-amber-six-35.vercel.app/` and:
    - Open DevTools → Network tab.
    - Log in / upload a document / open the chat.
-   - Confirm requests go to `https://gitgaurd-ai.onrender.com/api/...` and return `200`.
+   - Confirm requests go to `YOUR_BACKEND_URL/api/...` and return `200`.
 
 3. **CORS check** — if you see CORS errors in the console, ensure `FRONTEND_URL` is set correctly on Render and the service has been restarted.
 

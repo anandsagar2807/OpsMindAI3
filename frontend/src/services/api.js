@@ -5,7 +5,7 @@ import axios from 'axios';
 // In production builds, use the full API URL for direct connections.
 const API_URL = import.meta.env.DEV
   ? ''  // Vite proxy handles /api → http://localhost:5004
-  : (import.meta.env.VITE_API_URL || 'https://gitgaurd-ai.onrender.com');
+  : (import.meta.env.VITE_API_URL || '');
 
 const api = axios.create({
   baseURL: API_URL,
@@ -202,8 +202,40 @@ export const ragAPI = {
   },
 };
 
+// ─── SOP Smart-Feature APIs ───
+export const sopAPI = {
+  getSuggestedQuestions: (id, token) => {
+    setAuthToken(token);
+    return api.get(`/api/sop/${id}/suggested-questions`);
+  },
+  getSummary: (id, token) => {
+    setAuthToken(token);
+    return api.get(`/api/sop/${id}/summary`);
+  },
+  getInsights: (id, token) => {
+    setAuthToken(token);
+    return api.get(`/api/sop/${id}/insights`);
+  },
+  getActionItems: (id, token) => {
+    setAuthToken(token);
+    return api.get(`/api/sop/${id}/action-items`);
+  },
+  getTimeline: (id, token) => {
+    setAuthToken(token);
+    return api.get(`/api/sop/${id}/timeline`);
+  },
+  getRelated: (id, token) => {
+    setAuthToken(token);
+    return api.get(`/api/sop/${id}/related`);
+  },
+  getSearchAnalytics: (token) => {
+    setAuthToken(token);
+    return api.get('/api/sop/search-analytics');
+  },
+};
+
 // ─── SSE Streaming ───
-export const streamRAGResponse = async (query, conversationId, token, onMetadata, onContent, onComplete, onError) => {
+export const streamRAGResponse = async (query, conversationId, token, onMetadata, onContent, onComplete, onError, documentId = null) => {
   try {
     // Build URL — in dev mode API_URL is empty (proxy), in prod it's the full URL
     const streamUrl = API_URL
@@ -216,7 +248,7 @@ export const streamRAGResponse = async (query, conversationId, token, onMetadata
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`,
       },
-      body: JSON.stringify({ query, conversationId }),
+      body: JSON.stringify({ query, conversationId, documentId }),
     });
 
     if (!response.ok) {

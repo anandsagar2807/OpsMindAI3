@@ -1,4 +1,5 @@
 import { Brain, Zap, Shield, Sparkles } from 'lucide-react'
+import LogoNeuralMind from './Logo'
 
 const features = [
     {
@@ -46,11 +47,9 @@ export default function AuthPanel({ heading = 'Welcome back to', highlight = 'Op
                         <div className="absolute -inset-3 rounded-2xl bg-indigo-500/10 blur-xl" />
                         {/* Pulsing ring */}
                         <div className="absolute -inset-2 rounded-2xl border border-indigo-400/20 animate-pulse" />
-                        {/* Main logo */}
-                        <div className="relative w-12 h-12 rounded-[14px] bg-gradient-to-br from-indigo-500 via-purple-600 to-violet-700 p-[2px] shadow-[0_8px_32px_rgba(139,92,246,0.3)]">
-                            <div className="w-full h-full rounded-[11px] bg-gradient-to-br from-[#0a0a18] via-[#12122a] to-[#0a0a18] flex items-center justify-center">
-                                <Brain className="w-[22px] h-[22px] text-white drop-shadow-[0_0_10px_rgba(139,92,246,0.6)]" />
-                            </div>
+                        {/* Neural Mind Logo */}
+                        <div className="relative">
+                            <LogoNeuralMind size={52} />
                         </div>
                     </div>
 

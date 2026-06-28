@@ -21,7 +21,8 @@ import {
   Zap,
   File,
   Sparkles,
-  Lightbulb
+  Lightbulb,
+  MessageSquare
 } from 'lucide-react';
 import { useUploadDocument, useDocumentInsights } from '../hooks/useDocuments';
 import { useAuth } from '../hooks/useAuthContext';
@@ -149,6 +150,10 @@ export default function UploadPage() {
 
   const handleViewInsights = (docId) => {
     fetchInsights(docId);
+  };
+
+  const handleChatWithDoc = (docId) => {
+    navigate(`/dashboard/chat?doc=${docId}`);
   };
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -350,6 +355,7 @@ export default function UploadPage() {
                   onRemove={removeFromQueue}
                   onRetry={retryUpload}
                   onViewInsights={handleViewInsights}
+                  onChatWithDoc={handleChatWithDoc}
                   formatFileSize={formatFileSize}
                 />
               ))}
@@ -468,6 +474,15 @@ export default function UploadPage() {
                       <ExternalLink className="w-[14px] h-[14px]" />
                       View in Documents
                     </button>
+                    {insightsDocId && (
+                      <button
+                        onClick={() => navigate(`/dashboard/chat?doc=${insightsDocId}`)}
+                        className="flex items-center gap-2 px-4 py-2 rounded-[8px] bg-indigo-500/[0.10] border border-indigo-500/[0.18] text-indigo-400 hover:bg-indigo-500/[0.18] hover:text-indigo-300 text-[14px] font-medium transition-all duration-200"
+                      >
+                        <MessageSquare className="w-[14px] h-[14px]" />
+                        Chat with this SOP
+                      </button>
+                    )}
                   </div>
                 </div>
               ) : null}
@@ -479,7 +494,7 @@ export default function UploadPage() {
   );
 }
 
-function UploadQueueItem({ item, onRemove, onRetry, onViewInsights, formatFileSize }) {
+function UploadQueueItem({ item, onRemove, onRetry, onViewInsights, onChatWithDoc, formatFileSize }) {
   const statusConfig = {
     uploading: { icon: Upload, color: 'text-blue-400', bg: 'bg-blue-500/[0.08]', border: 'border-blue-500/[0.15]', label: 'Uploading' },
     processing: { icon: Loader2, color: 'text-amber-400', bg: 'bg-amber-500/[0.08]', border: 'border-amber-500/[0.15]', label: 'Processing', spin: true },
@@ -533,6 +548,16 @@ function UploadQueueItem({ item, onRemove, onRetry, onViewInsights, formatFileSi
           >
             <Lightbulb className="w-[14px] h-[14px]" />
             Insights
+          </button>
+        )}
+        {item.status === 'completed' && item.documentId && onChatWithDoc && (
+          <button
+            onClick={() => onChatWithDoc(item.documentId)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-[6px] bg-indigo-500/[0.12] border border-indigo-500/[0.20] text-indigo-400 hover:bg-indigo-500/[0.20] hover:text-indigo-300 text-[13px] font-medium transition-all duration-200"
+            title="Chat with this document"
+          >
+            <MessageSquare className="w-[14px] h-[14px]" />
+            Chat
           </button>
         )}
         <button

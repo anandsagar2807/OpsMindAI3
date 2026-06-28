@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { Sparkles, Minus, GripVertical, Maximize2, Minimize2, Lock, ArrowRight, UserPlus, LogIn } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../hooks/useAuthContext';
+import ChatPanel from './ChatPanel';
 
 /**
  * Relevance AI chat URL — embedded as a transparent, draggable widget
@@ -492,28 +493,21 @@ export default function DraggableChatAgent({ locked = false }) {
                     </p>
                 </div>
             ) : (
-                /* Relevance AI chat iframe */
-                <iframe
-                    src={RELEVANCE_CHAT_URL}
-                    title="OpsMind AI Chat Agent"
-                    allow="microphone; camera"
-                    allowTransparency={true}
-                    frameBorder={0}
-                    scrolling="no"
+                /* Native RAG chat panel powered by the backend */
+                <div
+                    data-no-drag
                     style={{
                         position: 'relative',
                         zIndex: 1,
                         width: '100%',
                         height: `calc(100% - ${HEADER_HEIGHT}px)`,
-                        border: 'none',
+                        pointerEvents: blockInteraction ? 'none' : 'auto',
                         background: 'rgba(10, 15, 30, 0.55)',
                         colorScheme: 'dark',
-                        filter: 'invert(1) hue-rotate(180deg)',
-                        WebkitFilter: 'invert(1) hue-rotate(180deg)',
-                        pointerEvents: blockInteraction ? 'none' : 'auto',
-                        display: 'block',
                     }}
-                />
+                >
+                    <ChatPanel compact={true} showHistory={false} />
+                </div>
             )}
         </div>
     );
