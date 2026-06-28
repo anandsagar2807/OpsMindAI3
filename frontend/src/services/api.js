@@ -1,11 +1,13 @@
 import axios from 'axios';
+import { API_CONFIG } from '../config/constants';
 
 // In development with vite proxy, use empty baseURL so requests go through
 // the proxy (same-origin, no CORS issues, more resilient).
-// In production builds, use the full API URL for direct connections.
+// In production builds, use the full API URL for direct connections to the
+// backend hosted on Render (https://opsmindai3.onrender.com).
 const API_URL = import.meta.env.DEV
   ? ''  // Vite proxy handles /api → http://localhost:5004
-  : (import.meta.env.VITE_API_URL || '');
+  : (import.meta.env.VITE_API_URL || API_CONFIG.BASE_URL_PROD || '');
 
 const api = axios.create({
   baseURL: API_URL,

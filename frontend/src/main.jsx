@@ -10,7 +10,7 @@ import './index.css';
 const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
 if (!clerkPublishableKey) {
-  throw new Error('Missing VITE_CLERK_PUBLISHABLE_KEY. Add it to frontend/.env or frontend/.env.local.');
+  console.warn('⚠️ Missing VITE_CLERK_PUBLISHABLE_KEY. Add it to frontend/.env or frontend/.env.local. Auth features will be disabled until it is set.');
 }
 
 const queryClient = new QueryClient({
@@ -54,6 +54,19 @@ const queryClient = new QueryClient({
 });
 
 function ClerkProviderWithRouter() {
+  // If the Clerk publishable key is missing, skip ClerkProvider so the app
+  // still renders (auth-protected routes will redirect to sign-in). This
+  // prevents a hard crash during build/deploy when the env var isn't set yet.
+  const content = (
+    <QueryClientProvider client={queryClient}>
+      <App />
+    </QueryClientProvider>
+  );
+
+  if (!clerkPublishableKey) {
+    return content;
+  }
+
   return (
     <ClerkProvider
       publishableKey={clerkPublishableKey}
@@ -61,9 +74,7 @@ function ClerkProviderWithRouter() {
       afterSignUpUrl="/dashboard"
       afterSignOutUrl="/"
     >
-      <QueryClientProvider client={queryClient}>
-        <App />
-      </QueryClientProvider>
+      {content}
     </ClerkProvider>
   );
 }

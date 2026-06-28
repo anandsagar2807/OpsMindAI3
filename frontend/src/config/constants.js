@@ -1,6 +1,8 @@
 export const API_CONFIG = {
     BASE_URL_DEV: '',
-    BASE_URL_PROD: '',
+    // Production backend hosted on Render. Can be overridden via VITE_API_URL
+    // environment variable in Vercel if needed.
+    BASE_URL_PROD: import.meta.env.VITE_API_URL || 'https://opsmindai3.onrender.com',
     TIMEOUT: 30000,
     UPLOAD_TIMEOUT: 120000,
 };
